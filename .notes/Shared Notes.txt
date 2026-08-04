@@ -546,3 +546,83 @@ enemies never leave the activeEnemies list HeatSystem's line-of-sight
 pursuer check reads from. Worth a decision on whether/when to fix
 (likely: swap the order in Die(), or drop the isDead check from
 Dismount()'s guard) but wasn't part of what was asked here.
+
+[2026-08-04, continued] Fix Die()/Dismount() ordering — Claude Code
+
+[DONE] Checkpoint check: working tree was already clean at commit
+32014cd (only the pre-known, user-owned unity/*.glb -> Assets_User/
+relocation present, left untouched again) — that commit serves as the
+checkpoint, no new commit needed before starting.
+
+[DONE] Confirmed why Dismount()'s isDead guard exists, rather than
+reordering blind, per the task's instruction. Traced every call site of
+Dismount(): (1) TakeDamage()'s own low-health branch, (2) Die(), (3)
+WeaponManager.ProcessHit() — which calls enemyHealth.TakeDamage() first,
+then SEPARATELY rolls `Random.value < currentWeapon.dismountChance` and
+calls enemyHealth.Dismount(...) again, regardless of whether that
+TakeDamage() call was already lethal — and (4) GrabSystem's Hijack flow
+(independent of damage entirely). Confirmed: (3) is exactly the
+"some other way" double-dismount risk the guard was defending against —
+a lethal WeaponManager hit runs TakeDamage() -> Die() -> Dismount(),
+then WeaponManager's own follow-up dismount-chance roll could call
+Dismount() again on the same hit. But `isDismounted` (set as
+Dismount()'s very first line, before any side effect runs) already
+fully covers this for ANY caller, independent of `isDead` — the isDead
+half of the guard is redundant once Die()'s ordering is correct, not a
+distinct protection. Confirmed via live regression test (see below) that
+isDismounted alone still blocks a direct follow-up Dismount() call after
+a lethal hit, with zero loot/ragdoll doubling.
+
+[DONE] Fix: in Die(), moved `isDead = true;` to AFTER the Dismount(...)
+call instead of before it (currentHealth = 0f stays first, unaffected).
+Dismount()'s own guard (`if (isDismounted || isDead) return;`) was left
+completely unchanged — since isDismounted alone already provides full
+protection against double-dismount for every real caller, reordering
+Die() was sufficient and didn't require touching the guard itself. Added
+a short comment explaining why the ordering matters, since a future
+editor moving `isDead = true` back up next to `currentHealth = 0f` would
+silently reintroduce the exact same bug.
+
+[DONE] Live play-tested via Unity MCP, killing a real placed enemy
+(Enemy_NeonSaints, TakeDamage(1000f, false)):
+  - No exception. isDead=True AND isDismounted=True this time (was
+    False before the fix) — Dismount() now actually runs to completion.
+  - OnEnemyDismounted event confirmed fired (subscribed a temporary
+    handler before the hit).
+  - Loot drop confirmed real: PlayerStats.ScrapParts went 0 -> 5
+    (DropLoot() now actually runs).
+  - Self-destroy confirmed working end-to-end without any extra
+    prompting: enough real time passed between tool calls that the
+    5s ragdollDuration DestroyAfterDelay coroutine completed on its own
+    — GameObject.Find("Enemy_NeonSaints") came back null on the next
+    check, and EnemyAIManager.GetActiveEnemies() correctly dropped from
+    5 to 4 with Enemy_NeonSaints cleanly absent (no dangling null entry)
+    - confirms EnemyAI.OnDestroy() -> UnregisterEnemy() fired correctly.
+    This is also the direct fix for the Heat System connection flagged
+    last session: dead enemies no longer linger in the list
+    HeatSystem's line-of-sight pursuer check reads from.
+  - Ragdoll spawn: the spawn code path (`if (ragdollPrefab != null)
+    Instantiate(...)`) is now correctly reachable (previously never
+    reached at all), but confirmed via reflection that NONE of the 5
+    placed enemies have a ragdollPrefab assigned (same gap as
+    damageParticles/sparkParticles from last session - optional visual
+    refs were never wired up on these prefabs). So no visible ragdoll
+    actually appears yet - not a bug in this fix, a separate pre-existing
+    content gap, out of scope here.
+  - Double-dismount regression check: repeated the exact WeaponManager
+    pattern manually (TakeDamage(1000f) lethal hit, then immediately a
+    direct follow-up Dismount() call on the same instance, same as its
+    post-hit dismount-chance roll) on Enemy_RustBarons. Confirmed only
+    ONE loot drop occurred (scrap +7, a single drop's range of 5-19, not
+    doubled) - the isDismounted guard correctly blocked the second call's
+    side effects, exactly preserving the original protection.
+  - Console checked after every step: 0 errors, 0 warnings throughout.
+  - Scene confirmed clean after stopping Play: isDirty=false,
+    rootCount=16.
+
+[NOTE] Confirmed but not fixed (genuinely out of scope, pre-existing,
+unrelated to this bug): none of the 5 placed enemies have ragdollPrefab,
+damageParticles, or sparkParticles assigned in the inspector. All three
+are correctly null-guarded now (no crashes), but the game currently has
+zero enemy visual feedback on hit/death for any of them. Worth a
+separate task if/when enemy polish is prioritized.

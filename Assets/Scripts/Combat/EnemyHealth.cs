@@ -139,10 +139,12 @@ namespace AsphaltAnarchy.Combat
         private void Die()
         {
             if (isDead) return;
-            isDead = true;
             currentHealth = 0f;
 
+            // Dismount()'s own guard checks isDead, so it must be set only
+            // after Dismount() returns, or death would block its own dismount.
             Dismount(transform.forward * 300f + Vector3.up * 200f);
+            isDead = true;
             OnEnemyDied?.Invoke(this);
         }
 
