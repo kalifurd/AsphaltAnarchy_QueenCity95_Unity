@@ -63,7 +63,8 @@ namespace AsphaltAnarchy.Combat
 
             if (isElectrified)
             {
-                sparkParticles?.Play();
+                if (sparkParticles != null)
+                    sparkParticles.Play();
                 Stun(1f);
             }
 
@@ -77,7 +78,8 @@ namespace AsphaltAnarchy.Combat
             }
             else
             {
-                damageParticles?.Play();
+                if (damageParticles != null)
+                    damageParticles.Play();
             }
         }
 

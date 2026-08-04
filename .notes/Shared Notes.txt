@@ -469,3 +469,80 @@ UnityEngine.Object.FindObjectOfType<T>() via execute_code finds it fine.
 Not a bug, just a blind spot in the find_gameobjects tool worth
 remembering for any future test involving Systems/GameManager/its
 children.
+
+[2026-08-04, continued] Fix EnemyHealth.TakeDamage() non-lethal crash —
+Claude Code
+
+[DONE] Checkpoint check: working tree was already clean at commit
+58b2846 (only the pre-known, user-owned unity/*.glb -> Assets_User/
+relocation present, left untouched again per standing instruction from
+last session) — that commit serves as the checkpoint, no new commit
+needed before starting.
+
+[DONE] Confirmed the actual exception before assuming anything, per the
+task's KISS-first instruction. Reproduced live via execute_code with a
+try/catch around EnemyHealth.TakeDamage(1f, false) on Enemy_NeonSaints:
+  UnityEngine.UnassignedReferenceException: "The variable damageParticles
+  of EnemyHealth has not been assigned." Stack trace confirmed the call
+  actually entered UnityEngine.ParticleSystem.Play() (called from
+  EnemyHealth.cs:80, the `damageParticles?.Play();` line) before
+  throwing — meaning the existing `?.` null check did NOT skip the call.
+
+[DONE] Confirmed the field state precisely (not just guessed) via
+reflection on all 5 placed enemies: for every one,
+`System.Object.ReferenceEquals(damageParticles, null)` = false (the raw
+C# reference is NOT actually null) but `(damageParticles as
+UnityEngine.Object) == null` = true (Unity's overloaded equality
+correctly reports it as missing/unassigned). This is Unity's "fake
+null" pattern for an unassigned SerializeField Object reference — C#'s
+`?.` operator does a raw reference-null check at the IL level and does
+NOT invoke UnityEngine.Object's overloaded `==`, so it fails to catch
+this case and lets the call through to Play(), which then throws deep
+in Unity's native binding layer. This is genuinely a missing-null-check
+bug as suspected, just with a specific Unity gotcha underneath (the
+right fix is an explicit `if (x != null) x.Play();`, not `x?.Play();`)
+— confirmed, not assumed.
+
+[DONE] Fix: in EnemyHealth.cs, replaced both `damageParticles?.Play();`
+(line 80, the one that actually crashed) and `sparkParticles?.Play();`
+(line 66, the sibling electrified-hit path — same field pattern, same
+latent bug, not yet triggered live but fixed proactively rather than
+leaving an identical landmine right next to the one just fixed) with
+explicit `if (x != null) x.Play();` checks. No prefab/inspector changes
+required — every enemy still works with zero particle systems assigned,
+matching the task's requirement that the visual effect stay optional.
+
+[DONE] Live play-tested via Unity MCP after the fix:
+  - Non-lethal hit (Enemy_KentuckyKings, TakeDamage(5f, false)): no
+    exception, health correctly went 80 -> 75, isDismounted/isDead both
+    stayed false as expected for a small hit.
+  - Electrified non-lethal hit (Enemy_Phantoms, TakeDamage(5f, true)):
+    exercises the sparkParticles path specifically — no exception,
+    health 80 -> 75, isStunned correctly flipped true.
+  - Lethal hit regression check (Enemy_RustBarons, TakeDamage(1000f,
+    false)): no exception, isDead correctly flipped true — the Die()
+    path (which never reaches the damageParticles branch anyway) still
+    works.
+  - Console checked after each hit: 0 errors, 0 warnings every time.
+  - Scene confirmed clean after stopping Play: isDirty=false,
+    rootCount=16, matching pre-test state.
+
+[FLAG] Found a separate, real, pre-existing bug while doing the lethal-
+hit regression check above — NOT fixed, out of scope for this pass
+(task was specifically the damageParticles/sparkParticles null-check):
+Die() sets `isDead = true` BEFORE calling Dismount(transform.forward *
+300f + Vector3.up * 200f), but Dismount()'s own guard is
+`if (isDismounted || isDead) return;` — so Die() calling Dismount() is
+always a no-op. Confirmed live: after a lethal hit, isDead=True but
+isDismounted stayed False. Practical effect: on every enemy death,
+the ragdoll never spawns, ejection force never applies,
+OnEnemyDismounted never fires, DropLoot() never runs (dead enemies
+currently give NO scrap/Echo points), the DestroyAfterDelay coroutine
+never starts (dead enemy GameObjects are never destroyed, they just sit
+there inert forever), and — relevant to last session's Heat System work
+— EnemyAI.OnDestroy() (which calls
+EnemyAIManager.UnregisterEnemy(this)) never fires either, so dead
+enemies never leave the activeEnemies list HeatSystem's line-of-sight
+pursuer check reads from. Worth a decision on whether/when to fix
+(likely: swap the order in Die(), or drop the isDead check from
+Dismount()'s guard) but wasn't part of what was asked here.
