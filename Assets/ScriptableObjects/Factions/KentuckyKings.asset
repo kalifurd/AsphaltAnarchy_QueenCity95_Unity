@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2467e1d6480717047a598e89365c5420, type: 3}
+  m_Name: KentuckyKings
+  m_EditorClassIdentifier: Assembly-CSharp::AsphaltAnarchy.Factions.FactionData
+  factionName: The Kentucky Kings
+  description: Cross-river royalty out of Newport and Covington, all high-speed swagger.
+  factionColor: {r: 0.85, g: 0.68, b: 0.1, a: 1}
+  emblem: {fileID: 0}
+  primaryTerritory: Newport
+  secondaryTerritory: Covington
+  combatStyle: High-speed drafting and sideswiping across the river bridges.
+  bikePrefab: {fileID: 8723663805421480158, guid: c349053871b87ba458625555048e83ff, type: 3}
+  riderPrefab: {fileID: 0}
+  aggression: 0.75
+  coordination: 0.7
+  fearThreshold: 0.35
+  defensiveness: 0.3
+  playerRelation: -0.5
+  echoResponseLow: Aggressive, drafting close and daring you to react.
+  echoResponseMid: Cautious, keeping distance instead of drafting.
+  echoResponseHigh: "Terrified \u2014 peeling off the bridges entirely."

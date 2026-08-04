@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2467e1d6480717047a598e89365c5420, type: 3}
+  m_Name: OTRSyndicate
+  m_EditorClassIdentifier: Assembly-CSharp::AsphaltAnarchy.Factions.FactionData
+  factionName: The OTR Syndicate
+  description: Alley-runners who know Over-the-Rhine's back streets better than the
+    cops do.
+  factionColor: {r: 0.55, g: 0.1, b: 0.7, a: 1}
+  emblem: {fileID: 0}
+  primaryTerritory: Over-the-Rhine
+  secondaryTerritory: Pendleton
+  combatStyle: Hit-and-run ambushes, quick strikes then vanish into the alleys.
+  bikePrefab: {fileID: 8569942007392014680, guid: 3163cc807b979bd4fa63279e173f83d5, type: 3}
+  riderPrefab: {fileID: 0}
+  aggression: 0.6
+  coordination: 0.6
+  fearThreshold: 0.4
+  defensiveness: 0.5
+  playerRelation: -0.4
+  echoResponseLow: Aggressive, running quick strikes and vanishing into alleys.
+  echoResponseMid: Cautious, retreating earlier and further each time.
+  echoResponseHigh: "Terrified \u2014 abandoning the alley routes entirely."

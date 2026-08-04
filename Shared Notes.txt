@@ -1,0 +1,7 @@
+=== SUMMARY (auto-generated, do not edit above this line) ===
+(nothing yet — this fills in after the first compaction pass)
+
+=== OPEN FLAGS (do not remove until resolved) ===
+(none)
+
+=== APPEND NEW NOTES BELOW THIS LINE ===

@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2467e1d6480717047a598e89365c5420, type: 3}
+  m_Name: NeonSaints
+  m_EditorClassIdentifier: Assembly-CSharp::AsphaltAnarchy.Factions.FactionData
+  factionName: The Neon Saints
+  description: Corporate-backed, high-tech racers who treat Downtown like their private
+    circuit.
+  factionColor: {r: 0, g: 1, b: 1, a: 1}
+  emblem: {fileID: 0}
+  primaryTerritory: Downtown
+  secondaryTerritory: Mount Adams
+  combatStyle: Precision strikes, electrified batons, coordinated pack surrounds.
+  bikePrefab: {fileID: 7752476853655849027, guid: 00d97f0c73f74d04ea2000f24f0e20ac, type: 3}
+  riderPrefab: {fileID: 0}
+  aggression: 0.7
+  coordination: 0.8
+  fearThreshold: 0.3
+  defensiveness: 0.4
+  playerRelation: -0.5
+  echoResponseLow: Aggressive and confident, taunting you over comms.
+  echoResponseMid: Cautious, breaking formation, second-guessing calls.
+  echoResponseHigh: "Terrified \u2014 abandoning bikes and fleeing on foot."

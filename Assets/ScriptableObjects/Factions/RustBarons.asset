@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2467e1d6480717047a598e89365c5420, type: 3}
+  m_Name: RustBarons
+  m_EditorClassIdentifier: Assembly-CSharp::AsphaltAnarchy.Factions.FactionData
+  factionName: The Rust Barons
+  description: Industrial scrappers running Queensgate's rail yards and scrapyards.
+  factionColor: {r: 0.72, g: 0.35, b: 0.1, a: 1}
+  emblem: {fileID: 0}
+  primaryTerritory: Queensgate
+  secondaryTerritory: West End
+  combatStyle: Full-throttle ramming, heavy chains, no subtlety.
+  bikePrefab: {fileID: 1549670180271752336, guid: 855ea100496a3d1408851ae5747bd72f, type: 3}
+  riderPrefab: {fileID: 0}
+  aggression: 0.9
+  coordination: 0.3
+  fearThreshold: 0.5
+  defensiveness: 0.2
+  playerRelation: -0.6
+  echoResponseLow: Aggressive, revving engines and ramming on sight.
+  echoResponseMid: Cautious, hanging back before committing to a charge.
+  echoResponseHigh: "Frozen with fear \u2014 stalling out mid-charge."
