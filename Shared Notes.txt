@@ -5,3 +5,110 @@
 (none)
 
 === APPEND NEW NOTES BELOW THIS LINE ===
+
+[2026-08-04] Grab/Hijack play-test — Claude Code
+
+[DONE] Baseline commit made before any testing/changes. New local git repo
+initialized at project root (none existed before). Commit a5a3002,
+"Baseline snapshot before Grab/Hijack play-test", working tree clean after.
+Covers the 7 post-backup-touched files (FactionData.cs, WeaponData.cs,
+InputManager.cs, PlayerStats.cs, WeatherSystem.cs, PoliceUnit.cs,
+TrafficLight.cs) plus everything else in the tree.
+
+[FLAG] Could not perform the live Play-mode test at all. Unity MCP tools
+(mcp__UnityMCP__manage_editor, read_console, find_gameobjects, etc.) are
+not connected in this Claude Code session — ToolSearch finds no matching
+tools. Unity.exe IS running (confirmed via tasklist, 2 processes). But:
+  - No .mcp.json exists anywhere in the project registering the Unity MCP
+    server (only .claude/settings.local.json has the tool *permissions*
+    pre-approved, which isn't the same as the server being registered).
+  - This Claude Code session's working directory is C:\Windows\System32,
+    not this project folder, so even a project-scoped .mcp.json wouldn't
+    have been picked up.
+Need a decision from you: either point me at the correct .mcp.json /
+Unity MCP bridge setup to add, or launch/resume Claude Code with this
+project folder as the working directory so project MCP config loads.
+Did not attempt to self-configure a new MCP server connection blind.
+
+[NOTE] Static read of GrabSystem.cs (not yet verified live) — one thing
+that looked off against task item 5 ("failed hijack — out of range/no
+valid target — applies fall damage"): AttemptHijack() only calls
+StartCoroutine(HijackRoutine(...)) when a target is found in hijackRange.
+If nothing is in range, the method just returns — no coroutine runs, so
+no fall damage is applied and no state change happens at all; pressing G
+with nothing nearby is currently a silent no-op rather than a "failed
+hijack." The in-flight failure path (target found but missing
+EnemyHealth/MotorcycleController) does correctly reach the
+TakeDamage(30f, DamageType.Fall) branch. Worth confirming with you whether
+"no target in range = silent no-op" is intended, or whether item 5 implies
+it should also count as a failed attempt with a penalty — needs live
+confirmation either way once the MCP connection is sorted.
+
+[NOTE] Rest of the checklist (bikeController.enabled toggle, playerRb
+isKinematic toggle / jitter, EnemyHealth.Dismount cleanup, velocity
+carry-over correctness, console cleanliness) not yet exercised — blocked
+on the same MCP connection issue above.
+
+[NOTE] Root cause found: user confirmed MCP-FOR-UNITY bridge is running in
+the open Editor (console shows "Server ready on http://127.0.0.1:8080" /
+"Session connected"), and ~/.claude.json already has the UnityMCP server
+registered — but scoped to the project-directory entry
+("C:/AsphaltAnarchy_QueenCity95_Unity_FIXED"). It only loads when Claude
+Code's cwd IS that folder. This session started in C:\Windows\System32,
+so the tools never appeared. User is opening a new terminal cd'd into
+this project folder and starting a fresh `claude` session there to
+continue the Grab/Hijack play-test. This session did not modify any
+config to fix it (no edits made to .claude.json).
+
+[2026-08-04, continued] MCP connection confirmed working from the project
+folder. Ran the live Play-mode test via mcp__UnityMCP__execute_code
+(reflection calls into GrabSystem's private AttemptHijack/HijackRoutine on
+the real Player GameObject in QueenCity_Main.unity), since simulating
+literal keyboard input isn't possible through the MCP bridge.
+
+[CONFIRMED BUG] "No target in range" IS a silent no-op, live-verified:
+called AttemptHijack() with all enemies far away — zero state change,
+zero damage, isHijacking stayed false. Matches the earlier static-read
+flag. Still open: does item 5 want this to count as a failed attempt
+with a fall-damage penalty, or is silent-no-op intended? Asked the user.
+
+[CONFIRMED WORKING] Full successful-hijack path, live-verified end to end:
+- Target-in-range detection works (Physics.OverlapSphere + enemyLayer mask
+  correctly finds a bike-tagged enemy within hijackRange).
+- bikeController.enabled correctly toggles false→true across the routine.
+- playerRb.isKinematic correctly toggles true→false, no stuck state.
+- Jump-arc interpolation moves the player transform smoothly toward the
+  target (verified mid-flight position mid-routine).
+- EnemyHealth.Dismount cleanup confirmed: the hijacked enemy GameObject
+  self-destroys (ragdoll+loot+delay) — nothing manual left to clean up.
+- Echo points confirmed correct: AddPoints(50, Hijack) applies the 2.0x
+  hijack multiplier -> 100 points -> exactly one level-up (level 0->1,
+  pointsPerLevel=100), consistent with EchoSystem.AddPoints/CheckLevelUp.
+- No fall damage applied on the success path (player health stayed at
+  100) — correctly did not fall into the "failed hijack" else-branch.
+- Console stayed completely clean (0 errors/warnings) through the whole
+  test, including through an ~27s stretch of normal simulated gameplay.
+
+[NOTE — environment gotcha, not a game bug] Mid-test, the Unity Editor
+window was unfocused and Time.frameCount/Time.time froze completely —
+Play Mode's Update loop stops ticking entirely when the Editor isn't
+OS-focused in this automation setup. EditorApplication.QueuePlayerLoopUpdate()
+and scripted GameView.Focus() did not resume it; only the user physically
+clicking the Editor window did. Worth knowing for any future automated
+play-mode testing session: pause/no-progress on frameCount + is_focused
+false in editor_state means "ask the user to click the window," not "the
+game is broken."
+
+[NOT YET EXERCISED] AI-side reactions to being hijacked (whether other
+enemies/FactionManager/EnemyAIManager respond to a faction member losing
+its bike) — checklist item was scoped to GrabSystem's own mechanics, not
+downstream AI reactions, so this was out of scope for this pass.
+
+Play mode stopped cleanly after testing; no scene changes were saved
+(test used reflection on runtime instances only, nothing persisted to
+the .unity file or any asset).
+
+[DECIDED] User confirmed "no target in range" silent no-op is intended
+behavior, not a bug — no target means the player never left their bike,
+so there's nothing to apply a failed-hijack penalty to. No code change
+needed. GrabSystem.cs is considered verified/closed for this pass.
