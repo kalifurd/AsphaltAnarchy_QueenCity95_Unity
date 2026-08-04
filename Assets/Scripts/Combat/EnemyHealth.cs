@@ -44,6 +44,7 @@ namespace AsphaltAnarchy.Combat
 
         public static event Action<EnemyHealth> OnEnemyDied;
         public static event Action<EnemyHealth> OnEnemyDismounted;
+        public static event Action<EnemyHealth, float> OnDamageTaken;
 
         private void Start()
         {
@@ -58,6 +59,7 @@ namespace AsphaltAnarchy.Combat
             if (isDead) return;
 
             currentHealth -= damage;
+            OnDamageTaken?.Invoke(this, damage);
 
             if (isElectrified)
             {

@@ -21,6 +21,7 @@ namespace AsphaltAnarchy.Factions
 
         private Dictionary<FactionData, float> factionRelations = new Dictionary<FactionData, float>();
         private Dictionary<FactionData, int> factionTerritoryCount = new Dictionary<FactionData, int>();
+        private Dictionary<FactionData, int> factionManpower = new Dictionary<FactionData, int>();
 
         public static event Action<FactionData, float> OnRelationChanged;
         public static event Action<FactionData> OnFactionDefeated;
@@ -34,7 +35,35 @@ namespace AsphaltAnarchy.Factions
                     factionRelations[faction] = faction.playerRelation;
                     factionTerritoryCount[faction] = 0;
                 }
+
+                if (!factionManpower.ContainsKey(faction) && faction.hasFiniteManpower)
+                {
+                    factionManpower[faction] = faction.startingManpower;
+                }
             }
+        }
+
+        public bool HasFiniteManpower(FactionData faction)
+        {
+            return faction != null && faction.hasFiniteManpower;
+        }
+
+        public int GetManpower(FactionData faction)
+        {
+            if (faction == null) return 0;
+            if (factionManpower.TryGetValue(faction, out int manpower))
+                return manpower;
+            return faction.hasFiniteManpower ? faction.startingManpower : 0;
+        }
+
+        public int ConsumeManpower(FactionData faction, int amount)
+        {
+            if (faction == null || !faction.hasFiniteManpower || amount <= 0) return 0;
+
+            int available = GetManpower(faction);
+            int consumed = Mathf.Min(available, amount);
+            factionManpower[faction] = available - consumed;
+            return consumed;
         }
 
         public float GetRelation(FactionData faction)

@@ -39,6 +39,10 @@ namespace AsphaltAnarchy.Factions
         [Range(-1f, 1f)]
         public float playerRelation = -0.5f;
 
+        [Header("Heat Reinforcements")]
+        public bool hasFiniteManpower = false;
+        public int startingManpower = 20;
+
         [Header("Echo Response")]
         [TextArea]
         public string echoResponseLow = "Aggressive and confident.";

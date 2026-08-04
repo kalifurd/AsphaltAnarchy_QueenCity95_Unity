@@ -2219,6 +2219,7 @@ GameObject:
   - component: {fileID: 480098992}
   - component: {fileID: 480098991}
   - component: {fileID: 480098990}
+  - component: {fileID: 480098998}
   m_Layer: 0
   m_Name: Systems
   m_TagString: Untagged
@@ -2419,6 +2420,28 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &480098998
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 480098989}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c19795b87220d714688053786228c16d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AsphaltAnarchy.Heat.HeatSystem
+  maxHeat: 100
+  heatPerHit: 8
+  heatPerTurfIncursion: 15
+  waveThreshold: 60
+  waveRetriggerCooldown: 20
+  enemiesPerWave: 2
+  maxWavesPerEncounter: 3
+  loseHeatCountdown: 8
+  enemyAIManager: {fileID: 0}
+  factionManager: {fileID: 0}
 --- !u!1 &545480409
 GameObject:
   m_ObjectHideFlags: 0
@@ -2844,6 +2867,7 @@ RectTransform:
   - {fileID: 392668173}
   - {fileID: 690080153}
   - {fileID: 88735145}
+  - {fileID: 1209764624}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -3697,6 +3721,101 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!1 &1209764623
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1209764624}
+  - component: {fileID: 1209764627}
+  - component: {fileID: 1209764626}
+  - component: {fileID: 1209764625}
+  m_Layer: 0
+  m_Name: HeatFlame
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1209764624
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1209764623}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1.9937695, y: 1.9937695, z: 1.9937695}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 684016937}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 1, y: 1}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: -40, y: -40}
+  m_SizeDelta: {x: 160, y: 160}
+  m_Pivot: {x: 1, y: 1}
+--- !u!114 &1209764625
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1209764623}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d691886b3787b04aac0305784c11153, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AsphaltAnarchy.Heat.HeatHUD
+  flameImage: {fileID: 1209764626}
+  minAlpha: 0
+  maxAlpha: 1
+  minScale: 0.85
+  maxScale: 1.25
+  punchScale: 1.6
+  punchDuration: 0.25
+--- !u!114 &1209764626
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1209764623}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 21300000, guid: ff95241c67ab7f04f8b3c3a6364f1a0d, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 1
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &1209764627
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1209764623}
+  m_CullTransparentMesh: 1
 --- !u!1 &1262929934
 GameObject:
   m_ObjectHideFlags: 0

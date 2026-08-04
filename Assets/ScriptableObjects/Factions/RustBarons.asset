@@ -26,6 +26,8 @@ MonoBehaviour:
   fearThreshold: 0.5
   defensiveness: 0.2
   playerRelation: -0.6
+  hasFiniteManpower: 1
+  startingManpower: 3
   echoResponseLow: Aggressive, revving engines and ramming on sight.
   echoResponseMid: Cautious, hanging back before committing to a charge.
   echoResponseHigh: "Frozen with fear \u2014 stalling out mid-charge."

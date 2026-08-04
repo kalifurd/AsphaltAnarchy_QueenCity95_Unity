@@ -41,6 +41,7 @@ namespace AsphaltAnarchy.AI
         private WeaponManager weaponManager;
         private Transform playerTransform;
         private EchoSystem echoSystem;
+        private EnemyAIManager aiManager;
 
         private float currentFearLevel;
         private float lastAttackTime;
@@ -53,6 +54,7 @@ namespace AsphaltAnarchy.AI
         public FactionData Faction => faction;
         public AIState CurrentState => currentState;
         public bool IsPackLeader => isPackLeader;
+        public bool IsPursuing => currentState == AIState.Chase || currentState == AIState.Attack;
 
         private void Start()
         {
@@ -66,6 +68,14 @@ namespace AsphaltAnarchy.AI
             var player = GameObject.FindGameObjectWithTag("Player");
             if (player != null)
                 playerTransform = player.transform;
+
+            aiManager = FindObjectOfType<EnemyAIManager>();
+            aiManager?.RegisterEnemy(this);
+        }
+
+        private void OnDestroy()
+        {
+            aiManager?.UnregisterEnemy(this);
         }
 
         private void Update()
@@ -377,7 +387,7 @@ namespace AsphaltAnarchy.AI
             bikeController.ApplyExternalForce(transform.forward * throttle * 500f, ForceMode.Force);
         }
 
-        private bool CanSeePlayer()
+        public bool CanSeePlayer()
         {
             if (playerTransform == null) return false;
             Vector3 toPlayer = playerTransform.position - transform.position;

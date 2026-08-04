@@ -301,3 +301,171 @@ KISS instruction (only asked for the two stub methods): DeactivateMythWalk()
 never reverts forced-green lights or diverted police back to normal —
 there's no "un-divert" or "return to red" call anywhere. Worth a decision
 later on whether that's wanted, but wasn't part of what was asked here.
+
+[2026-08-04, continued] Heat System (new, separate from EchoSystem) —
+Claude Code
+
+[DONE] Checkpoint commit 487739d made first (notes + PoliceUnit/
+TrafficLight only — left the unity/*.glb -> Assets_User/ asset
+relocation alone per user, that's their in-progress work from
+tripo.ai renders, not mine to touch).
+
+[FLAG-then-resolved] Step 2 investigation found real scope gaps, same
+pattern as the last two tasks — stopped and asked before writing
+anything:
+  - EnemyAIManager.SpawnEnemyWave had ZERO live callers anywhere in the
+    codebase. Both plausible hook points are stubs:
+    TurfWarManager.TriggerDefenseEvent() (comment: "Spawn enemy wave to
+    reclaim / Implementation depends on spawn system") and
+    TurfNode.StartCombatGauntlet() (comment: "Spawn enemy wave"). User
+    confirmed: OK for HeatSystem to call SpawnEnemyWave directly: don't
+    touch those two stubs, out of scope.
+  - The "Outlaw-club vs OTR Syndicate" finite/renewable manpower split
+    named in the task doesn't exist in code anywhere — FactionData has
+    no manpower field at all, and no faction is literally named
+    "Outlaws" (the 5 gangs are Neon Saints, Rust Barons, OTR Syndicate,
+    Kentucky Kings, Phantoms). User picked: Rust Barons only gets finite
+    manpower (closest tonal fit — ramming/chains/"no subtlety" per
+    README); store it as a startingManpower/hasFiniteManpower pair on
+    FactionData (design data), with runtime depletion tracked in
+    FactionManager mirroring the existing territory-count dict pattern
+    (not mutating the SO asset at runtime — SO field writes during Play
+    DO persist to the asset on disk after Stop, unlike scene objects,
+    so that would have corrupted RustBarons.asset during testing).
+
+[FLAG-then-resolved] While wiring HeatSystem's pursuer/line-of-sight
+check, found EnemyAI.Start() never actually called
+EnemyAIManager.RegisterEnemy() — activeEnemies was permanently empty,
+dead code, for every enemy including the 5 already placed in the scene.
+Not a design question, just missing plumbing directly required for
+Heat's "all pursuers" check to have anything to check — fixed it
+(EnemyAI now registers in Start()/unregisters in OnDestroy(), matching
+the FindObjectOfType pattern already used for echoSystem/playerTransform
+in the same method).
+
+[DONE] New Assets/Scripts/Heat/HeatSystem.cs (separate component,
+placed on the existing Systems GameObject, not folded into
+EchoSystem.cs). Subscribes to two REAL existing events rather than
+inventing new plumbing: EnemyHealth.OnDamageTaken (new event, added
+alongside the existing OnEnemyDied/OnEnemyDismounted, fired at the top
+of TakeDamage() before the damage-particle/dismount/death branching) for
+combat, and TurfNode.OnNodeEntered (already fires live via
+OnTriggerEnter tag=="Player") for turf incursions when the node isn't
+player-controlled. Both handlers also capture the enemy's/node's
+FactionData as the "current encounter faction" — derived live from real
+game state, not invented.
+  - AddHeat(amount) raises heat (clamped 0..maxHeat), resets the evade
+    countdown, and checks the wave threshold.
+  - Past waveThreshold, spawns EnemyAIManager.SpawnEnemyWave in pairs
+    (enemiesPerWave=2), capped at maxWavesPerEncounter=3, gated by
+    waveRetriggerCooldown=20s between triggers.
+  - If FactionManager.HasFiniteManpower(encounterFaction) is true, wave
+    size is clamped to available manpower (can spawn a partial wave of
+    1) and consumed from FactionManager's runtime dict; if manpower is
+    fully depleted, the wave silently doesn't fire at all (no increment
+    to wavesTriggeredThisEncounter, no cooldown reset) — this is
+    intentionally distinct from hitting the wave-count cap.
+  - Every Update(), checks whether any registered EnemyAI is both
+    IsPursuing (Chase/Attack state) AND CanSeePlayer() (made public,
+    was already a correct private LOS raycast check). If none do, an
+    evade countdown (loseHeatCountdown=8s) runs; on completion,
+    ClearHeat() zeroes heat, resets wave count, clears encounter
+    faction. Any pursuer regaining LOS resets the countdown to 0.
+
+[DONE] Supporting real-code changes (all small, all directly required,
+none invented):
+  - FactionData.cs: added hasFiniteManpower (bool) + startingManpower
+    (int) design fields.
+  - FactionManager.cs: added HasFiniteManpower/GetManpower/
+    ConsumeManpower, backed by a runtime Dictionary<FactionData,int>
+    populated in the existing Initialize() (already called from
+    GameManager.Start() -> InitializeSystems(), confirmed live) —
+    mirrors the existing factionTerritoryCount dict pattern exactly.
+  - EnemyAIManager.cs: added GetActiveEnemies() (returns a copy of the
+    list, mirrors TurfWarManager.GetPlayerClaimedNodes()) — needed since
+    nothing previously read that list back out.
+  - EnemyAI.cs: added public IsPursuing (Chase||Attack) and flipped
+    the existing CanSeePlayer() from private to public. Added
+    RegisterEnemy/UnregisterEnemy calls (see flag above).
+  - EnemyHealth.cs: added the OnDamageTaken static event (see above).
+  - RustBarons.asset: hasFiniteManpower=true, startingManpower=3 (kept
+    low deliberately so a live play-test could reach depletion inside
+    one encounter without needing dozens of hits).
+
+[DONE] HUD: single flaming graphic doubling as the meter, on the
+existing HUD_Canvas (same Canvas as HealthBar/EchoBar/ShopUI — did not
+create a second Canvas). Built via manage_texture (radial gradient,
+hot-yellow core to transparent red edge, 64x64, imported as a Sprite) at
+Assets/Textures/UI/HeatFlame.png, since no flame art existed in the
+project and generate_image needs a configured provider key. New
+Assets/Scripts/Heat/HeatHUD.cs on a new "HeatFlame" child GameObject
+(top-right anchor, pivot 1,1): Image alpha lerps 0->1 with
+HeatSystem.HeatFraction on OnHeatChanged, a punch-scale coroutine fires
+on OnWaveTriggered (scale spikes to 1.6x then eases back), fades back to
+fully transparent when OnHeatCleared zeroes it out.
+
+[DONE] Live play-test via Unity MCP execute_code (reflection used only
+to speed up test timing constants and to bypass the wave-retrigger
+cooldown deterministically between calls within a single script — never
+to fake state that real code should produce):
+  - Real event pipeline confirmed end-to-end: EnemyHealth.TakeDamage()
+    on the actual Enemy_OTRSyndicate/Enemy_RustBarons instances already
+    placed in the scene -> OnDamageTaken -> HeatSystem.AddHeat ->
+    EncounterFaction correctly set from the real EnemyAI.Faction.
+  - Wave trigger + cap (OTR Syndicate, renewable): 4x AddHeat(25) in one
+    script, resetting the retrigger timer between each via reflection.
+    Waves 1-3 each spawned exactly 2 enemies (confirmed via
+    EnemyAIManager.GetActiveEnemies().Count delta), wave 4 correctly
+    blocked (0 spawned, WavesTriggeredThisEncounter stayed at 3) by
+    maxWavesPerEncounter.
+  - Manpower cost is real, not cosmetic (Rust Barons, startingManpower
+    3): wave 1 spawned 2 (manpower 3->1), wave 2 spawned only 1 -
+    partial wave, clamped to remaining manpower (manpower 1->0), wave 3
+    spawned 0 and WavesTriggeredThisEncounter stayed at 2 (never reached
+    the maxWavesPerEncounter=3 cap - stopped by manpower depletion
+    specifically, a visibly different failure mode than OTR's clean cap
+    stop).
+  - Cooldown-and-clear: confirmed three separate times (once
+    organically between tool round-trips, twice deliberately) that with
+    loseHeatCountdown temporarily lowered to 2s for test speed and no
+    enemy in Chase/Attack state (all placed/spawned enemies default to
+    Patrol until the player is actually detected), heat reliably drops
+    to 0, WavesTriggeredThisEncounter resets to 0, and EncounterFaction
+    clears once the countdown elapses with nobody having line of sight.
+  - HUD confirmed live end-to-end via the real Image component: alpha
+    0 (heat 0) -> 0.7 (heat 70, matches HeatFraction) on AddHeat; scale
+    jumped to ~1.6 (punchScale) at the instant a wave fired; alpha and
+    scale both returned to 0 / 0.85 (minScale) once heat auto-cleared.
+  - Console stayed clean throughout every step above — same 2
+    pre-existing entries (see flag below) before and after, nothing new.
+
+[FLAG] Found a pre-existing, unrelated bug while testing — NOT fixed,
+out of scope for this pass: EnemyHealth.TakeDamage()'s non-lethal branch
+(`else damageParticles?.Play();`) throws UnassignedReferenceException on
+any enemy whose damageParticles field isn't assigned in the inspector
+(confirmed on Enemy_OTRSyndicate — likely true for all 5 placed enemies,
+none have this wired up). Routed around it for testing by using a
+one-shot lethal hit (routes through Die()/Dismount() instead, which
+null-checks its optional refs properly with `if (x != null)` rather than
+`?.`). Needs a real fix (either assign particle systems on the enemy
+prefabs, or guard the Play() call properly) before melee combat against
+these enemies is played normally end-to-end — currently any non-lethal
+hit against these 5 scene enemies will throw.
+
+[FLAG] Editor-automation gotcha recurred (see
+[[project_grab_hijack_playtest]] memory) despite "Run in Background"
+being confirmed still enabled: the first two manage_editor(play) calls
+this session got stuck in play_mode.is_changing=true indefinitely (the
+"Systems" GameObject, which holds GameManager/EnemyAIManager/etc, was
+straight-up missing from the running scene while stuck). A
+stop -> user physically clicks the Editor window -> play cycle was
+needed again. New wrinkle this time: once truly playing,
+manage_editor/find_gameobjects tools only search the ACTIVE SCENE -
+GameManager calls DontDestroyOnLoad(gameObject) on the Systems object in
+Awake(), which moves it to Unity's separate "DontDestroyOnLoad"
+pseudo-scene. find_gameobjects (by_name or by_component) returns nothing
+for anything living there, even though it's alive and correct -
+UnityEngine.Object.FindObjectOfType<T>() via execute_code finds it fine.
+Not a bug, just a blind spot in the find_gameobjects tool worth
+remembering for any future test involving Systems/GameManager/its
+children.

@@ -28,6 +28,11 @@ namespace AsphaltAnarchy.AI
             activeEnemies.Remove(enemy);
         }
 
+        public List<EnemyAI> GetActiveEnemies()
+        {
+            return new List<EnemyAI>(activeEnemies);
+        }
+
         public void UpdateGlobalFearLevel(int echoLevel)
         {
             globalFearLevel = echoLevel;
