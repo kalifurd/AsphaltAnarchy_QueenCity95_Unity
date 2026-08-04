@@ -222,3 +222,82 @@ Shop UI task considered complete: Engine/Handling/Armor/Nitrous-unlock
 all live-verified working via both reflection and a real mouse click;
 insufficient-funds gating verified at both the UI layer and inside
 PlayerStats' own guards; console clean; scene saved.
+
+[2026-08-04, continued] Myth Walk stubs — PoliceUnit.DivertPatrol() /
+TrafficLight.ForceGreenForPlayer() — Claude Code
+
+[DONE] Checkpoint check: working tree was already clean at commit
+eebc827 before starting (no changes needed, that commit serves as the
+checkpoint).
+
+[NOTE] Read EchoSystem.cs first. ApplyMythWalkEffects() (called from
+ActivateMythWalk(), gated by ToggleMythWalk() checking
+PlayerStats.HasMythWalkUnlocked and the cooldown timer) already calls
+FindObjectsOfType<TrafficLight>().ForceGreenForPlayer() and
+FindObjectsOfType<PoliceUnit>().DivertPatrol() on every instance in the
+scene. Task step 5 (wiring) needed zero work — it was already correct,
+just calling into empty stubs.
+
+[FLAG-then-resolved] Both PoliceUnit.cs and TrafficLight.cs were
+completely empty stubs (no fields, no state, no movement/AI of any
+kind) — confirmed via grep that zero scene/prefab files reference either
+component anywhere in the project, and README.md explicitly labels them
+"Environment reactivity stub" / "Police diversion stub" with police
+pursuit AI listed as unbuilt future work. Unlike the task's assumption,
+there was no existing EnemyAI-style state machine on PoliceUnit to
+divert (EnemyAI is a separate, unrelated class for combat riders,
+requires MotorcycleController/EnemyHealth which PoliceUnit doesn't
+have). Flagged both to the user before writing speculative
+pursuit/signal-state systems. User chose the minimal option for both:
+state-only, no visuals, no movement.
+
+[DONE] TrafficLight.cs: added a `LightState` enum (Red/Yellow/Green,
+default Red), a `currentState` field, and a public `CurrentState`
+getter. ForceGreenForPlayer() sets currentState = Green. No renderer/
+light/material wiring — none exists in the project yet to hook into.
+
+[DONE] PoliceUnit.cs: added an `isDiverted` bool field and a public
+`IsDiverted` getter. DivertPatrol() sets isDiverted = true. No movement
+or steering logic — nothing existed to redirect.
+
+[FLAG-then-resolved] Live play-test was blocked twice by the same
+MCP-attach gotcha as two prior sessions (Claude Code session starting
+before Unity/the bridge came up, so UnityMCP tools never attached).
+Fixed by the user closing and reopening a fresh `claude` session after
+confirming Unity was open; UnityMCP tools attached correctly and
+read_console/manage_scene confirmed the bridge and scene state on the
+first calls.
+
+[DONE] Live play-test, resumed session, via execute_code (Roslyn not
+available, fell back to codedom — fully-qualified type names required
+since the tool compiles the snippet as a bare method body and a
+top-level `using` line isn't valid there):
+- Console checked before test: only pre-existing FindObjectOfType/
+  FindObjectsOfType obsolete-API warnings across unrelated files
+  (MotorcycleController, EnemyAI, EnemyHealth, EchoSystem, TurfNode) —
+  nothing from PoliceUnit/TrafficLight, no errors.
+- Entered Play mode, spawned a temporary GameObject each for
+  AsphaltAnarchy.Echo.PoliceUnit and AsphaltAnarchy.Echo.TrafficLight
+  via AddComponent (not placed in the scene/prefab, created and
+  destroyed entirely at runtime via script).
+- Confirmed initial state: Police.IsDiverted=False,
+  Light.CurrentState=Red.
+- Called DivertPatrol() and ForceGreenForPlayer(), confirmed:
+  Police.IsDiverted=True, Light.CurrentState=Green.
+- Destroyed both temp GameObjects, checked console again: 0 new
+  errors/warnings.
+- Exited Play mode. Scene confirmed unchanged: QueenCity_Main,
+  isDirty=false, rootCount=16 (same as before the test) — the temp
+  instances never touched the saved scene.
+
+Myth Walk stub task (PoliceUnit.DivertPatrol / TrafficLight.
+ForceGreenForPlayer) is now fully closed: code written, live-verified,
+console clean, scene untouched/clean. No outstanding items except the
+pre-existing [NOTE] below re: DeactivateMythWalk() not reverting state
+(explicitly out of scope, user's call to revisit later).
+
+[NOTE] Not addressed, out of scope for this pass per the task's
+KISS instruction (only asked for the two stub methods): DeactivateMythWalk()
+never reverts forced-green lights or diverted police back to normal —
+there's no "un-divert" or "return to red" call anywhere. Worth a decision
+later on whether that's wanted, but wasn't part of what was asked here.

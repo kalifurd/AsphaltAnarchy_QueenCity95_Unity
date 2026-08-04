@@ -61,3 +61,9 @@ Numbered, append new ones at the bottom, don't renumber old ones.
   the player's Rigidbody under an enemy bike's Rigidbody. If you're
   touching hijack/grab code, read the current implementation first, don't
   assume the old reparenting approach — it was replaced.
+- **Launch Unity (with the MCP bridge running) before starting a Claude
+  Code session, not after.** Starting Claude Code first means the
+  UnityMCP tools never attach for that session — not even as deferred
+  tools — and the only fix is closing and reopening a fresh session once
+  Unity's already up. This has hit three sessions in a row; it's a
+  startup-order habit now, not a bug to keep working around each time.

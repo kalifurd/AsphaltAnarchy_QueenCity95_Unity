@@ -4,6 +4,13 @@ namespace AsphaltAnarchy.Echo
 {
     public class PoliceUnit : MonoBehaviour
     {
-        public void DivertPatrol() { }
+        [SerializeField] private bool isDiverted;
+
+        public bool IsDiverted => isDiverted;
+
+        public void DivertPatrol()
+        {
+            isDiverted = true;
+        }
     }
 }
