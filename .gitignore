@@ -34,3 +34,5 @@
 
 sysinfo.txt
 crashlytics-build.properties
+
+.claude/settings.local.json
