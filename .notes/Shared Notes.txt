@@ -112,3 +112,113 @@ the .unity file or any asset).
 behavior, not a bug — no target means the player never left their bike,
 so there's nothing to apply a failed-hijack penalty to. No code change
 needed. GrabSystem.cs is considered verified/closed for this pass.
+
+[2026-08-04, continued] Upgrade Shop UI task — Claude Code
+
+[DONE] Checkpoint: working tree was already clean at commit f917efa
+before starting (no changes needed).
+
+[DONE] Read PlayerStats.cs in full. Confirmed real shape vs. task
+assumptions: UpgradeEngine/UpgradeHandling/UpgradeArmor/UnlockNitrous
+all exist and are cost-gated, but take raw (increase, cost) args —
+PlayerStats has no built-in tier/price table, so the shop UI owns that
+data. No UpgradeMaxHealth-equivalent exists. Only OnScrapChanged is
+broadcast (no per-stat change events) — sufficient to refresh the shop
+panel on any purchase. Asked user: skip a health upgrade item entirely
+(no method exists for it) vs. add one to PlayerStats. User chose skip —
+shop covers Engine/Handling/Armor/Nitrous-unlock only, scrap shown
+read-only.
+
+[FLAG] Cannot proceed to scene work (building the shop panel on
+HUD_Canvas) or the live play-test. The MCP-FOR-UNITY bridge itself is
+healthy — mcp-for-unity.exe process running, Unity Editor open,
+~/.claude.json has UnityMCP correctly registered for this exact project
+path (http://127.0.0.1:8080/mcp), and the endpoint responds (HTTP 406
+to a bare GET, i.e. alive). But this Claude Code session has zero
+UnityMCP tools loaded, not even as deferred tools — the session appears
+to have started before the bridge/config were in place and never
+attached. Did not attempt to self-fix (no edits to .claude.json, no
+bridge restart). Needs the user to restart this Claude Code session
+(fresh `claude` launch, cwd already correct at the project root) so it
+picks up the already-correct MCP registration. Script-writing work
+(create_script equivalent) could technically proceed via plain file
+writes without MCP, but scene/Canvas wiring cannot be done safely by
+hand-editing .unity YAML — waiting for the reconnect instead.
+
+[2026-08-04, continued] Session restarted per above; MCP connection
+confirmed live (editor_state resource responded, project on
+QueenCity_Main.unity). Hit the same Play-mode focus-freeze gotcha as the
+Grab/Hijack pass, but this time editor_state showed play_mode.is_changing
+stuck true indefinitely while unfocused (not just frameCount frozen).
+User clicked the window AND enabled Unity's "Run in Background" player
+setting; had to also call manage_editor(action="stop") to force a clean
+exit from the stuck transition afterward. Recommend suggesting "Run in
+Background" over just "click the window" if this recurs.
+
+[DONE] Wrote Assets/Scripts/Core/ShopUI.cs — toggles a shop panel with B,
+shows scrap balance (read-only), and has 4 rows (Engine/Handling/Armor
+upgrades + Nitrous unlock) that call PlayerStats' existing cost-gated
+methods directly. UI refreshes via PlayerStats.OnScrapChanged subscription
+rather than a full new event; each row's Button.interactable reflects
+cost >= scrap balance, and the Nitrous row shows "OWNED" and disables once
+purchased. Compiled clean, zero console errors.
+
+[DONE] Built the ShopPanel hierarchy under HUD_Canvas via
+batch_execute/manage_gameobject/manage_components (VerticalLayoutGroup
+panel, HorizontalLayoutGroup rows, TextMeshProUGUI labels, uGUI Buttons).
+Wired all ShopUI serialized fields to the built objects and to the
+Player's PlayerStats component. Panel starts inactive; a small always-on
+"Press B - Shop" hint sits outside the panel.
+
+[TOOL QUIRK] This MCP-FOR-UNITY build rejects Color values passed as a
+JSON array (e.g. [1,1,1,1]) inside manage_components set_property calls —
+throws "Error reading JObject... Current JsonReader item is not an
+object: StartArray." Must pass colors as {"r":..,"g":..,"b":..,"a":..}
+objects instead. The skill's workflows.md examples use array form; don't
+trust that for color properties specifically on this bridge version.
+
+[TOOL QUIRK] Setting a child UI element's RectTransform to a full stretch
+(anchorMin[0,0]/anchorMax[1,1]/sizeDelta[0,0]) via manage_components
+set_property, WITHOUT also explicitly including anchoredPosition:[0,0] in
+the same properties dict, left offsetMin/offsetMax equal to the object's
+old (pre-stretch) anchoredPosition instead of collapsing to zero — the
+button's child label text ended up rendered far outside the button's
+visible bounds (invisible in-game, but all component data looked correct
+on inspection, including a real mesh/bounds/character count). Fix: always
+include anchoredPosition:[0,0] alongside anchorMin/anchorMax/sizeDelta
+when stretching a child to fill its parent via this tool. This cost real
+debugging time — the bug was invisible in the data resource and only showed
+up as missing text in an actual screenshot/gameplay check.
+
+[FLAG — resolved, noting for future] Re-entering Play mode via
+manage_editor(action="play") shortly after a previous stop (while that
+prior transition's is_changing hadn't fully cleared) triggered 5x Unity
+engine-level "PlayerLoop internal function has been called recursively"
+console errors — a genuine Editor bug, not from project code. Recovered
+cleanly via manage_editor(action="stop"); no lasting damage, scene safe
+(fix was already saved in Edit mode beforehand). Lesson: don't chain
+play/stop/play through MCP back-to-back — wait for is_changing:false and
+is_playing matching the intended state before issuing the next transition.
+
+[CONFIRMED WORKING — live user verification] User manually pressed Play,
+clicked into the Game view for input focus (B did nothing until the Game
+view itself was clicked, not just the Editor window — a real Unity
+requirement, unrelated to the earlier focus-freeze bug), pressed B and
+saw the shop panel with correct BUY button text. Clicked BUY with 0 scrap
+— correctly did nothing (buttons are non-interactable below cost, by
+design). Claude granted 500 test scrap via execute_code without cycling
+play mode; user then clicked BUY for real with the mouse and confirmed it
+worked (scrap deducted, row refreshed). No Xbox controller support was
+implemented — B key only, matching Grab/Hijack's F/G convention; user's
+controller not responding is expected, not a bug.
+
+[DONE] Fixed a real (if minor) layout bug found via user screenshot: the
+"Press B - Shop" hint text at anchoredPosition [30,30] overlapped the
+existing EchoBar slider (anchoredPosition [180,50], size 280x25). Moved
+hint to anchoredPosition [30,10] so it sits below the EchoBar's y-range
+instead. Scene saved.
+
+Shop UI task considered complete: Engine/Handling/Armor/Nitrous-unlock
+all live-verified working via both reflection and a real mouse click;
+insufficient-funds gating verified at both the UI layer and inside
+PlayerStats' own guards; console clean; scene saved.
