@@ -626,3 +626,63 @@ damageParticles, or sparkParticles assigned in the inspector. All three
 are correctly null-guarded now (no crashes), but the game currently has
 zero enemy visual feedback on hit/death for any of them. Worth a
 separate task if/when enemy polish is prioritized.
+
+[DONE] Pushed all 5 local commits to origin/master at user's request:
+f917efa..5c56e38 (Heat System, the damageParticles/sparkParticles null-
+check fix, and the Die()/Dismount() ordering fix). First `git push`
+attempt hung and had to be killed after a 2-minute timeout with zero
+output — retried in the background with a longer timeout and it went
+through in a few seconds (37.37 KiB, 70 objects). Looked like a one-off
+slow/cold connection, not an auth or repo issue — no special handling
+needed, just don't assume failure if a push seems to hang, retry with
+more time before troubleshooting further. Branch confirmed up to date
+with origin/master afterward.
+
+[2026-08-05] Tripo.ai DCC Bridge — websocket wouldn't fully connect —
+Claude Code (outside git, tooling fix only, no game code touched)
+
+[DONE] Diagnosed and fixed: the Tripo DCC Bridge Unity plugin (local file:
+package at C:\Users\T1NK3R\Downloads\Tripo3d_Unity_Bridge-latest\
+Tripo3d_Unity_Bridge, referenced from Packages/manifest.json as
+com.tripo3d.unitybridge — this is the tool the user has been using to pull
+tripo.ai model renders into unity/*.glb / Assets_User/, referenced in
+several [DONE] notes above) would show a "connected" websocket but the
+generated 3D model never actually arrived in Unity — no error on either
+side, just silence.
+
+Root cause: the bundled websocket-sharp.dll (v1.0.2.59611) negotiates
+permessage-deflate compression by default whenever Chrome offers it
+(always). This build's compression support silently breaks large binary
+frames specifically — exactly the frames used for file-transfer chunks —
+while small control frames (handshake ack, ping/pong) pass through fine.
+So the connection looked completely healthy (101 Switching Protocols,
+working ping/pong) while the actual model data never arrived.
+
+Confirmed by wiring the underlying WebSocketServer's own internal Log
+into the plugin's UI log (previously silent/unwired) — this showed the
+101 response negotiating permessage-deflate, and zero file_transfer
+messages ever logged as received on a connection that stayed open and
+pinged successfully for minutes.
+
+Fix, both in Editor/WebSocketSharpServer.cs:
+  1. _server.AddWebSocketService<TripoWebSocketBehavior>("/") changed to
+     pass an initializer: (path, () => new TripoWebSocketBehavior {
+     IgnoreExtensions = true }) — makes the server decline the
+     compression extension entirely.
+  2. _server.Log.Level = LogLevel.Trace + _server.Log.Output wired to
+     LogHelper.Log, so any future handshake-level failure shows up in
+     the plugin's own Message Log UI instead of being silently
+     swallowed.
+
+Live-verified end to end after the fix: connected -> "File transfer
+complete: harley davidson motorcycle 3d model" -> full ModelImporter
+pipeline (ZIP extract, move to Assets, AssetDatabase import, add to
+scene) -> "Model added to scene: harley_davidson_motorcycle_3d_model" ->
+healthy ping/pong afterward. No errors.
+
+[FLAG — do not update/reinstall this plugin] This is a local file:
+package, not git-tracked by this repo. If a fresh copy of the Tripo DCC
+Bridge is ever downloaded from Tripo.ai and dropped in over these files,
+this fix is lost and the silent-connection bug will return. Full writeup
+in memory (project_tripo_dcc_bridge_websocket_fix.md) for whoever hits
+this next — reapply the same two WebSocketSharpServer.cs changes above.
