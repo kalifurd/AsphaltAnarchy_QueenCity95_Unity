@@ -783,3 +783,155 @@ both effects are real (not placeholders), live on the prefabs so every
 wave-spawned reinforcement gets them too, live-verified with exact
 particle counts on both the plain-hit and electrified-hit paths plus one
 wave-spawned instance, console clean, scene untouched.
+
+[2026-08-05, continued] Visual confirmation of the particle effects, at
+user's request — Claude Code
+
+[DONE] Beyond the earlier particleCount-based verification, visually
+confirmed both effects render on screen: re-entered Play mode, triggered
+each hit, forced a partial ParticleSystem.Simulate() so the burst was
+mid-flight, paused the editor (EditorApplication.isPaused) to freeze that
+frame across the tool round-trip, then used manage_camera(screenshot) to
+capture it. Damage burst (orange) visible above Enemy_KentuckyKings;
+spark burst (pale blue) visible above/beside Enemy_Phantoms once the
+camera was moved in close. Enemies themselves are still untextured
+white-capsule placeholders — expected, out of scope, unrelated to this
+task. Temporary screenshot files deleted after (Assets/Screenshots/ isn't
+git-tracked, so this was just local cleanup, not a repo change).
+
+[FLAG] While cleaning up those screenshot files, git status also showed
+unrelated changes this session did not make: 3 of the user's Tripo bike
+files (OTR_Syn_Bike.glb.txt, Rust Baron NPC.glb.txt, Rust_Baron_Bike.glb)
+had moved from Assets_User/ back into Assets/TripoModels/, and the
+harley_davidson_motorcycle_3d_model folder under TripoModels/ was gone.
+Not caused by anything this session ran (only Assets/Screenshots/ was
+touched). Likely the Tripo DCC Bridge plugin doing background work while
+its Editor-side server was live, or the user working in parallel. Flagged
+to the user rather than touched; user moved on to the next task without
+addressing it, so the next checkpoint commit below captured this state
+as-is as usual (not this session's to fix).
+
+[2026-08-05, continued] Generic NPC interaction system — Claude Code
+
+[DONE] Checkpoint commit ad872f1 made first, capturing the Tripo file
+movement flagged above exactly as found (harley model removed from
+TripoModels/, 3 bike files moved back from Assets_User/ into
+TripoModels/) — not touched by this session, committed as-is per
+standing instruction.
+
+[DONE] Read InputManager.cs, PlayerStats.cs, and WeaponManager.cs before
+writing anything, per the task's KISS instruction:
+  - InputManager.cs already has a fully-wired interactKey/InteractPressed
+    (bound to E) — but it was completely dead code. Confirmed via grep:
+    InputManager.Instance is referenced nowhere outside InputManager.cs
+    itself, and no GameObject in the scene carries an InputManager
+    component, so InputManager.Instance was null at runtime. Every other
+    input-driven system (GrabSystem's F/G, WeaponManager's own Q/E
+    weapon-cycle) reads Input.GetKeyDown directly, bypassing InputManager
+    entirely — it's vestigial infrastructure nothing has ever plugged
+    into. Since the task pointed specifically at this file and the field
+    already exists for exactly this purpose, activated it rather than
+    duplicating a 4th raw-Input reader: added an InputManager component
+    to the existing "Systems" GameObject (same place GameManager/
+    EnemyAIManager/HeatSystem/etc. already live) and had NPCInteraction
+    consume InputManager.Instance.InteractPressed. This is the first real
+    consumer of InputManager in the project.
+  - PlayerStats.cs: confirmed UpgradeEngine/UpgradeHandling/UpgradeArmor/
+    UnlockNitrous/UnlockHijack are the existing cost-gated methods (same
+    ones ShopUI already calls) — reused directly, no duplication.
+  - WeaponManager.cs: confirmed EquipWeapon(WeaponData)/
+    UnlockWeapon(WeaponData) are the existing equip/unlock methods —
+    reused directly.
+
+[FLAG-then-resolved] Found that interactKey (E) collides with
+WeaponManager's own hardcoded weapon-cycle-right key (also E, read via a
+separate raw Input.GetKeyDown(KeyCode.E) inside WeaponManager, not routed
+through InputManager). Harmless today (a fresh player has only 1 unlocked
+weapon, so CycleWeapon no-ops), but the very Item outcome this task adds
+is what creates a 2nd unlocked weapon — after that, E would both cycle
+weapons and interact in the same press. Asked the user before proceeding:
+they chose to keep E as-is and accept the overlap rather than rebind
+interactKey to a free key. No changes made to WeaponManager's own binding
+— out of scope, not asked.
+
+[DONE] New Assets/Scripts/World/NPCInteraction.cs (new folder, matching
+the precedent set by Assets/Scripts/Heat/ for a new gameplay domain).
+Proximity (Vector3.Distance to the tagged Player, default range 3) +
+InputManager.Instance.InteractPressed trigger, one of three outcome
+types per instance:
+  - Item: WeaponManager.UnlockWeapon(itemToGive) then EquipWeapon(...) —
+    directly reuses WeaponManager's existing methods.
+  - Upgrade: a small enum (Engine/Handling/Armor/Nitrous/Hijack) switches
+    to the matching PlayerStats cost-gated method — same methods and same
+    (increase, cost) pattern ShopUI already uses, just triggered by
+    proximity+E instead of a shop-panel button click. Cost defaults to 0
+    on the test instance (a free NPC gift), but the field supports a real
+    scrap cost if a future NPC should charge for it.
+  - Info: text-only. Shows a message on a single shared HUD_Canvas text
+    element (new InteractionMessageText, styled like the existing
+    ShopHint) for a few seconds, then auto-hides. Explicitly did NOT
+    build any waypoint/map-marker UI — nothing in the codebase has a
+    map/waypoint system to hook into, and the task called that out of
+    scope in advance.
+  - hasInteracted one-shot guard on Item/Upgrade only (Info repeats
+    freely): without it, holding E near an Upgrade NPC would re-call
+    PlayerStats' cost-gated method every single frame — with cost=0 that
+    is infinite free stats, not a hypothetical. This is required-for-
+    correctness, not scope creep.
+  - Compiled clean on the first pass (read_console: only the pre-existing
+    unrelated "resolving packages" message, no new errors/warnings).
+
+[DONE] Wired one test NPC instance into QueenCity_Main
+(NPC_Test_Info — a plain capsule, 2 units from the Player, well within
+the default 3-unit interactRange), its NPCInteraction wired to the new
+shared InteractionMessageText element and left configured as the Info
+outcome (a safe, repeatable steady-state) with a placeholder message.
+Scene saved with this instance in place, per the task asking for it to be
+wired into the actual scene rather than a throwaway runtime-only spawn.
+
+[DONE] Live play-tested via Unity MCP execute_code. Literal key input
+still isn't simulatable through the MCP bridge (same limitation as every
+prior play-test session), so used the same reflection approach as the
+Grab/Hijack sessions — plus, specifically to exercise the real Update()
+gating logic (not just the outcome methods), temporarily set
+InputManager's InteractPressed backing field via reflection to supply
+the one signal that can't be sent any other way, then called the real
+private Update() so the actual proximity-check + input-check + dispatch
+code path ran, not a shortcut around it:
+  - Info: called Interact() directly first — distance confirmed 2.0
+    (within range), message panel went inactive->active with the correct
+    text.
+  - Item: reconfigured the same instance's outcomeType/itemToGive via
+    reflection to HeavyChain, called Interact() directly — CurrentWeapon
+    went Baseball Bat -> Heavy Chain (a real WeaponManager state change,
+    not a flag), hasInteracted correctly flipped true, message correct.
+  - One-shot gate: re-equipped Baseball Bat manually, then ran the real
+    Update() (via the InteractPressed backing-field trick) with
+    hasInteracted still true — confirmed CurrentWeapon stayed Baseball
+    Bat, i.e. the gate actually blocked a real re-trigger, not just
+    "looks blocked by inspection."
+  - Upgrade: switched outcomeType to Upgrade (Engine, +15, cost 0),
+    hasInteracted reset false, ran the real Update() end-to-end via the
+    InteractPressed trick — PlayerStats.EnginePower went 150 -> 165 (a
+    real PlayerStats mutation through its own cost-gated method, not a
+    duplicate calculation), hasInteracted flipped true, message correct.
+  - Proximity gate: moved the NPC 500 units away, reset to Info +
+    inactive panel, ran real Update() with InteractPressed forced true —
+    panel correctly stayed inactive, confirming out-of-range presses are
+    ignored.
+  - Console checked before and after every step: only the one
+    pre-existing "resolving packages" message, zero new errors/warnings.
+  - After stopping Play mode, confirmed the NPC's fields reverted to
+    their saved Inspector values on their own (outcomeType back to Info,
+    hasInteracted back to false, position unchanged) — none of the
+    reflection pokes during testing persisted, as expected for ordinary
+    component fields on a scene object. Scene saved in this clean state.
+
+Generic NPC interaction system considered complete for this pass: all
+three outcome types live-verified through the real trigger path (not
+just the outcome methods in isolation), one-shot and proximity gates both
+confirmed to actually block, console clean, one real test instance saved
+in the scene. Not done / explicitly out of scope per the task: no
+waypoint/map UI for the Info case (flagged above as a separate future
+decision), no real faction-specific NPC character or dialogue — the test
+instance is a placeholder capsule as the task allowed.
