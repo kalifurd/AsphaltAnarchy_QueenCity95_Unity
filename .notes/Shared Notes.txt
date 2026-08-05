@@ -686,3 +686,100 @@ Bridge is ever downloaded from Tripo.ai and dropped in over these files,
 this fix is lost and the silent-connection bug will return. Full writeup
 in memory (project_tripo_dcc_bridge_websocket_fix.md) for whoever hits
 this next — reapply the same two WebSocketSharpServer.cs changes above.
+
+[2026-08-05, continued] Give damageParticles/sparkParticles real effects
+— Claude Code
+
+[DONE] Checkpoint commit 712a4cd made first, covering the user's
+in-progress Tripo asset relocation (TripoModels/, Assets_User/) plus the
+scene/manifest state already sitting in the working tree — none of it
+touched by this task, committed as-is per standing instruction.
+
+[DONE] Confirmed exact trigger sites in EnemyHealth.cs (Assets/Scripts/
+Combat/EnemyHealth.cs) before writing anything: TakeDamage()'s
+`isElectrified` branch calls sparkParticles.Play() (alongside a 1s Stun)
+on ANY electrified hit; the plain "else" branch — a hit that's neither
+lethal nor past dismountThreshold — calls damageParticles.Play(). Neither
+fires on a lethal or dismount-threshold hit.
+
+[DONE] Confirmed the correct fix target before touching anything:
+EnemyAIManager.SpawnEnemyWave() (the Heat System reinforcement spawner)
+instantiates `faction?.bikePrefab`. Despite the misleading field name,
+cross-checked guids and confirmed FactionData.bikePrefab on all 5 faction
+assets actually points at the full Assets/Prefabs/Enemy_*.prefab (the one
+with EnemyHealth/EnemyAI/WeaponManager), not a bike-only model — so
+patching those 5 prefabs is both correct and sufficient; nothing else
+spawns enemies.
+
+[DONE] Built the effects headlessly via Unity MCP execute_code using
+PrefabUtility.LoadPrefabContents/SaveAsPrefabAsset/UnloadPrefabContents
+(not the 5 placed scene instances, not manage_components — ParticleSystem
+modules are C# property-wrapped structs that don't map cleanly onto that
+tool's reflection-based property setter). For each of the 5 prefabs, added
+two child GameObjects, each a real built-in ParticleSystem (no external
+texture/asset — material is Unity's built-in "Default-Particle.mat" via
+AssetDatabase.GetBuiltinExtraResource, a soft round dot sprite):
+  - DamageParticlesFX: short 12-particle sphere burst, warm orange/brown
+    (0.75, 0.45, 0.15), 0.35s lifetime, playOnAwake=false — a hit-spark/
+    dust puff for the plain-hit case.
+  - SparkParticlesFX: short 20-particle sphere burst, pale blue/white
+    (0.6, 0.85, 1.0), faster (startSpeed 6 vs 3.5), 0.25s lifetime,
+    slight gravity — an electrified-zap look for the stun case.
+Wired both into EnemyHealth's existing damageParticles/sparkParticles
+SerializeFields via SerializedObject (so the null-guard code from the
+earlier fix session now has something real to call). Verified the field
+wiring afterward by reading it back on all 5 prefabs — all correct.
+
+[DONE] Live play-tested via Unity MCP execute_code (no reflection needed
+— TakeDamage() is public):
+  - Non-lethal hit (Enemy_KentuckyKings, TakeDamage(5f, false)): health
+    80->75, damageParticles.isPlaying went true immediately after the
+    call.
+  - Electrified hit (Enemy_Phantoms, TakeDamage(5f, true)): health
+    80->75, IsStunned correctly flipped true, and a forced
+    ParticleSystem.Simulate(0.02f, restart:true) confirmed exactly 20
+    live particles — matching the configured spark burst count exactly,
+    not just an isPlaying flag.
+  - Non-lethal hit (Enemy_NeonSaints) with the same forced-simulate
+    check on damageParticles: exactly 12 live particles, matching the
+    configured damage burst count exactly.
+  - Wave-spawned reinforcement check (the actual point of fixing the
+    prefab instead of the scene instances): called
+    EnemyAIManager.SpawnEnemyWave(RustBarons faction, ..., 1) directly,
+    same call Heat System uses. Confirmed the spawned
+    "Enemy_RustBarons(Clone)" carries both DamageParticlesFX and
+    SparkParticlesFX children, then hit it with TakeDamage(5f, false) and
+    confirmed 12 live particles via the same forced-simulate check —
+    proves the fix lives on the prefab, not just patched onto the 5
+    pre-placed instances.
+  - Console checked before and after every step: only the one
+    pre-existing "An error occurred while resolving packages:" entry
+    (present before this session started, unrelated to this task — see
+    [NOTE] below), zero new errors/warnings from any of the above.
+  - Scene confirmed untouched after stopping Play: isDirty=false. Only
+    the 5 prefab assets show as changed in git status — no scene file
+    changes.
+
+[NOTE] Unrelated, pre-existing, not investigated: Unity's console shows
+one persistent "An error occurred while resolving packages:" entry that
+was already present before this session's testing began and survived a
+console clear. Likely tied to the Packages/manifest.json changes from the
+user's in-progress Tripo import work (already in the working tree before
+this task started), not to anything touched here. Worth a look if package
+resolution ever visibly breaks something, but out of scope for this pass.
+
+[NOTE] One test-only oddity, not a bug: the manually-spawned
+"Enemy_RustBarons(Clone)" from the wave-spawn test above disappeared from
+EnemyAIManager's active list (GetActiveEnemies() back to the original 5)
+by the time of a later cleanup call, without an explicit Destroy() from
+this session succeeding (GameObject.Find came back null for it on the
+cleanup attempt) and with zero console errors either side. Effect had
+already been verified working before this happened, so it didn't affect
+the result — flagging only in case it recurs and turns out to matter for
+some other test.
+
+damageParticles/sparkParticles particle-effect task considered complete:
+both effects are real (not placeholders), live on the prefabs so every
+wave-spawned reinforcement gets them too, live-verified with exact
+particle counts on both the plain-hit and electrified-hit paths plus one
+wave-spawned instance, console clean, scene untouched.
