@@ -1515,3 +1515,61 @@ new nodes created, configured, wired to their factions, and verified working.
 Awaiting editor-side manual add of the 3 nodes to TurfWarManager.allNodes list
 for persistent automatic initialization on scene load, and user decision on
 Price Hill optional neutral node.
+
+[2026-08-06, continued] District level-design reference docs — Claude Code
+(docs only; no code, scene, or asset changes this entry)
+
+[DONE] Created Docs/ folder (new top-level, deliberately outside .notes/
+so design docs don't tangle with this session-log protocol) with two
+level-design reference documents, written to be handed to a developer to
+build from:
+  - Docs/LevelDesign_PriceHill_Delhi_1995.md — Price Hill + Delhi
+    Township as the protagonist's home turf and the game's starting
+    area. Built around the real four-tier vertical geography (River Rd
+    strip / Lower Price Hill flats / East+West Price Hill crest / Delhi
+    suburbs), four real controllable gateways (8th St Viaduct to
+    Queensgate, Waldvogel Viaduct, Anderson Ferry, Glenway/Queen City Av
+    west+north), the dead Price Hill Incline right-of-way as a
+    motorcycle-only shortcut, ~28 tagged locations, chase/chokepoint/
+    sightline tables, 1995 period checklist, and blockout notes.
+  - Docs/LevelDesign_Milford_Batavia_1995.md — Milford + Batavia
+    (Clermont County) as Highway Kin MC's EASTERN half only (Hamilton/
+    Fairfield western half explicitly deferred to a separate future
+    doc). District thesis: "the old road and the bypass" (SR 32
+    Appalachian Hwy killed US 50/Old 74 — the Kin hold the roads
+    progress abandoned). Clubhouse = "The Scales" [F], a defunct truck
+    stop + weigh station with CB mast on the US 50 Perintown flats.
+    ~20 tagged locations incl. real Stonelick Covered Bridge, Clermont
+    County Fairgrounds, Batavia courthouse block, Harsha Lake dam, Ford
+    Batavia plant (kept strictly neutral). Later extended with a Miami
+    Township ring section (§3f) at user prompt: SR 28 strip as a
+    witness-density gradient, "Phase II" subdivision-under-construction
+    chase-trap, Live Oaks career campus, Miamiville/Branch Hill hamlets
+    — sharpens the thesis to a two-axis suburban squeeze (SR 32 +
+    SR 28).
+
+[NOTE] Both docs use a shared real-vs-fiction tagging convention ([R]
+real name kept / [R*] real place renamed / [F] fictional on plausible
+building stock). Policy: real civic landmarks keep their names; private
+businesses that get gang activity attached are renamed over real
+building stock (e.g. the real Glenway chili parlor -> "Crest Hill
+Chili") so no crime story hangs on a real family business.
+
+[DECIDED] The earlier open [FLAG] proposing Price Hill/Delhi as an
+optional neutral/contested TurfNode is resolved by the user's design
+direction, superseded: Price Hill/Delhi is now PlayerCrew HOME turf and
+the starting district, not neutral ground. The Price Hill doc's §6
+proposes 2 start-owned PlayerCrew nodes (clubhouse w/ safehouse, 8th &
+State) plus 2 neutral-start nodes (Warsaw Ave, Anderson Ferry) that
+would exercise the new startingFaction=null case.
+
+[FLAG] Everything in both docs' §6 "systems tie-ins" sections
+(TurfNode proposals, heat spawn origins, ferry timed crossing, covered-
+bridge pursuit script, Kin convoy patrols, fairgrounds events) is
+SUGGESTION ONLY — nothing is wired, no scene or code was touched. Each
+needs its own build pass. Milford doc specifically maps the EXISTING
+TurfNode_Milford onto The Scales rather than proposing new turf (per
+user direction), with a note that its current (80,0,80) placeholder
+position should be relocated once the district gets a real coordinate
+plan — same caveat both docs carry about all current abstract node
+coordinates.
