@@ -1224,3 +1224,32 @@ wiring (flagged earlier, unchanged).
 Round 2 considered complete for the 3 models the user assigned: Rust
 Barons bike and Highway Kin bike+NPC are real, live-verified, screenshot-
 confirmed models now, not placeholders. Committed alongside this note.
+
+[NOTE] Session paused here at the user's request. Plan going forward,
+per the user: they'll redownload the remaining faction exports directly
+from the Tripo website themselves (rather than through the in-editor
+DCC Bridge flow that produced the last batch), specifically so each file
+can be given a real faction-tagged name up front instead of Tripo's
+generic auto-name (rugged_biker_character_3d_model, etc.) — the exact
+naming ambiguity problem flagged earlier this session. No action taken
+this entry; nothing further imported or wired.
+
+[FLAG] For whoever picks this up next: when the user says the new
+downloads are ready, don't assume manual-website-downloaded files will
+land the same way the DCC Bridge batch did (auto-copied into
+Assets/TripoModels/ with Unity-side conversion already done — Materials/
+folder, ModelImporter, etc., per the pattern this session confirmed for
+the 2026-08-06 batch). A manual download from the website could arrive
+as a raw .glb sitting outside Assets/ entirely, or as a .glb inside
+Assets/ that still isn't Unity-importable the same way the broken 2026-
+08-04 batch wasn't (DefaultImporter, no glTF package installed — see
+the earlier flag in this file and project_faction_assets_status.md).
+Check file location AND each file's .meta importer type directly before
+assuming anything is ready to wire, same as this session did — don't
+just trust the filename/timestamp alone.
+
+Still open and unresolved, unchanged: OTR Syndicate (bike unusable + no
+NPC), Neon Saints/Kentucky Kings/Phantoms (nothing at all), Rust Barons'
+own NPC (still only the broken "Rust Baron NPC.glb.txt"), and Highway
+Kin's TurfNode/heat-trigger wiring. Faction-asset-import task remains
+paused, not complete.
