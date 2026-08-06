@@ -965,3 +965,99 @@ it, so it's not in the active path. Only touched the Documents copy.
 before: any future fresh download of the Tripo DCC Bridge will overwrite
 this fix again. Full fix writeup now in memory
 (project_tripo_dcc_bridge_websocket_fix.md).
+
+[2026-08-06] Import/wire generated faction bike+NPC assets — Claude Code
+
+[DONE] Checkpoint commit made first, covering the 3 newly-generated Tripo
+model sets (rugged_biker_character_3d_model, rusted_motorcycle_3d_model,
+rusty_motorcycle_3d_model) plus the pre-existing manifest/notes drift
+already sitting in the working tree — none of it touched by this session.
+
+[DONE] Full direct inventory of Assets/TripoModels/ (not assumed from
+memory) against the 5 real gang FactionData assets
+(Assets/ScriptableObjects/Factions/*.asset: RustBarons, OTRSyndicate,
+NeonSaints, KentuckyKings, Phantoms, plus PlayerCrew as the 6th
+non-gang asset per the existing key-invariant note). Result:
+  - Rust Barons: bike (Rust_Baron_Bike.glb) and NPC ("Rust Baron
+    NPC.glb.txt") both present, dated 2026-08-04.
+  - OTR Syndicate: bike only (OTR_Syn_Bike.glb.txt), dated 2026-08-04.
+    No NPC export exists anywhere in the project.
+  - Neon Saints, Kentucky Kings, Phantoms: zero raw exports of any kind
+    — no bike, no NPC.
+  - 3 unattributed exports, all dated today (2026-08-06): 1 NPC-shaped
+    (rugged_biker_character_3d_model) + 2 bikes (rusted_motorcycle_3d_
+    model, rusty_motorcycle_3d_model), using Tripo's generic default
+    folder names, not faction-prefixed like the 2026-08-04 batch.
+
+[FLAG] The task brief named a 6th gang, "Highway Kin," alongside Rust
+Barons/OTR Syndicate/Neon Saints/Kentucky Kings/Phantoms. No such
+faction exists anywhere in the project — grepped the full Assets tree,
+zero hits. Only 5 gang FactionData assets exist (matching the standing
+key-invariant note: 5 gangs + PlayerCrew = 6 total FactionData assets,
+not 6 gangs). Did not create a 6th gang faction on my own initiative —
+need to know whether "Highway Kin" was a mix-up with one of the 5
+existing gangs, or a genuinely new gang the user wants added (new
+FactionData asset + Enemy_ prefab + turf, well beyond "import assets"
+scope).
+
+[FLAG] The 2026-08-04 batch (Rust_Baron_Bike.glb, "Rust Baron
+NPC.glb.txt", OTR_Syn_Bike.glb.txt) is NOT actually usable by Unity
+despite sitting inside Assets/TripoModels/. Checked their .meta files
+directly: all three import as DefaultImporter (generic opaque binary),
+not ModelImporter. Confirmed no glTF import package is installed
+(grepped Packages/manifest.json and packages-lock.json for "gltf" —
+zero hits; the only Tripo-related package is the DCC Bridge itself).
+.glb has no importer in this project at all, and two of the three are
+further renamed to .glb.txt on top of that. By contrast, the 3
+2026-08-06 exports are real ModelImporter .fbx files with an
+auto-generated Materials/ folder each — they came through the Tripo DCC
+Bridge's proper Unity-side conversion, the older batch did not. So
+"already in Assets/" ≠ "actually importable" for the Rust Barons pair
+and the OTR Syndicate bike. Re-exporting those 3 through the DCC Bridge
+(same pipeline that produced the 08-06 batch) looks like the fix, but
+didn't do it unasked since it means re-running generation/export
+outside this session's normal file-edit tools.
+
+[FLAG] The 3 unattributed 2026-08-06 exports have no faction tag
+anywhere I could find — not in the filenames (Tripo's generic default
+naming), not in Shared Notes.txt, not in any manifest/log in the repo.
+Guessing an assignment (e.g. "rugged_biker" = OTR Syndicate's missing
+NPC) risks silently mislabeling a faction's canon look. Need the
+intended faction for each of the 3 before importing them as that
+faction's asset.
+
+[NOTE] Checked FactionData.cs before assuming a scope gap on the NPC
+side, per the task's explicit instruction not to invent a field solo:
+a `riderPrefab` field already exists alongside `bikePrefab` (line 26),
+so there's already somewhere to put an NPC reference — no new field
+needed. However, confirmed via grep that `riderPrefab` is referenced
+nowhere in Assets/Scripts — it's currently dead/unused. Wiring a model
+into it would not make that model appear in-game on its own.
+
+[FLAG] Architecture conflict between the task's literal instruction
+("wire each bike into FactionData.bikePrefab") and how bikePrefab is
+actually consumed. Confirmed via grep: EnemyAIManager.cs:56 instantiates
+`faction?.bikePrefab` directly as the ENTIRE spawned enemy (the
+Enemy_*.prefab with EnemyAI/EnemyHealth/WeaponManager already on it,
+per the 2026-08-05 session's cross-check) — bikePrefab is not a
+bike-only mesh reference despite the name, all 5 gangs already have it
+pointing at their Enemy_*.prefab, and it's the only thing
+SpawnEnemyWave instantiates. Overwriting it with a bare bike mesh would
+delete AI/health/combat from every wave-spawned enemy of that faction.
+The actual integration point for "real model instead of a placeholder
+capsule" (per this task's step 5) is almost certainly swapping the
+capsule/cylinder primitive mesh (confirmed via the 5 prefabs' MeshFilter
+entries — built-in primitives, fileID 10208/10206, guid all-zeros)
+inside each Enemy_*.prefab for the real bike+rider models, not
+reassigning the FactionData field. Flagging rather than picking an
+approach solo since it changes what "wire the bike into bikePrefab"
+even means for this task.
+
+Stopped here per the notes-rules instruction to flag and ask rather than
+guess: faction generation is far less complete than the task brief
+assumed (only Rust Barons has a full raw pair, and even that pair is
+currently unusable; only OTR Syndicate has a usable-once-reexported
+bike; Neon Saints/Kentucky Kings/Phantoms have nothing at all), plus a
+named 6th faction doesn't exist and the FactionData.bikePrefab wiring
+target isn't what it sounds like. Asked the user directly rather than
+importing/wiring anything based on a guess.
