@@ -1061,3 +1061,78 @@ bike; Neon Saints/Kentucky Kings/Phantoms have nothing at all), plus a
 named 6th faction doesn't exist and the FactionData.bikePrefab wiring
 target isn't what it sounds like. Asked the user directly rather than
 importing/wiring anything based on a guess.
+
+User's answers: hold the 3 unattributed 2026-08-06 models (no import this
+pass), skip the 3 unusable 2026-08-04 exports (no re-export this pass),
+confirmed the mesh-swap-inside-Enemy_prefab wiring approach for whenever
+real models do get approved, and asked for Highway Kin to be created as
+a real 6th gang. Net effect: no actual bike/NPC model import happened
+this session (both candidate batches were explicitly held back) — the
+only concrete deliverable is the Highway Kin faction scaffold below.
+
+[DONE] Created Highway Kin as a real 6th gang, matching the existing
+5-gang pattern exactly (all fields set via manage_scriptable_object, not
+hand-edited YAML):
+  - Assets/ScriptableObjects/Factions/HighwayKin.asset (new FactionData):
+    "The Highway Kin," description/combatStyle/echo responses written
+    around the identity the user gave ("outliers, good ole boys, patrol
+    outer areas") — county-line outlaws who skip city turf entirely,
+    CB-radio convoy tactics, primaryTerritory "The Outerbelt" (Cincinnati's
+    real I-275 loop, ties the highway name to actual patrol turf) /
+    secondaryTerritory "Colerain" (doesn't overlap any of the 5 existing
+    gangs' territory strings), aggression 0.65/coordination 0.55/
+    fearThreshold 0.45/defensiveness 0.55 (territorial homebodies who dig
+    in rather than chase far), playerRelation -0.4, hasFiniteManpower
+    false (same as 4 of the 5 existing gangs), factionColor a muted
+    olive/forest green (0.25, 0.45, 0.2) — checked against all 5 existing
+    factionColors first, doesn't collide with any.
+  - Assets/Prefabs/Enemy_HighwayKin.prefab: duplicated from
+    Enemy_Phantoms.prefab (root GameObject auto-renamed on duplicate, no
+    leftover "Phantoms" naming anywhere in the hierarchy — confirmed via
+    get_hierarchy), EnemyAI.faction repointed to HighwayKin.asset via
+    manage_prefabs. Still carries the same placeholder capsule mesh and
+    the real DamageParticlesFX/SparkParticlesFX children as the other 5 —
+    no real model to swap in this pass, per the hold decision above.
+  - HighwayKin.asset.bikePrefab wired to Enemy_HighwayKin.prefab, same
+    convention as the other 5 (bikePrefab = the whole composite enemy
+    prefab, not a bare mesh, per the architecture-conflict flag above).
+  - Registered in the Systems GameObject's FactionManager.allFactions
+    (7 entries now: 5 original gangs + HighwayKin + PlayerCrew) and
+    EnemyAIManager.enemyPrefabs (6 entries now), so Highway Kin
+    participates in FactionManager.Initialize() relations/manpower
+    tracking the same as the other 5. Verified both lists by reading the
+    GameObject's components back after the edit, not just trusting the
+    write call's return value.
+
+[DONE] Live play-tested via Unity MCP execute_code: entered Play mode,
+looked up "The Highway Kin" through FactionManager.GetFactionByName (the
+same public API the rest of the codebase uses, not a direct asset
+reference) to confirm the name lookup path works, then called the real
+EnemyAIManager.SpawnEnemyWave(highwayKin, position, 1) — the same method
+Heat System uses for every other faction. Active enemy count went 5->6,
+the spawned instance's EnemyAI.Faction matched the HighwayKin asset by
+reference, and its MeshFilter confirmed the "Capsule" placeholder mesh
+(expected — no real model approved this pass, not a bug). Console clean
+before/after, scene isDirty=false after stopping Play (runtime-only
+spawn, no scene-state leak, same as prior sessions' spawn tests).
+
+[NOTE] This session's play-test verified faction wiring/spawning works
+end-to-end for the new gang, NOT "real model instead of placeholder" —
+that specific success criterion from the original task brief doesn't
+apply to any faction this session, since both model batches were held
+back. Confirming a real model on Highway Kin (or any other faction)
+needs a separate pass once the flagged questions above are resolved.
+
+[FLAG] Explicitly out of scope this session, not attempted: Highway Kin
+has no TurfNode(s) in the scene (TurfWarManager.allNodes still lists only
+the original 4 nodes tied to the 5 existing gangs) and nothing calls
+HeatSystem/SpawnEnemyWave with the HighwayKin faction automatically —
+the gang exists and can be spawned/queried, but isn't hooked into turf
+capture or heat-triggered reinforcements yet. That's real level-design
+scope (where does its turf physically sit, what encounters spawn it),
+not something to invent solo.
+
+Faction-asset-import task considered paused, not complete: Highway Kin
+scaffold is done and verified end-to-end; the actual bike/NPC model
+import/wiring work for all 6 gangs is blocked on the 3 flagged questions
+above (Highway Kin's own bike/NPC still needed too, on top of those).
