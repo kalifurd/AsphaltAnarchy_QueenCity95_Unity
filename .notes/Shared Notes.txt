@@ -1573,3 +1573,32 @@ user direction), with a note that its current (80,0,80) placeholder
 position should be relocated once the district gets a real coordinate
 plan — same caveat both docs carry about all current abstract node
 coordinates.
+
+[2026-08-06, continued] Third district doc: Hamilton/Fairfield — Claude
+Code (docs only; no code, scene, or asset changes this entry)
+
+[DONE] Created Docs/LevelDesign_Hamilton_Fairfield_1995.md — Highway
+Kin MC's WESTERN half (Butler County), completing the pair with the
+Milford/Batavia eastern-half doc. Same conventions ([R]/[R*]/[F] tags,
+~5:1 compression, §6 systems = suggestions only). District thesis: "the
+company town after the companies" — 1995 Hamilton ("Hamilton!" incl.
+the real 1986 exclamation point) as declining Safe Capital/paper-mill
+city, with booming Fairfield as a suburban "moat" the Kin cross between
+their ground and the loop. Structure: three parallel N-S strands
+(SR 4/Dixie strip = watched, US 127/Pleasant = known, SR 128 river road
+= back way) + Great Miami levees as the vertical. Clubhouse = "The
+Vault" [F], a bankrupt safe-works annex on the mill row (pairs with the
+eastern half's "The Scales": "The Scales weigh it. The Vault keeps
+it."). ~20 tagged locations incl. Butler County Courthouse block (heat
+origin), operating Champion paper mill [R, strictly neutral economy
+anchor], CSX at-grade main line (train-block pursuit script), MCD levee
+crest paths (this district's bike-only route), Fernald [R] as a scripted
+absolute no-go federal fence (period-correct: cleanup era), and Forest
+Fair Mall [R] as the half-lit "new ruin" loop gateway. Maps the EXISTING
+TurfNode_Hamilton onto The Vault (no new turf proposed; same
+placeholder-coordinate relocation caveat, current position -80,0,-80).
+
+[NOTE] Also updated the Milford/Batavia doc's header cross-reference
+(was "separate future pass", now points at the new companion doc). All
+three district docs now cross-reference each other and share the same
+section skeleton, so the next district pass has an established template.

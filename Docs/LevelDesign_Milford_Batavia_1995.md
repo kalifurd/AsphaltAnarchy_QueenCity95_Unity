@@ -1,7 +1,7 @@
 # MILFORD / BATAVIA (CLERMONT COUNTY) — LEVEL DESIGN REFERENCE
 **Asphalt Anarchy: Queen City '95 — Highway Kin MC eastern territory**
 **Setting: Clermont County, Ohio, 1995. Status: design reference, not yet built.**
-**Companion doc:** `LevelDesign_PriceHill_Delhi_1995.md` (same conventions). The western half of Kin territory (Hamilton/Fairfield, Butler County) is a separate future pass — not covered here.
+**Companion docs:** `LevelDesign_PriceHill_Delhi_1995.md`, `LevelDesign_Hamilton_Fairfield_1995.md` (same conventions). This is the **eastern half** of Highway Kin territory; the western half (Hamilton/Fairfield, Butler County) has its own doc.
 
 ---
 
