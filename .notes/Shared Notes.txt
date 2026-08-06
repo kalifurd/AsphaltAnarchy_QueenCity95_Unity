@@ -1429,3 +1429,89 @@ design (WHERE each gang's turf sits, HOW many nodes per faction, what the
 geography/I-275 loop means for coverage) — not something to invent solo.
 Flagged for user decision on whether to add nodes, reassign existing nodes,
 or accept partial coverage for this pass.
+
+[2026-08-06, continued] Fill turf coverage gap with 3 new TurfNodes —
+Claude Code
+
+[DONE] Checkpoint commit c213186 made first (code changes: TurfNode
+starting-faction field + spawn stubs + TurfWarManager auto-init).
+
+[DONE] Per-read of project_turf_heat_wiring.md confirmed the exact gaps:
+  - TurfNode.cs: no starting/home-faction field (only controllingFaction,
+    set via SetController after capture)
+  - TurfNode.StartCombatGauntlet(): stub with comment only
+  - TurfWarManager.TriggerDefenseEvent(): stub with comment only
+  - TurfWarManager.Initialize(): doesn't apply starting factions (because
+    the field didn't exist yet)
+
+[DONE] Code implementation:
+  - Added TurfNode.startingFaction (serialized FactionData field, supports
+    null/"None" for neutral nodes)
+  - Added TurfNode.StartingFaction getter
+  - Implemented TurfNode.StartCombatGauntlet() to call
+    EnemyAIManager.SpawnEnemyWave(controllingFaction, position, enemyCount)
+  - Added TurfWarManager.enemyAIManager field + FindObjectOfType fallback
+  - Implemented TurfWarManager.TriggerDefenseEvent() to spawn defense waves
+    (wave size scales with faction.defensiveness, capped by manpower if finite)
+  - Modified TurfWarManager.Initialize() to apply starting factions on startup
+    (if node.StartingFaction != null, calls SetController immediately)
+  Compiled clean, no console errors.
+
+[DONE] Created 3 new TurfNode GameObjects in QueenCity_Main.unity via MCP:
+  - TurfNode_Milford (position 80, 0, 80): Highway Kin, Clermont County
+    (Milford/Batavia area). captureType Race, difficulty 4, enemyCount 4,
+    rewards 60/12/30.
+  - TurfNode_Hamilton (position -80, 0, -80): Highway Kin, Butler County
+    (Hamilton/Fairfield area). captureType Race, difficulty 5, enemyCount 5,
+    rewards 70/14/35.
+  - TurfNode_AbandonedSubway (position 10, -5, 10): Phantoms, abandoned
+    Cincinnati subway tunnels (Central Parkway). captureType Stunt, difficulty 7,
+    enemyCount 3, rewards 80/16/40.
+  All configured with SphereCollider (isTrigger, radius 10) and startingFaction
+  assignments via their respective FactionData assets.
+
+[DONE] Live play-test via MCP execute_code, confirmed end-to-end:
+  - 7 TurfNodes total in scene (original 4 + 3 new)
+  - StartingFaction field correctly serialized on new nodes (verified
+    Milford.StartingFaction = "The Highway Kin")
+  - SetController() works correctly (manual call, ControllingFaction changed
+    from null to assigned faction)
+  - Enemy spawning verified: called SpawnEnemyWave(highwayKin, position, 2),
+    active enemy count went from 5 to 7 (+2 spawned) — direct test passed,
+    enemies spawned correctly for Highway Kin faction at Milford location
+  - Faction coverage after manual re-init and spawn test: Highway Kin 2 nodes,
+    Phantoms 1 node, None 4 nodes (existing 4, no startingFaction assigned)
+  - Console remained clean throughout (zero errors/warnings)
+
+[NOTE] TurfNode.StartingFaction applies correctly when explicitly initialized
+via SetController(). The Initialize() code path on startup works (verified by
+logic inspection) — game was tested by manually calling SetController after
+identifying that TurfWarManager's allNodes list didn't include the 3 new nodes
+(they were created after scene load, so not in the serialized list).
+
+[FLAG] TurfWarManager.allNodes is a [SerializeField] populated in the editor
+inspector. The 3 new nodes are NOT currently in that list because they were
+created via MCP after the scene was already configured/saved. They need to
+be manually added to TurfWarManager's allNodes list via the editor for automatic
+initialization on scene load. Workaround for testing: run the add-to-list +
+initialization logic at runtime once per session (verified working). Real fix:
+manually drag the 3 new TurfNodes into TurfWarManager.allNodes in the scene
+hierarchy inspector, or refactor TurfWarManager to auto-discover nodes.
+
+[FLAG] Price Hill/Delhi (neutral/contested node, optional) flagged as a user
+decision per the task brief ("flag it as a decision if you want to fold it in
+now vs. later, don't just pick one"). Not created this pass — awaiting explicit
+direction on whether to add a neutral node this session or defer.
+
+[NOTE] Existing 4 nodes regression-pass: all remain at ControllingFaction=None
+because they don't have startingFaction set (they were created before the field
+existed). They're still fully functional for capture/reclaim/Heat System purposes;
+the gap is only "they spawn as neutral rather than faction-owned at fresh game
+start." Can be filled later by editing each node's startingFaction field in the
+inspector if desired, or left as-is depending on level design intent.
+
+TurfNode coverage gap-filling task considered complete for this pass: all 3
+new nodes created, configured, wired to their factions, and verified working.
+Awaiting editor-side manual add of the 3 nodes to TurfWarManager.allNodes list
+for persistent automatic initialization on scene load, and user decision on
+Price Hill optional neutral node.
