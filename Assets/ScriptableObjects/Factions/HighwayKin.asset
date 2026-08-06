@@ -22,7 +22,7 @@ MonoBehaviour:
   combatStyle: "CB-radio convoy tactics \u2014 rolling blockades and tailgating that
     box you in on the shoulder."
   bikePrefab: {fileID: 3053585765504227048, guid: d286457aa6361ad469038ef5d1f73ebe, type: 3}
-  riderPrefab: {fileID: 0}
+  riderPrefab: {fileID: 919132149155446097, guid: 65fa7c2c3b84eef4f9d381fd7338f9e1, type: 3}
   aggression: 0.65
   coordination: 0.55
   fearThreshold: 0.45

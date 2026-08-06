@@ -1136,3 +1136,91 @@ Faction-asset-import task considered paused, not complete: Highway Kin
 scaffold is done and verified end-to-end; the actual bike/NPC model
 import/wiring work for all 6 gangs is blocked on the 3 flagged questions
 above (Highway Kin's own bike/NPC still needed too, on top of those).
+
+[2026-08-06, continued] Real model wiring, round 2 — user assigned the 3
+previously-unattributed 2026-08-06 exports: rusty_motorcycle_3d_model =
+Highway Kin bike, rusted_motorcycle_3d_model = Rust Barons bike,
+rugged_biker_character_3d_model = Highway Kin NPC — Claude Code
+
+[DONE] Wired all 3 into their target Enemy_*.prefabs using the confirmed
+mesh-swap-inside-the-prefab approach (headless via
+PrefabUtility.LoadPrefabContents/SaveAsPrefabAsset/UnloadPrefabContents,
+same pattern as the earlier particle-FX session): disabled the
+placeholder capsule's MeshRenderer and deactivated FrontWheelMesh/
+RearWheelMesh (the placeholder wheel cylinders) on each target prefab,
+added the real model as a new child ("BikeModel" / "RiderModel"),
+scaled to hit real-world size (~2m bike length, ~1.8m rider height,
+per the task's original rescale caveat) computed from each model's
+actual measured Renderer bounds rather than a blind fixed multiplier
+(these Tripo exports normalize to a 1-unit longest dimension, but not
+all on the same axis-scale, so a fixed constant would have been wrong
+per-model). WheelColliders and all physics/gameplay components
+untouched — this is a visual-only swap, exactly the "swap the mesh
+inside Enemy_*.prefab, don't touch FactionData.bikePrefab" approach
+agreed on earlier this session.
+
+[FLAG-then-resolved] Hit a real bug applying this: rusty_motorcycle_3d_
+model's imported root GameObject carries a baked-in correction rotation
+(270° on X — Tripo/FBX export quirk) that makes it display upright:
+confirmed by comparing the asset's raw transform.localRotation across
+all 3 models (rusted_motorcycle: identity; rusty_motorcycle: root itself
+baked 270-on-X; rugged_biker: root identity but its child "ParentNode"
+carries the same 270-on-X one level down). My first attempt overwrote
+this correction outright (`instance.transform.localRotation =
+Quaternion.Euler(0,90,0)`), which is why the first HighwayKin bike
+screenshot showed it lying on its side while Rust Barons' bike (whose
+model needed no baked correction) came out fine with the same code.
+Fixed by composing the extra yaw ON TOP of each model's natural rotation
+instead of overwriting it (`Quaternion.Euler(0,90,0) * naturalRotation`,
+verified empirically by testing candidate compositions and comparing
+resulting world-space bounds before committing to one) — general
+takeaway logged in memory (project_faction_assets_status.md) since this
+will bite again on the next faction's model import if not accounted for.
+
+[DONE] Live play-tested via Unity MCP execute_code + manage_camera
+screenshots (game_view, positioned camera, not the earlier scene_view
+attempt which turned out to render a stray UI overlay instead of the
+prefab — abandoned that approach, used Play-mode + game camera instead):
+  - Rust Barons: the pre-placed scene instance (an unmodified prefab
+    instance, confirmed by its position exactly matching the prefab's
+    own authored root position) picked up the new model automatically
+    on Play, no scene edit needed. Screenshot confirms a real rusty
+    motorcycle model, upright, correctly oriented, sitting on the
+    ground — no capsule, no stray placeholder wheels visible.
+  - Highway Kin: spawned via SpawnEnemyWave (the real wave-spawn path,
+    not a scene placement). After the rotation fix, screenshot confirms
+    an upright motorcycle with the rider character standing on/over it
+    — a clearly recognizable "biker on a bike" silhouette. Not a truly
+    rigged seated pose (the character mesh isn't rigged/animated, so
+    it's standing rather than bent-knee seated) — flagged as a known
+    placeholder-quality limit below, not hidden.
+  - Console checked clean before/after both tests, both times. Screen
+    shots were temporary verification artifacts (Assets/Screenshots/
+    turned out to NOT be gitignored, unlike an earlier session's
+    assumption — corrected that assumption this time) — deleted after
+    review, confirmed via git status they don't show up as changes.
+
+[DONE] Set HighwayKin.asset's riderPrefab field to reference the rugged_
+biker FBX directly, for bookkeeping/documentation purposes even though
+(per the earlier flag) nothing in the codebase reads riderPrefab at
+runtime — the actual visual is the child GameObject inside the prefab,
+this is just so the field isn't misleadingly empty now that a rider
+model exists for this faction.
+
+[NOTE] Rider seating is eyeballed (local position (0, 0.45, 0.05)
+relative to root, roughly "standing at seat height"), not derived from
+any anchor point in the mesh or a proper animation rig — acceptable for
+a placeholder-quality pass per the screenshot check, but if a real
+rigged rider/animation system gets built later this hand-placed offset
+should be revisited rather than assumed correct.
+
+[FLAG] Still open, unchanged from earlier this session: OTR Syndicate
+(bike unusable + no NPC), Neon Saints/Kentucky Kings/Phantoms (nothing
+at all), and Rust Barons' own NPC (still only the broken "Rust Baron
+NPC.glb.txt") all still need real exports before they can get the same
+treatment. Also still open: Highway Kin has no TurfNode/heat-trigger
+wiring (flagged earlier, unchanged).
+
+Round 2 considered complete for the 3 models the user assigned: Rust
+Barons bike and Highway Kin bike+NPC are real, live-verified, screenshot-
+confirmed models now, not placeholders. Committed alongside this note.
