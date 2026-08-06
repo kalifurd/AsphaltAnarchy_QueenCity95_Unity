@@ -1389,3 +1389,43 @@ gangs + PlayerCrew). Per this file's own rule ("if you think it needs to
 change, flag that in posting.txt/Shared Notes.txt rather than editing
 directly"), flagging here instead of editing notes_rules.md. Whoever has
 edit authority over that file should update the invariant.
+
+[2026-08-06] TurfNode coverage audit against 6-faction roster — Claude Code
+
+[DONE] Checkpoint commit af1bf6c made first (faction prefabs + main scene
+state from asset wiring pass, none touched by this audit).
+
+[DONE] Full direct audit of every TurfNode in QueenCity_Main.unity,
+checking actual scene file YAML (not memory/assumptions). Found exactly
+4 TurfNode instances:
+  1. TurfNode_NewportRiverfront → Kentucky Kings
+     (description: "Kentucky Kings turf along the Newport riverfront")
+  2. TurfNode_QueensgateYard → Rust Barons
+     (description: "A Rust Barons scrapyard and rail depot, heavily defended")
+  3. TurfNode_DowntownOverpass → Neon Saints
+     (description: "A Neon Saints stunt run across the Downtown overpasses")
+  4. TurfNode_OTRAlley → OTR Syndicate
+     (description: "A narrow alley in Over-the-Rhine, controlled by the OTR Syndicate")
+
+[DONE] Identified coverage gaps against the complete 6-faction roster
+(Rust Barons, OTR Syndicate, Neon Saints, Kentucky Kings, Highway Kin, Phantoms):
+  - Rust Barons: ✓ (Queensgate Yard)
+  - OTR Syndicate: ✓ (OTR Alley)
+  - Neon Saints: ✓ (Downtown Overpass)
+  - Kentucky Kings: ✓ (Newport Riverfront)
+  - Highway Kin: ✗ ZERO turf presence
+  - Phantoms: ✗ ZERO turf presence
+
+[DONE] Regression test via MCP: entered Play mode, confirmed both
+TurfWarManager and HeatSystem present, enabled, and initialized correctly
+— no errors, no warnings. All 4 TurfNodes detected and loaded. Systems
+in a known-good state.
+
+[FLAG] This audit IS NOT a fix — it is a report. Decision-level flagging:
+Highway Kin and Phantoms have zero TurfNode presence. The 4 existing nodes
+are all at 25% factions each; a 1:1 node-per-faction target would need 2
+MORE TurfNode placements, or a different coverage model. This is real level
+design (WHERE each gang's turf sits, HOW many nodes per faction, what the
+geography/I-275 loop means for coverage) — not something to invent solo.
+Flagged for user decision on whether to add nodes, reassign existing nodes,
+or accept partial coverage for this pass.
