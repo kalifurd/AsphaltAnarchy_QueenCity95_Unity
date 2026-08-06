@@ -1642,3 +1642,28 @@ gameplay, no reference beyond respectful silence. Real grief, not set
 dressing. Also: adult-business strip rendered as signage/doormen only;
 Pompilio's kept strictly neutral (same real-business rule as Jungle
 Jim's/Ford/Champion in the other docs).
+
+[NOTE] Session paused here at the user's request (2026-08-06, end of
+day). State captured: memory files updated (project_turf_heat_wiring
+rewritten from "findings only" to "partially built + gap list"; new
+project_district_design_docs memory for the 4-doc template/conventions).
+Open items for whoever picks this up, in rough priority order:
+  1. TurfWarManager.allNodes still only lists the original 4 nodes —
+     the 3 new TurfNodes (Milford, Hamilton, AbandonedSubway) need a
+     manual editor add (or an auto-discovery refactor) before their
+     startingFaction applies on a normal scene load.
+  2. User decision: should the original 4 nodes get startingFaction
+     values (they currently start neutral, pre-dating the field)?
+  3. Price Hill doc §6 proposes 4 turf nodes (2 PlayerCrew start-owned
+     incl. safehouse, 2 neutral) — not built, needs a go-ahead.
+  4. Newport doc §6's mid-river jurisdiction heat seam — decision
+     needed BEFORE any build; touches core HeatSystem rules.
+  5. District docs not yet written: downtown/OTR (OTR Syndicate),
+     Queensgate (Rust Barons), Phantoms' subway, Covington (optional).
+  6. Older flags still open, unchanged: scene-root Tripo preview-object
+     clutter, notes_rules.md stale "6 FactionData" invariant, deletion
+     of superseded broken .glb files, Ducati model unassigned.
+Working tree at pause: clean except the user's own untracked
+Assets/Screenshots + Assets/TripoModels files (never committed by any
+session today; left untracked as-is, flagging rather than sweeping them
+into a commit unasked).
