@@ -935,3 +935,33 @@ in the scene. Not done / explicitly out of scope per the task: no
 waypoint/map UI for the Info case (flagged above as a separate future
 decision), no real faction-specific NPC character or dialogue — the test
 instance is a placeholder capsule as the task allowed.
+[2026-08-06] Tripo DCC Bridge stopped working again — Claude Code (outside
+git, tooling fix only, no game code touched)
+
+[DONE] Confirmed this was exactly the scenario flagged on 2026-08-05: the
+user re-downloaded a fresh copy of Tripo3d_Unity_Bridge-latest today (both
+C:\Users\T1NK3R\Downloads\Tripo3d_Unity_Bridge-latest\ and
+C:\Users\T1NK3R\Documents\Tripo3d_Unity_Bridge-latest\ have today's
+timestamps), which silently dropped the websocket compression fix.
+Packages/manifest.json's com.tripo3d.unitybridge file: reference now
+points at the Documents copy (not Downloads, where the original 2026-08-05
+fix note says the plugin lived) — location moved, so future sessions
+should check manifest.json for the current path rather than assuming
+Downloads.
+
+[DONE] Reapplied the same two-part fix to
+C:\Users\T1NK3R\Documents\Tripo3d_Unity_Bridge-latest\Tripo3d_Unity_Bridge\
+Editor\WebSocketSharpServer.cs (the copy manifest.json actually
+references): IgnoreExtensions=true on the AddWebSocketService initializer
+to decline permessage-deflate, plus Log.Level=Trace and Log.Output wired
+to LogHelper.Log. Not live-verified this session (would need Unity open
+with a real tripo.ai render to confirm end-to-end) — user should confirm
+a model import succeeds next time they use it.
+
+[NOTE] Left the Downloads copy unfixed — manifest.json doesn't reference
+it, so it's not in the active path. Only touched the Documents copy.
+
+[FLAG — do not update/reinstall this plugin, still applies] Same risk as
+before: any future fresh download of the Tripo DCC Bridge will overwrite
+this fix again. Full fix writeup now in memory
+(project_tripo_dcc_bridge_websocket_fix.md).
