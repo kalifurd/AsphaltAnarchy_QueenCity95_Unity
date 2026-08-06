@@ -1818,6 +1818,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AsphaltAnarchy.Factions.TurfNode
   nodeName: Newport Riverfront
   description: Kentucky Kings turf along the Newport riverfront.
+  startingFaction: {fileID: 0}
   captureType: 0
   difficultyRating: 6
   enemyCount: 6
@@ -2715,6 +2716,9 @@ MonoBehaviour:
   - {fileID: 1286303923}
   - {fileID: 1834805679}
   - {fileID: 351175815}
+  - {fileID: 1612325344}
+  - {fileID: 1698025709}
+  - {fileID: 1242337895}
   reclaimCheckInterval: 60
   reclaimChance: 0.2
 --- !u!114 &480098994
@@ -4768,6 +4772,87 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1209764623}
   m_CullTransparentMesh: 1
+--- !u!1 &1242337894
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1242337897}
+  - component: {fileID: 1242337896}
+  - component: {fileID: 1242337895}
+  m_Layer: 0
+  m_Name: TurfNode_Milford
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1242337895
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1242337894}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e341699433fead4085b1a1adef49e03, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AsphaltAnarchy.Factions.TurfNode
+  nodeName: Milford
+  description: Highway Kin outpost in Milford, Clermont County.
+  startingFaction: {fileID: 11400000, guid: 551ecd992e66f304b8656d56f98390e6, type: 2}
+  captureType: 0
+  difficultyRating: 4
+  enemyCount: 4
+  scrapReward: 60
+  tokenReward: 12
+  echoPointsReward: 30
+  territoryBorder: {fileID: 0}
+  playerColor: {r: 0, g: 1, b: 0, a: 1}
+  enemyColor: {r: 1, g: 0, b: 0, a: 1}
+  neutralColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hasSafehouse: 0
+  safehouseSpawnPoint: {fileID: 0}
+--- !u!135 &1242337896
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1242337894}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 10
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!4 &1242337897
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1242337894}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 80, y: 0, z: 80}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1262929934
 GameObject:
   m_ObjectHideFlags: 0
@@ -4979,6 +5064,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AsphaltAnarchy.Factions.TurfNode
   nodeName: Queensgate Yard
   description: A Rust Barons scrapyard and rail depot, heavily defended.
+  startingFaction: {fileID: 0}
   captureType: 1
   difficultyRating: 5
   enemyCount: 8
@@ -6256,7 +6342,7 @@ Camera:
   near clip plane: 0.3
   far clip plane: 1000
   field of view: 60
-  orthographic: 1
+  orthographic: 0
   orthographic size: 5
   m_Depth: -1
   m_CullingMask:
@@ -6281,8 +6367,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1539512059}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -10}
+  m_LocalRotation: {x: 0, y: 0.00000014044014, z: 0, w: 1}
+  m_LocalPosition: {x: -0.0000056176054, y: 1, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6530,6 +6616,88 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1286303924}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1612325343
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1612325346}
+  - component: {fileID: 1612325345}
+  - component: {fileID: 1612325344}
+  m_Layer: 0
+  m_Name: TurfNode_AbandonedSubway
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1612325344
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1612325343}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e341699433fead4085b1a1adef49e03, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AsphaltAnarchy.Factions.TurfNode
+  nodeName: Abandoned Subway
+  description: The Phantoms' lair in the abandoned Cincinnati subway tunnels beneath
+    Central Parkway.
+  startingFaction: {fileID: 11400000, guid: 545134168f57f59449333df41d76afac, type: 2}
+  captureType: 2
+  difficultyRating: 7
+  enemyCount: 3
+  scrapReward: 80
+  tokenReward: 16
+  echoPointsReward: 40
+  territoryBorder: {fileID: 0}
+  playerColor: {r: 0, g: 1, b: 0, a: 1}
+  enemyColor: {r: 1, g: 0, b: 0, a: 1}
+  neutralColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hasSafehouse: 0
+  safehouseSpawnPoint: {fileID: 0}
+--- !u!135 &1612325345
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1612325343}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 10
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!4 &1612325346
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1612325343}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 10, y: -5, z: 10}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1641400866
 GameObject:
@@ -6990,6 +7158,87 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1685843526}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1698025708
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1698025711}
+  - component: {fileID: 1698025710}
+  - component: {fileID: 1698025709}
+  m_Layer: 0
+  m_Name: TurfNode_Hamilton
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1698025709
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1698025708}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e341699433fead4085b1a1adef49e03, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AsphaltAnarchy.Factions.TurfNode
+  nodeName: Hamilton
+  description: Highway Kin stronghold in Hamilton, Butler County.
+  startingFaction: {fileID: 11400000, guid: 551ecd992e66f304b8656d56f98390e6, type: 2}
+  captureType: 0
+  difficultyRating: 5
+  enemyCount: 5
+  scrapReward: 70
+  tokenReward: 14
+  echoPointsReward: 35
+  territoryBorder: {fileID: 0}
+  playerColor: {r: 0, g: 1, b: 0, a: 1}
+  enemyColor: {r: 1, g: 0, b: 0, a: 1}
+  neutralColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  hasSafehouse: 0
+  safehouseSpawnPoint: {fileID: 0}
+--- !u!135 &1698025710
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1698025708}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 10
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!4 &1698025711
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1698025708}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -80, y: 0, z: -80}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1734032466
 GameObject:
   m_ObjectHideFlags: 0
@@ -7278,6 +7527,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AsphaltAnarchy.Factions.TurfNode
   nodeName: Downtown Overpass
   description: A Neon Saints stunt run across the Downtown overpasses.
+  startingFaction: {fileID: 0}
   captureType: 2
   difficultyRating: 4
   enemyCount: 0
@@ -7506,6 +7756,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AsphaltAnarchy.Factions.TurfNode
   nodeName: OTR Alley
   description: A narrow alley in Over-the-Rhine, controlled by the OTR Syndicate.
+  startingFaction: {fileID: 0}
   captureType: 0
   difficultyRating: 3
   enemyCount: 5
@@ -8687,3 +8938,6 @@ SceneRoots:
   - {fileID: 1516777712}
   - {fileID: 1149398763}
   - {fileID: 654289957}
+  - {fileID: 1242337897}
+  - {fileID: 1698025711}
+  - {fileID: 1612325346}
