@@ -1253,3 +1253,139 @@ NPC), Neon Saints/Kentucky Kings/Phantoms (nothing at all), Rust Barons'
 own NPC (still only the broken "Rust Baron NPC.glb.txt"), and Highway
 Kin's TurfNode/heat-trigger wiring. Faction-asset-import task remains
 paused, not complete.
+
+[DONE] Faction-asset-import task is now FULLY COMPLETE (2026-08-06,
+later same day). User kept pushing exports through the DCC Bridge
+(now-fixed websocket) across several more rounds; each time landed with
+Tripo's generic auto-names again (no faction attribution in the
+filename/log, same problem as before) and had to be inferred from
+context/what the user said they'd just pulled. All 6 gangs now have
+real, screenshot-verified bike+NPC models wired into their
+Enemy_*.prefab (placeholder capsule/wheel meshes disabled, not deleted;
+BikeModel+RiderModel children added): Rust Barons (NPC added this
+round, bike was already done), Neon Saints, Kentucky Kings, Phantoms,
+Highway Kin (already done), OTR Syndicate (last one, done last).
+Verification method settled on: instantiate a temp prefab copy far from
+other scene content (e.g. (300,5,300) — the world origin has other
+placeholder enemies cluttering the shot), screenshot from a SIDE angle
+(head-on makes a 2m bike read as a tiny blob), then DestroyImmediate the
+temp instance. Full details and the reusable wiring recipe (rotation
+compose formula, scale factors, position offsets) are in
+project_faction_assets_status.md.
+
+[FLAG] One misattribution happened and was corrected: user said a
+bridge-delivered bike+NPC pair was "OTR", got wired into
+Enemy_OTRSyndicate.prefab and verified, then user caught it — "shit i
+was wrong thats the Phantom models." Reverted OTR's prefab to
+placeholder state and rewired the same two models onto
+Enemy_Phantoms.prefab instead. Lesson for future faction-asset work: a
+user's in-the-moment attribution for a generically-named Tripo export
+can still be wrong when juggling multiple exports — no way to verify
+from the file itself, so if a later correction comes in, check whether
+anything else (prefab names, this notes file, memory) still needs
+fixing too.
+
+[NOTE] Deleted (via AssetDatabase.DeleteAsset, not raw filesystem) the
+old unusable "Phantom NPC.glb" / "Phantom_bike.glb" (2026-08-05,
+DefaultImporter, no glTF package — same broken format as the original
+2026-08-04 batch) since Phantoms now has real bridge-delivered models
+instead. The equivalent old broken files for Rust Barons/OTR
+(Rust_Baron_Bike.glb, "Rust Baron NPC.glb.txt", OTR_Syn_Bike.glb.txt)
+are now also fully superseded and safe to delete the same way, just
+hasn't been done yet — low priority tidy-up.
+
+[NOTE] A duplicate-resend gotcha hit during the Rust Barons NPC pull:
+the bridge re-sent 2 already-processed models (Neon Saints' bike, Rust
+Barons' own existing bike) alongside the 2 genuinely new ones. Unity
+silently auto-renamed the folders with a "_1" suffix rather than
+erroring — this looks identical to a real new asset until you check the
+console log content (same base filename/texture names) against what's
+already wired. When a "pulled X" report has more Found-model log
+entries than the expected 2-per-faction (bike+NPC), check for "_N"
+suffixed duplicate folders before assuming everything is new.
+
+[NOTE] Also spawned this session: `ducati_sport_motorcycle_3d_model`, an
+extra/unused bike from the Rust Barons pull. User was asked whether to
+swap it in for Rust Barons' existing GSXR750 bike or keep the GSXR750 —
+chose to keep the existing bike, so the Ducati model sits unused in
+Assets/TripoModels/, not wired to anything. User later mentioned
+possibly using it as a "traffic npc" — checked, this project has NO
+traffic/civilian-vehicle NPC system (only Assets/Scripts/Echo/
+TrafficLight.cs, a traffic *light* script, not vehicles), so that would
+be new scope, not a quick reassignment. Left untouched pending a clearer
+ask.
+
+[FLAG] TurfNode/heat-trigger wiring for all 6 gangs was started this
+session (user asked directly: "wire up TurfNode and heat-trigger for
+all six") but NOT completed — ran low on usage mid-investigation, before
+any code was written or scene changes made. Findings so far, so the next
+session doesn't have to rediscover them:
+  - HeatSystem.cs (Assets/Scripts/Heat/HeatSystem.cs) is ALREADY fully
+    implemented and faction-generic. Combat-triggered heat (fighting any
+    enemy) already correctly triggers reinforcement waves of the right
+    faction's bike+NPC model for all 6 gangs — verified EnemyAI.faction
+    is correctly serialized per-prefab on all 6 Enemy_*.prefab, and
+    FactionData.bikePrefab correctly points at each faction's own
+    prefab. No code change needed for the combat-heat path.
+  - The turf-incursion heat path (HeatSystem.HandleTurfEntered, fires
+    off TurfNode.OnNodeEntered) is also wired in code but CAN NEVER FIRE
+    for any faction currently: TurfNode.cs has no serialized
+    starting/home-faction field at all — controllingFaction is only
+    ever set via SetController(), called from TurfWarManager.ClaimNode()
+    (after a capture) or LoadFromSerializableData() (loading a save). At
+    a fresh game start every TurfNode's ControllingFaction is null, so
+    no hostile-turf heat can ever trigger until a node has already
+    changed hands once. This is a real gap, not just missing wiring.
+  - TurfNode.StartCombatGauntlet() and TurfWarManager.TriggerDefenseEvent()
+    are both unimplemented stubs — comments only ("// Spawn enemy wave",
+    "// Implementation depends on spawn system"). Capturing turf via
+    combat gauntlet, and factions attempting to reclaim lost turf, don't
+    actually spawn any enemies yet. EnemyAIManager.SpawnEnemyWave(faction,
+    location, count) already exists and is faction-generic/ready to call
+    from both places once implemented.
+  - Scene only has 4 TurfNode instances placed (TurfNode_OTRAlley,
+    TurfNode_QueensgateYard, TurfNode_DowntownOverpass,
+    TurfNode_NewportRiverfront) — NOT 6. No 1:1 gang-to-node mapping
+    exists yet. "OTR Alley" obviously maps to OTR Syndicate by name; the
+    other 3 are ambiguous. FactionData.cs has primaryTerritory/
+    secondaryTerritory string fields per faction (Assets/
+    ScriptableObjects/FactionData.cs) that were about to be checked
+    against the 4 node names to resolve the mapping — not done yet.
+    Whoever picks this up needs to either resolve that mapping from
+    those fields, ask the user, or decide whether 2 more TurfNode
+    objects need to be created for full 6-gang coverage.
+  - FactionManager (all 7 factions incl. PlayerCrew) and
+    EnemyAIManager.enemyPrefabs (all 6 gang prefabs) are already fully
+    and correctly wired in the "Systems" GameObject's Inspector — no
+    action needed there. HeatSystem.enemyAIManager/factionManager
+    Inspector refs are NULL but self-heal harmlessly via
+    FindObjectOfType() fallback in HeatSystem.Start() (only one instance
+    of each exists in the scene) — low-priority cleanup, not a blocker.
+  - Do not start this from scratch next time — read
+    project_turf_heat_wiring.md (memory) first.
+
+[FLAG] Noticed but not investigated or cleaned up: the open scene
+(QueenCity_Main.unity, already showing modified in git status this
+session) has a pile of loose, un-parented GameObjects sitting at the
+scene root — plain names matching every raw Tripo model imported this
+session (black_motorcycle_3d_model, dark_motorcycle_rider_3d_model,
+sport_bike_3d_model, gangster_figure_3d_model, rugged_biker_3d_model,
+harley_davidson_motorcycle_3d_model, vintage_motorcycle_3d_model [+ a
+"_1" duplicate], biker_character_3d_model [+ "_1"],
+rusted_motorcycle_3d_model [+ "_1"], rusty_motorcycle_3d_model,
+rugged_biker_character_3d_model, ducati_sport_motorcycle_3d_model,
+military_pilot_3d_model, plus an unrelated "NPC_Test_Info"). These are
+NOT the "_VerifyTemp" instances this session's own verification process
+created and always cleaned up via DestroyImmediate — best guess is the
+Tripo DCC Bridge itself auto-drops a preview instance into whatever
+scene is open every time an import finishes. Nobody has confirmed this
+theory or decided whether to clean it up. Flagging rather than deleting
+unilaterally since it's scene content nobody explicitly asked to remove.
+
+[FLAG] notes_rules.md's "Key Invariants" section still says "6
+FactionData assets exist, not 5" — this went stale on 2026-08-06 when
+HighwayKin was added as a real 6th gang (now 7 FactionData assets: 6
+gangs + PlayerCrew). Per this file's own rule ("if you think it needs to
+change, flag that in posting.txt/Shared Notes.txt rather than editing
+directly"), flagging here instead of editing notes_rules.md. Whoever has
+edit authority over that file should update the invariant.
