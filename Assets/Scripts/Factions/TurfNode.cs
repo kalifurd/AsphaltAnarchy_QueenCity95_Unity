@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 using AsphaltAnarchy.Core;
+using AsphaltAnarchy.AI;
 
 namespace AsphaltAnarchy.Factions
 {
@@ -13,6 +14,7 @@ namespace AsphaltAnarchy.Factions
         [Header("Identity")]
         [SerializeField] private string nodeName = "OTR Alley";
         [SerializeField] private string description = "A narrow alley in Over-the-Rhine.";
+        [SerializeField] private FactionData startingFaction;
 
         [Header("Capture Requirements")]
         [SerializeField] private CaptureType captureType = CaptureType.Race;
@@ -42,6 +44,7 @@ namespace AsphaltAnarchy.Factions
 
         public string NodeName => nodeName;
         public FactionData ControllingFaction => controllingFaction;
+        public FactionData StartingFaction => startingFaction;
         public CaptureType CaptureMethod => captureType;
         public float Difficulty => difficultyRating;
         public bool WasRecentlyLost => wasRecentlyLost;
@@ -117,8 +120,15 @@ namespace AsphaltAnarchy.Factions
         private void StartCombatGauntlet()
         {
             GameManager.Instance?.ChangeState(GameState.Combat);
-            // Spawn enemy wave
-            // On survival, call CompleteCapture()
+
+            if (controllingFaction != null)
+            {
+                var enemyAIManager = FindObjectOfType<EnemyAIManager>();
+                if (enemyAIManager != null)
+                {
+                    enemyAIManager.SpawnEnemyWave(controllingFaction, transform.position, enemyCount);
+                }
+            }
         }
 
         private void StartStuntChallenge()

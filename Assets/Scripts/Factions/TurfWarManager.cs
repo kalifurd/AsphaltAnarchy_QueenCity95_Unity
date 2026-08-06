@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System;
 using AsphaltAnarchy.Echo;
+using AsphaltAnarchy.AI;
 
 namespace AsphaltAnarchy.Factions
 {
@@ -19,6 +20,7 @@ namespace AsphaltAnarchy.Factions
 
         private FactionManager factionManager;
         private EchoSystem echoSystem;
+        private EnemyAIManager enemyAIManager;
         private float reclaimTimer;
 
         public static event Action<TurfNode> OnNodeClaimed;
@@ -29,10 +31,15 @@ namespace AsphaltAnarchy.Factions
         {
             factionManager = factions;
             echoSystem = echo;
+            enemyAIManager = FindObjectOfType<EnemyAIManager>();
 
             foreach (var node in allNodes)
             {
                 node.Initialize(this, factions);
+                if (node.StartingFaction != null)
+                {
+                    node.SetController(node.StartingFaction);
+                }
             }
 
             UpdateFactionTerritoryCounts();
@@ -90,8 +97,12 @@ namespace AsphaltAnarchy.Factions
         private void TriggerDefenseEvent(TurfNode node)
         {
             OnDefenseEventTriggered?.Invoke(node);
-            // Spawn enemy wave to reclaim
-            // Implementation depends on spawn system
+
+            if (node.ControllingFaction != null && enemyAIManager != null)
+            {
+                int defenseWaveCount = Mathf.Max(1, node.ControllingFaction.defensiveness > 0.7f ? 4 : 2);
+                enemyAIManager.SpawnEnemyWave(node.ControllingFaction, node.transform.position, defenseWaveCount);
+            }
         }
 
         private void UpdateFactionTerritoryCounts()
