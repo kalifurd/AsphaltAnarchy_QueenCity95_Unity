@@ -1602,3 +1602,43 @@ placeholder-coordinate relocation caveat, current position -80,0,-80).
 (was "separate future pass", now points at the new companion doc). All
 three district docs now cross-reference each other and share the same
 section skeleton, so the next district pass has an established template.
+
+[2026-08-06, continued] Fourth district doc: Newport KY — Claude Code
+(docs only; no code, scene, or asset changes this entry)
+
+[DONE] Created Docs/LevelDesign_Newport_1995.md — Kentucky Kings
+territory. BEFORE writing, read KentuckyKings.asset directly to ground
+the doc in existing canon (unlike Highway Kin, this faction's lore
+wasn't in session memory): primaryTerritory Newport / secondary
+Covington, "cross-river royalty... all high-speed swagger", combatStyle
+"high-speed drafting and sideswiping across the river bridges", low
+defensiveness 0.3, gold color. The doc is built around that canon:
+district thesis "last call in Sin City" (1995 Newport as the real
+tail-end of its wide-open era — city squeezing the Monmouth St adult
+strip, Indiana casino boats licensed/under construction, pre-Levee/
+pre-aquarium riverfront), and the Kings' true territory framed as THE
+BRIDGES/crossings rather than ground, matching their canon. Clubhouse =
+"The Kingfish" [F], a moored showboat on Riverboat Row outside the real
+post-'37 floodwall; maps onto EXISTING TurfNode_NewportRiverfront (no
+new turf; placeholder position 70,0,-40 relocation caveat; its existing
+Race captureType reframed as a bridge run). ~17 tagged locations incl.
+the three real Ohio bridges with distinct personalities (Taylor-
+Southgate BRAND-NEW in '95 — real opening year; narrow L&N still
+carrying cars, "purple" name deliberately avoided as post-'95; I-471
+Big Mac), floodwall gates as chokepoints, dead Wiedemann brewery
+(closed '83, real) as the Kings' warehouse, live Newport Steel as
+neutral economy anchor, Tower Park/Ft Thomas overlook. Covington
+explicitly deferred (canon secondary ground, off-map).
+
+[NOTE] Signature systems suggestion flagged inside the doc as needing
+its own pass BEFORE building: a mid-river jurisdiction seam (state-line
+heat handoff on the Ohio bridges — period-true, it's literally why Sin
+City existed, and faction-true). Touches core HeatSystem rules, so it's
+called out as decision-first, not build-first.
+
+[NOTE] Tone guardrail written into the doc: the Beverly Hills Supper
+Club fire site (Southgate, 1977) is deliberately NOT a location — no
+gameplay, no reference beyond respectful silence. Real grief, not set
+dressing. Also: adult-business strip rendered as signage/doormen only;
+Pompilio's kept strictly neutral (same real-business rule as Jungle
+Jim's/Ford/Champion in the other docs).
