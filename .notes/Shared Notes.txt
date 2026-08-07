@@ -1990,3 +1990,106 @@ written this pass):
 [DONE] Memory updated: [[project_district_design_docs]] now records
 this audit's findings so the next session doesn't have to re-derive
 them before the flagged decisions get resolved.
+
+[2026-08-07, continued] Jurisdiction-handoff mechanic IMPLEMENTED —
+Claude Code
+(code change only — Assets/Scripts/Heat/HeatSystem.cs; no scene/asset
+changes, scene file has zero diff after the play-test, confirmed)
+
+[NOTE] Scope: exactly the minimal design proposed in the prior audit
+pass, built to the 5 settled decisions, no re-litigation:
+  1. Gang-scoped only (PoliceUnit still has no pursuit AI to hang a
+     police-side handoff on).
+  2. Fresh-crossing baseline = 30 (half of waveThreshold=60, a
+     moderate value on the existing 0-100 maxHeat scale — not 0, not
+     inherited).
+  3. Evasion-clearing now scoped to the primary pursuer's faction only.
+  4. Only one primary at a time (HandleJurisdictionCrossing demotes the
+     current primary before promoting the new one; no dual-primary
+     state is representable).
+  5. No trigger contract built — HandleJurisdictionCrossing is called
+     directly for this pass; what calls it and how a zone is
+     identified stays blocked on real Newport bridge geometry.
+
+[DONE] Step 1 checkpoint: committed the prior pass's Shared Notes.txt
+audit entry (commit d211778) before touching code.
+
+[DONE] Step 2 — implemented `HandleJurisdictionCrossing(FactionData
+enteringFaction)` in HeatSystem.cs exactly per the audit's proposed
+shape: demotes the current primary (encounterFaction/currentHeat/
+wavesTriggeredThisEncounter) into a private `PursuitGroup` record kept
+in a new `secondaryGroups` list — heat and wave count retained exactly,
+never cleared. Promotes enteringFaction to primary: restores a parked
+secondary from where it left off if one exists (re-crossing back),
+otherwise starts fresh at the new `jurisdictionCrossingBaseline = 30f`
+serialized field. Added `GetSecondaryHeat(FactionData)` public getter
+(read-only, additive) so parked heat is inspectable without reflection.
+Added `secondaryHeatDecayRate = 2f` (heat/sec) serialized field and a
+`DecaySecondaryGroups()` call from Update() that passively drains each
+parked group and removes it once it reaches 0 — fully independent of
+player evasion. No existing public API (CurrentHeat, EncounterFaction,
+the 3 static events), AddHeat, TryTriggerWave, or ClearHeat was
+touched — HeatHUD and every other consumer needed zero changes, as
+predicted in the audit.
+
+[DONE] Step 3 — updated `AnyPursuerHasLineOfSight()` with one added
+filter line: `if (enemy.Faction != encounterFaction) continue;` before
+the existing IsPursuing/CanSeePlayer check. This is the only change to
+existing evasion logic — scopes the evasion/heat-clear countdown to the
+current primary's own faction, per decision 3. The demoted secondary's
+real EnemyAI instances are untouched and keep running their own state
+machine unmodified (still physically "pursuing" per the design intent)
+but can no longer hold or clear the primary's heat.
+
+[DONE] Step 4 — live play-tested via UnityMCP, using the real Systems/
+HeatSystem and the real Enemy_RustBarons / Enemy_KentuckyKings scene
+objects (no new GameObjects spawned, same restraint as the Myth Walk
+tests):
+  - Seeded a mid-fight state via reflection (currentHeat=75,
+    encounterFaction=RustBarons, wavesTriggeredThisEncounter=2) to
+    simulate real accumulated heat, then called
+    HandleJurisdictionCrossing(KentuckyKings). Confirmed: EncounterFaction
+    -> KentuckyKings, CurrentHeat -> 30 (baseline, not 0, not 75),
+    WavesTriggeredThisEncounter -> 0, GetSecondaryHeat(RustBarons) == 75
+    (fully retained, not cleared).
+  - Confirmed the parked RustBarons heat decays over real elapsed time
+    independent of the primary: by ~51s later it had fully drained to 0
+    and self-removed from the list (75 heat / 2 per sec ~= 37.5s to
+    empty — consistent with the decay rate). Crucially, this happened
+    WHILE the KentuckyKings-primary heat separately auto-cleared via
+    the existing (unmodified) evasion countdown after ~8s with no real
+    KentuckyKings pursuer in sight — proving the two are on genuinely
+    independent timelines, not coupled.
+  - Confirmed decision 3's filter directly: with KentuckyKings as
+    primary, enumerated all 5 real active enemies and their
+    Faction != EncounterFaction filter outcome — only Enemy_KentuckyKings
+    was NOT skipped; RustBarons, Phantoms, NeonSaints, and OTRSyndicate
+    all were, regardless of their own pursuit state. Separately forced
+    Enemy_RustBarons into Chase state directly adjacent to the player
+    (temporarily disabling its own CapsuleCollider to rule out a
+    raycast self-hit artifact unrelated to this change) — even primed
+    to see the player, it's correctly excluded from the primary's
+    evasion check once it's the demoted secondary.
+  - Console stayed clean throughout (only the expected "[GameManager]
+    State changed to: Exploring" log).
+  - Cleaned up: Enemy_RustBarons' collider/state manually restored
+    before exiting play mode; confirmed after Stop that edit-mode scene
+    state reverted fully on its own regardless (position, state,
+    collider all back to original) — `git status` shows zero scene
+    file diff, only HeatSystem.cs changed.
+
+[FLAG] Nothing broke, but two implementation notes worth surfacing:
+  - `jurisdictionCrossingBaseline` (30) and `secondaryHeatDecayRate`
+    (2/sec) are both serialized fields, tunable in the Inspector without
+    touching code — flagging in case the "moderate baseline" or decay
+    pace needs balancing once there's real gameplay to feel it against.
+  - The CanSeePlayer() self-hit raycast quirk hit during testing (a
+    freshly-teleported enemy's own raycast origin can self-intersect
+    its CapsuleCollider) is pre-existing EnemyAI behavior, not
+    introduced by this change — worked around in the test, not fixed,
+    since it's out of this pass's scope.
+
+[DONE] This closes the mechanic side of the Newport mid-river
+jurisdiction seam flagged back on 2026-08-06. Still blocked on real
+Newport bridge geometry (its own future district build pass) before
+anything can actually call HandleJurisdictionCrossing in real gameplay.

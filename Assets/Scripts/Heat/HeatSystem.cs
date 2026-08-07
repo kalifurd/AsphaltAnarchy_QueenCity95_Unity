@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 using AsphaltAnarchy.AI;
 using AsphaltAnarchy.Combat;
 using AsphaltAnarchy.Factions;
@@ -29,6 +30,10 @@ namespace AsphaltAnarchy.Heat
         [Header("Cooldown / Evasion")]
         [SerializeField] private float loseHeatCountdown = 8f;
 
+        [Header("Jurisdiction Handoff")]
+        [SerializeField] private float jurisdictionCrossingBaseline = 30f; // moderate starting heat for a freshly-promoted primary — half of waveThreshold: not 0 (not a reset), not inherited (crossing would be pointless)
+        [SerializeField] private float secondaryHeatDecayRate = 2f; // heat/sec passive decay for a demoted secondary pursuer, independent of player evasion
+
         [Header("References")]
         [SerializeField] private EnemyAIManager enemyAIManager;
         [SerializeField] private FactionManager factionManager;
@@ -40,6 +45,15 @@ namespace AsphaltAnarchy.Heat
         private Transform playerTransform;
         private bool isEvading;
         private float evadeTimer;
+
+        private class PursuitGroup
+        {
+            public FactionData faction;
+            public float heat;
+            public int wavesTriggered;
+        }
+
+        private readonly List<PursuitGroup> secondaryGroups = new List<PursuitGroup>();
 
         public float CurrentHeat => currentHeat;
         public float MaxHeat => maxHeat;
@@ -81,6 +95,8 @@ namespace AsphaltAnarchy.Heat
         {
             if (waveRetriggerTimer > 0f)
                 waveRetriggerTimer -= Time.deltaTime;
+
+            DecaySecondaryGroups();
 
             if (currentHeat <= 0f) return;
 
@@ -140,6 +156,9 @@ namespace AsphaltAnarchy.Heat
             foreach (var enemy in enemies)
             {
                 if (enemy == null) continue;
+                // Only the current primary pursuer's own faction can hold/clear evasion —
+                // a demoted secondary faction decays passively instead (see DecaySecondaryGroups).
+                if (enemy.Faction != encounterFaction) continue;
                 if (enemy.IsPursuing && enemy.CanSeePlayer())
                     return true;
             }
@@ -188,6 +207,68 @@ namespace AsphaltAnarchy.Heat
 
             OnHeatChanged?.Invoke(currentHeat);
             OnHeatCleared?.Invoke();
+        }
+
+        /// <summary>
+        /// Crossing a jurisdiction line (e.g. a state-line bridge): demotes the
+        /// current primary pursuer to a secondary record that retains its heat
+        /// and decays passively in the background (not cleared, not evaded off),
+        /// then promotes enteringFaction to primary — restored from where it left
+        /// off if it already had a parked secondary group, otherwise started at
+        /// jurisdictionCrossingBaseline. A handoff, not a reset.
+        /// </summary>
+        public void HandleJurisdictionCrossing(FactionData enteringFaction)
+        {
+            if (enteringFaction == null || enteringFaction == encounterFaction) return;
+
+            if (encounterFaction != null)
+            {
+                secondaryGroups.RemoveAll(g => g.faction == encounterFaction);
+                secondaryGroups.Add(new PursuitGroup
+                {
+                    faction = encounterFaction,
+                    heat = currentHeat,
+                    wavesTriggered = wavesTriggeredThisEncounter
+                });
+            }
+
+            var existing = secondaryGroups.Find(g => g.faction == enteringFaction);
+            if (existing != null)
+            {
+                secondaryGroups.Remove(existing);
+                currentHeat = existing.heat;
+                wavesTriggeredThisEncounter = existing.wavesTriggered;
+            }
+            else
+            {
+                currentHeat = jurisdictionCrossingBaseline;
+                wavesTriggeredThisEncounter = 0;
+            }
+
+            currentHeat = Mathf.Clamp(currentHeat, 0f, maxHeat);
+            encounterFaction = enteringFaction;
+            waveRetriggerTimer = 0f;
+            isEvading = false;
+            evadeTimer = 0f;
+
+            OnHeatChanged?.Invoke(currentHeat);
+        }
+
+        /// <summary>Current parked heat for a demoted secondary faction, or 0 if it has none (never crossed, or fully decayed).</summary>
+        public float GetSecondaryHeat(FactionData faction)
+        {
+            var group = secondaryGroups.Find(g => g.faction == faction);
+            return group != null ? group.heat : 0f;
+        }
+
+        private void DecaySecondaryGroups()
+        {
+            for (int i = secondaryGroups.Count - 1; i >= 0; i--)
+            {
+                secondaryGroups[i].heat -= secondaryHeatDecayRate * Time.deltaTime;
+                if (secondaryGroups[i].heat <= 0f)
+                    secondaryGroups.RemoveAt(i);
+            }
         }
     }
 }
