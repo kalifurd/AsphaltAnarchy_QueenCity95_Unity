@@ -1667,3 +1667,93 @@ Working tree at pause: clean except the user's own untracked
 Assets/Screenshots + Assets/TripoModels files (never committed by any
 session today; left untracked as-is, flagging rather than sweeping them
 into a commit unasked).
+
+[2026-08-07] Price Hill/Delhi build-scoping pass — Claude Code
+(planning only; no scene, script, or asset changes this entry)
+
+[NOTE] Task: read Docs/LevelDesign_PriceHill_Delhi_1995.md in full and
+scope a genuinely small first buildable milestone, per Dev Note #1
+(K.I.S.S. FIRST). Read the full doc, checked live scene state via
+UnityMCP before proposing scope rather than trusting assumptions.
+
+[FLAG] Checkpoint commit skipped: `git status --porcelain` shows only
+untracked files (user's own Screenshots/TripoModels from prior
+sessions, same set noted at the 2026-08-06 pause); `git diff --stat` on
+tracked files is empty. Nothing to checkpoint — this pass only read a
+doc, no scene/code/asset changes were made.
+
+[FLAG] Discrepancy from the task's premise: assumed "two existing Price
+Hill turf nodes." Checked the live scene via UnityMCP
+(find_gameobjects by component TurfNode) — exactly 7 TurfNodes exist,
+same 7 as documented in [[project_turf_heat_wiring]]:
+TurfNode_OTRAlley (60,0,60), TurfNode_QueensgateYard (-60,0,60),
+TurfNode_DowntownOverpass (0,0,-70), TurfNode_NewportRiverfront
+(70,0,-40), TurfNode_Milford (80,0,80), TurfNode_Hamilton (-80,0,-80),
+TurfNode_AbandonedSubway (10,-5,10). NONE are Price Hill. The doc's own
+§6 says its 4 proposed nodes (TurfNode_InclineHouse,
+TurfNode_EighthAndState, TurfNode_WarsawAve, TurfNode_AndersonFerry)
+are "proposed, not created" — this is correct, matches the scene.
+Price Hill has zero turf infrastructure today. Any milestone scope
+needs to build from that, not from "the two existing nodes."
+
+[FLAG] No terrain exists anywhere in the scene yet. Confirmed via MCP:
+the entire scene's ground is one flat MeshRenderer plane ("Ground",
+localScale 20/1/20, world size ~200x200 units) at y=0 — no elevation
+change, no roads, no tiers, nothing built for ANY district including
+Price Hill. The doc gives topology (what's above what) and a "~5:1
+compression" ratio but no concrete numbers: no tier-to-tier elevation
+deltas in units, no worked example converting a real road length (e.g.
+the 8th St hill) into in-game units. Terrain/road blockout can't start
+without at least one anchor number from the user — inventing a scale
+was avoided per the task's own instruction not to guess missing specs.
+
+[FLAG] No hero-building or housing-kit assets/prefabs exist yet for
+this or any district — checked Assets/Prefabs, it only holds the 6
+enemy faction prefabs (Enemy_NeonSaints, RustBarons, OTRSyndicate,
+KentuckyKings, Phantoms, HighwayKin). The doc's "10 P1 heroes + 4
+housing kits + 2 church variants + 1 storefront kit" (§4) is a naming/
+budget plan, not built art. Needs a source decision (Tripo-generate
+like the vehicle/NPC models, ProBuilder kit-bash, or an asset-store
+kit) before any building geometry can start.
+
+[FLAG] Doc's "cops in cars can't follow" framing for the incline cut
+(§2, §8.5) has no code basis to gate against yet — grepped
+Assets/Scripts, only one vehicle class exists in the whole project
+(MotorcycleController; no CarController/PoliceController/any car
+type). Either this mechanic stays narrative-only until a car vehicle
+type gets built, or it's already trivially true (nothing but
+motorcycles exists in the game) and needs zero gating code right now.
+Flagging so nobody builds bollard-collision logic against a car type
+that doesn't exist.
+
+[NOTE] Proposed minimal first buildable milestone (FOR REVIEW — not
+started, no go-ahead given yet):
+  1. TurfNode_InclineHouse only, of the doc's 4 proposed nodes —
+     hasSafehouse=true, startingFaction=PlayerCrew (the FactionManager
+     playerFaction reference per notes_rules.md invariant), placed at
+     a deliberately-chosen real coordinate (NOT inheriting the
+     ±60-80 abstract placeholder spacing the doc's §8.7 already warns
+     against).
+  2. The Incline House clubhouse building itself — 1 of the doc's 10
+     P1 hero uniques (brick former incline-powerhouse block-out:
+     barrel-vaulted hall, fenced bike yard, rooftop).
+  3. Its immediate street only — a short State Ave stub connecting the
+     clubhouse yard to the bottom mouth of the incline cut. Not the
+     full State Ave run, not the 8th St climb, not Tier 2/3 in general.
+  4. Explicitly DEFERRED past this milestone: the other 3 proposed
+     nodes (EighthAndState, WarsawAve, AndersonFerry), all four tiers
+     of terrain, the other 9 P1 heroes, all housing/church/storefront
+     kits, gateways G1-G4, the rail crossing and ferry scripted
+     systems, the incline-cut's full length and its bollard collision.
+  This is smaller than "clubhouse + street + two existing nodes"
+  because there are zero existing Price Hill nodes to build around —
+  it's a from-zero start, not an extension of standing geometry.
+
+[DONE] Planning pass complete. No scene, script, or asset changes made
+this session. Awaiting user decisions before any build work starts:
+  (a) sign off (or adjust) the minimal milestone scope above,
+  (b) at least one concrete terrain/elevation/compression number to
+      anchor the blockout,
+  (c) housing-kit and hero-building art source,
+  (d) whether "cops in cars" needs a car vehicle type built now or
+      stays deferred/narrative.
