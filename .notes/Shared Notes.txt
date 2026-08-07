@@ -2264,3 +2264,84 @@ rather than padded.
 [DONE] Memory updated: [[project_district_design_docs]] now lists all
 6 docs; districts not yet written trimmed to OTR/downtown's own light
 touches (Mount Adams, Pendleton, Covington) plus Phantoms' subway.
+
+[2026-08-07, session pause] Approaching usage limits — Claude Code
+
+[NOTE] Session paused here at the user's request (approaching usage
+lockout). Working tree confirmed clean at commit a266f60 except the
+same long-standing untracked Assets/Screenshots + Assets/TripoModels
+files noted at every prior pause this project — not swept into a
+commit, same as always.
+
+Everything done this session, in order (all committed):
+  1. [DONE] Price Hill build-scoping plan — Docs/LevelDesign_PriceHill_
+     Delhi_1995.md read in full, live scene checked via UnityMCP,
+     corrected a wrong premise ("two existing Price Hill turf nodes" —
+     there were zero), proposed the InclineHouse/clubhouse/State Ave
+     stub milestone for review.
+  2. [DONE] Built that milestone: TurfNode_InclineHouse (PlayerCrew,
+     hasSafehouse=true, added to TurfWarManager.allNodes), a placeholder
+     clubhouse cube, StateAve_Stub, and InclineCut_Stub (climbing the
+     user's real-world-derived 21.6m elevation anchor exactly). Live
+     play-tested via MCP, console clean.
+  3. [DONE] Answered a follow-up about capsule shapes in a screenshot —
+     identified via WorldToScreenPoint math as pre-existing
+     Player/NPC_Test_Info/Enemy_NeonSaints placeholders, not gizmos or
+     leftovers. This fed a new Key Invariant the user added to
+     notes_rules.md (rival faction spawns need real separation).
+  4. [DONE] Jurisdiction-handoff heat mechanic: audited HeatSystem.cs,
+     PoliceUnit.cs (still a bare stub, no pursuit AI), and confirmed
+     Newport has zero scene geometry. Proposed a minimal design, got 5
+     decisions back, then implemented HeatSystem.HandleJurisdictionCrossing()
+     — gang-scoped, additive, no HUD/API changes. Live-tested with the
+     REAL Systems/HeatSystem and real Enemy_RustBarons/Enemy_KentuckyKings
+     scene objects: heat persistence, independent secondary decay, and
+     the primary-only evasion filter all confirmed; zero scene file diff
+     after.
+  5. [DONE] Two new district docs, canon-first (FactionData read before
+     writing each time):
+     - Docs/LevelDesign_Queensgate_1995.md — Rust Barons. Thesis built
+       from their actual stat block (3-person roster, low coordination/
+       defensiveness) not the ramming aesthetic. Maps onto existing
+       TurfNode_QueensgateYard. Flagged (not decided) whether the main
+       narrative's laundering-syndicate thread physically lives here.
+       Corrected a wrong premise: no Union Terminal 3D model exists in
+       the project despite the task assuming one did.
+     - Docs/LevelDesign_Downtown_OTR_1995.md — caught that "downtown"
+       is NOT OTR Syndicate ground (it's the Neon Saints', confirmed by
+       both the live TurfNode and NeonSaints.asset) and restructured as
+       a two-faction doc. Found NeonSaints.asset's own description says
+       "corporate-backed" outright — strengthens the Queensgate
+       laundering thread without confirming it. Both docs receive
+       every prior doc's existing gateways rather than redefining them.
+
+OPEN ITEMS for whoever picks this up next, in rough priority order:
+  1. The corporate-backing/laundering-syndicate story thread is now
+     flagged in TWO docs (Queensgate's Frontage, Downtown's Sky Garage)
+     with real canon evidence (NeonSaints.asset says "corporate-backed"
+     outright) — this is the single biggest open narrative decision on
+     the board right now and both docs are built to receive an answer
+     either way.
+  2. The original 4 TurfNodes (OTRAlley, QueensgateYard, DowntownOverpass,
+     NewportRiverfront) still have no startingFaction assigned despite
+     3 of their 4 descriptions explicitly naming their controlling gang
+     in text — still needs the user's go-ahead to actually set the field.
+  3. TurfNode.StartCombatGauntlet() doesn't respect
+     FactionManager.HasFiniteManpower the way HeatSystem's wave-spawner
+     does — flagged in the Queensgate doc, matters once
+     TurfNode_QueensgateYard (3-manpower Rust Barons) gets tuned.
+  4. HandleJurisdictionCrossing() has no trigger contract yet — nothing
+     calls it in real gameplay. Blocked on real Newport bridge geometry
+     (its own future district build pass).
+  5. Districts/areas still not written: Phantoms' subway (East End
+     primary), Covington (Kings' secondary), Queensgate's West End edge,
+     Mount Adams (Saints' secondary), Pendleton (folded into the
+     Downtown/OTR doc already, not fully built).
+  6. Minor canon tension surfaced, not resolved: Phantoms.asset's
+     secondaryTerritory is "Lower Price Hill," reading slightly
+     differently than the Price Hill doc's own "no presence here" text.
+  7. Older flags still open, unchanged from before this session: scene-
+     root Tripo preview-object clutter, deletion of superseded broken
+     .glb files, Ducati model unassigned.
+Working tree at pause: clean at commit a266f60, same untracked
+Screenshots/TripoModels as always.
