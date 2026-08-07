@@ -2183,3 +2183,84 @@ gave Covington.
 
 [DONE] Memory updated: [[project_district_design_docs]] now lists all
 5 docs and the Union Terminal/manpower-mismatch findings.
+
+[2026-08-07, continued] Sixth district doc: Downtown & Over-the-Rhine
+— Claude Code
+(docs only; no code, scene, or asset changes this entry)
+
+[DONE] Created Docs/LevelDesign_Downtown_OTR_1995.md. Canon-first per
+established discipline: read NeonSaints.asset and OTRSyndicate.asset
+before writing anything.
+
+[FLAG-then-resolved] The task asked for "the OTR/downtown doc" assuming
+(reasonably) that's OTR Syndicate ground throughout. Live-checked
+TurfNode_DowntownOverpass before writing and found its description
+already reads "A Neon Saints stunt run across the Downtown overpasses"
+— Downtown itself is NOT OTR Syndicate territory, it's the Neon
+Saints', confirmed independently by NeonSaints.asset's own
+primaryTerritory=Downtown field. Did not silently build around the
+wrong premise: restructured this as a genuinely two-faction doc (OTR
+Syndicate in Over-the-Rhine, Neon Saints in Downtown) rather than
+one-faction doc with two neighborhood names.
+
+[DONE] Major canon discovery, unprompted: NeonSaints.asset's own
+description says **"corporate-backed"** outright — the only faction in
+the game described that way. This directly strengthens (does not
+confirm) the story thread flagged in the Queensgate doc (a possible
+corporate-backed syndicate laundering money through salvage yards).
+Flagged explicitly in §1/§6 as a stronger-but-still-undecided thread,
+cross-referenced back to Queensgate's own flag rather than treated as
+newly resolved. The Neon Saints' clubhouse ("The Sky Garage") is built
+as the physical expression of this if the user ever confirms it —
+deliberately left without an owner/backer name.
+
+[DONE] Central Parkway (built over the historic Miami & Erie Canal —
+the real etymology behind "Over-the-Rhine," German immigrants crossing
+"the Rhine" to reach the neighborhood) used as the literal, historically
+real seam between the two factions' ground. Received rather than
+redefined where it already appears in other docs: it's the same road
+Queensgate's G3 already uses.
+
+[DONE] Maps onto BOTH existing nodes, no new turf proposed:
+TurfNode_DowntownOverpass (Neon Saints, Stunt captureType, matches
+their precision/coordination canon) and TurfNode_OTRAlley (OTR
+Syndicate, Race captureType, matches "alley-runners" directly). Both
+confirmed startingFaction=NULL live — same pre-existing gap as the
+other original nodes, not new, not fixed by this doc.
+
+[DONE] Received (not redefined) every existing companion-doc gateway
+that already points at "downtown/OTR": Price Hill's G1 (Queensgate ->
+downtown/OTR) and G2 (Waldvogel Viaduct -> downtown riverfront ->
+Newport bridges), Newport's G1 (three Ohio bridges -> downtown), and
+Queensgate's G3/G4. Established two genuinely NEW gateways this doc
+owns: G3 Roebling Suspension Bridge -> Covington (Kentucky Kings'
+canon secondary, light touch only) and G5 Columbia Parkway/Mount Adams
+-> East End (Phantoms' canon PRIMARY territory per Phantoms.asset,
+off-map, future doc).
+
+[NOTE] Found and flagged a minor canon tension while researching
+(not this doc's job to resolve): Phantoms.asset's own
+secondaryTerritory field is "Lower Price Hill," which reads a little
+differently than the Price Hill doc's existing text ("Phantoms: no
+presence here... at most a watched rail spur"). Logged plainly in §6
+as a fact surfaced during research, not treated as a contradiction
+needing a fix.
+
+[DONE] Kept Mount Adams (Neon Saints' canon secondary) and Pendleton
+(OTR Syndicate's canon secondary) deliberately light-touch, same
+restraint pattern as Covington in the Newport doc and the West End edge
+in the Queensgate doc — one anchor mention each, not built out.
+
+[NOTE] Heat-origin precinct deliberately left unconfirmed/hedged in §6
+— CPD District 1 plausibly covers downtown/OTR historically, but this
+doc doesn't have Price-Hill-level address confidence (District 3, 3201
+Warsaw) for it, and says so rather than inventing a specific address.
+
+[NOTE] Hero-building budget: 8 P1 uniques across both factions —
+larger than Queensgate's deliberately small budget (this covers two
+full primary territories, not one small gang's ground), proportionate
+rather than padded.
+
+[DONE] Memory updated: [[project_district_design_docs]] now lists all
+6 docs; districts not yet written trimmed to OTR/downtown's own light
+touches (Mount Adams, Pendleton, Covington) plus Phantoms' subway.
