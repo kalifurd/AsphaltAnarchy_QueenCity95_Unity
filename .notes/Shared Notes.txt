@@ -2093,3 +2093,93 @@ tests):
 jurisdiction seam flagged back on 2026-08-06. Still blocked on real
 Newport bridge geometry (its own future district build pass) before
 anything can actually call HandleJurisdictionCrossing in real gameplay.
+
+[2026-08-07, continued] Fifth district doc: Queensgate — Claude Code
+(docs only; no code, scene, or asset changes this entry)
+
+[DONE] Created Docs/LevelDesign_Queensgate_1995.md — Rust Barons MC
+territory, completing a 5th entry in the district-doc set (Price Hill,
+Milford, Hamilton, Newport, now Queensgate). Canon-first per
+instruction: read RustBarons.asset before writing anything. Their full
+stat block (aggression 0.9, coordination 0.3, defensiveness 0.2,
+startingManpower=3 — smallest roster of any gang, fearThreshold 0.5,
+echoResponseHigh "frozen with fear, stalling out mid-charge") shaped
+the thesis directly, not just the reskinned-GSX-R750/ramming aesthetic:
+"scrapping in the shadow of someone else's machine" — the Barons hold
+gaps in a rail/industrial machine they don't own or control, not a
+fortress. Deliberately scoped smaller than every companion doc (4 P1
+heroes vs. Price Hill's 10 or Newport's 6) per the user's explicit
+"doesn't need to be the biggest district" instruction.
+
+[DONE] Maps onto the EXISTING TurfNode_QueensgateYard rather than
+proposing new turf, per instruction — live-checked its actual current
+data via UnityMCP before writing: position (-60,0,60), captureType
+CombatGauntlet, hasSafehouse=true (already set, matches the doc's
+clubhouse/safehouse pairing with zero conflict), startingFaction
+currently unassigned/neutral (same pre-existing gap the
+project_turf_heat_wiring memory already tracks for the original 4
+nodes — not new, not fixed by this doc).
+
+[DONE] Received and built on Price Hill's already-established G1 (8th
+Street Viaduct -> Queensgate) rather than re-deriving it — the doc's
+own G1 entry explicitly says "received, not redefined" and describes
+only the Queensgate-side landing, leaving the Price Hill doc's existing
+description of the same span untouched.
+
+[DONE] Wove in the user's story thread (a corporate-backed syndicate
+possibly laundering money through local salvage yards) as a clearly
+FLAGGED, undecided narrative hook rather than invented canon: proposed
+one P1 location ("The Frontage" — a fenced, camera'd, too-clean salvage
+lot on Gest St, deliberately left unnamed/undesigned in detail) built
+to be that operation's physical home IF the user confirms the thread,
+with §6 explicit that whether/how the Rust Barons interact with it is
+a story decision this doc doesn't make. Same treatment class as
+Newport's mid-river heat seam — flagged, not resolved.
+
+[FLAG] Corrected a factual premise in the task before writing: no
+Cincinnati Union Terminal 3D model exists anywhere in the project —
+checked via UnityMCP AssetDatabase.FindAssets("union"/"terminal") (zero
+matches beyond unrelated TextMesh Pro/MCP package files) and a
+filesystem search of Assets/TripoModels. Included Union Terminal in the
+doc anyway as a real, period-accurate, geographically-correct landmark
+(west end of Ezzard Charles Drive, matches RustBarons' real-world
+adjacent geography) — same "design reference, not built yet" treatment
+every other doc gives its unbuilt hero content — but flagged clearly in
+the doc itself (§4, §8) that no model currently backs it, so nobody
+downstream assumes otherwise.
+
+[NOTE] Code-reading turned up a real (pre-existing, unrelated to this
+doc) inconsistency worth flagging for whenever TurfNode_QueensgateYard
+actually gets tuned: TurfNode.StartCombatGauntlet() spawns its
+serialized `enemyCount` (class default 5) directly via
+EnemyAIManager.SpawnEnemyWave, without checking
+FactionManager.HasFiniteManpower/ConsumeManpower the way
+HeatSystem.SpawnReinforcementWave() already does. RustBarons.asset caps
+at startingManpower=3 — if enemyCount is left at default, a single
+capture attempt could spawn more Rust Barons than their canon roster
+has. Logged in the doc's §6, not fixed (out of scope for a docs-only
+pass).
+
+[NOTE] Treated the real Kenyon-Barr urban-renewal history (the
+neighborhood displaced in the late 1950s-60s to build Queensgate) as a
+tone guardrail in §7, same class of treatment as the Newport doc's
+Beverly Hills Supper Club fire guardrail — acknowledged directly in the
+doc's orientation section (§1) and period checklist (§7), explicitly
+not gameplay dressing or ruins flavor.
+
+[NOTE] Did not retroactively edit the other 4 docs' "Companion docs"
+header lines to add Queensgate — confirmed via grep this was never the
+actual established pattern (Newport's own companion line lists Price
+Hill/Milford/Hamilton, but Milford and Hamilton's lines were never
+updated to add Newport after the fact). Followed the real precedent:
+only the newest doc lists everyone before it.
+
+[NOTE] Districts not yet written, unchanged: downtown/OTR (OTR
+Syndicate), Phantoms' subway, Covington (Kentucky Kings' canon
+secondary, optional). Queensgate's own West End edge (Rust Barons'
+canon secondary territory) was deliberately kept light this pass — one
+anchor location, not a built-out sub-district, same restraint Newport
+gave Covington.
+
+[DONE] Memory updated: [[project_district_design_docs]] now lists all
+5 docs and the Union Terminal/manpower-mismatch findings.
