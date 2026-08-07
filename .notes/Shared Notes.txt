@@ -1887,3 +1887,106 @@ for any district (none do yet). Read and acknowledged this session —
 no further action needed right now, just carrying it forward as
 standing guidance for whenever Price Hill (or any district) gets a
 real coordinate plan.
+
+[2026-08-07, continued] Jurisdiction-handoff heat mechanic — planning/
+audit pass — Claude Code
+(no code, scene, or asset changes this entry — proposal only, per the
+task's own "planning pass, not a full build" framing)
+
+[DONE] Step 1 checkpoint check: no tracked changes to commit — git
+status clean except the same untracked Screenshots/TripoModels files
+present every prior pass. Nothing to checkpoint.
+
+[DONE] Step 2 — read HeatSystem.cs in full, plus its actual consumers
+(EnemyAI.cs, EnemyAIManager.cs, HeatHUD.cs, PoliceUnit.cs) to ground
+findings in real code:
+  - HeatSystem has ZERO concept of location, zones, or jurisdiction
+    today. Exactly one global `currentHeat` scalar and one
+    `encounterFaction` (FactionData) at a time — whichever faction's
+    gang member last dealt damage (HandleEnemyDamaged) or whose turf
+    node the player last entered (HandleTurfEntered) simply overwrites
+    encounterFaction. No concept of "which faction is currently
+    pursuing" beyond that single field; no way today to track two
+    factions' pursuit concurrently.
+  - AnyPursuerHasLineOfSight() (drives the evasion/heat-clear
+    countdown) checks ALL active enemies globally via
+    EnemyAIManager.GetActiveEnemies(), no per-faction/per-zone filter.
+  - SpawnReinforcementWave() always spawns encounterFaction's prefab —
+    single-faction only, same limitation.
+  - BIGGER FINDING: police have no pursuit AI at all. PoliceUnit.cs is
+    still exactly the 2026-08-04 Myth Walk stub — isDiverted bool +
+    DivertPatrol(), no FactionData, no movement, no chase state
+    machine. README.md explicitly lists police pursuit AI as unbuilt
+    future work. The ONLY thing that actually chases/attacks the
+    player is EnemyAI (gang riders), tied to FactionData. This means:
+    if "jurisdiction" is meant as literal OH-PD-vs-KY-PD police
+    handoff, there's nothing to escalate/de-escalate yet — a bigger
+    prerequisite than this pass. If it means gang-faction pursuers
+    (e.g. Rust Barons chasing across into Kentucky Kings ground), the
+    existing EnemyAI/FactionData machinery is sufficient to hang this
+    on right now. Flagging the distinction rather than assuming one.
+  - HeatHUD.cs only reads HeatSystem.HeatFraction + the 3 static
+    events — a single flame-meter graphic, no per-faction display.
+    Relevant to the proposal below: keeping the public API mapped to
+    one "primary" pursuer means the HUD needs zero changes.
+
+[DONE] Step 3 — checked Newport's live scene state via UnityMCP
+(find_gameobjects, hierarchy). Confirmed: nothing exists beyond
+TurfNode_NewportRiverfront (70,0,-40, one of the original 4
+pre-existing nodes). No bridge geometry, no jurisdiction-boundary
+trigger, nothing named Newport/Bridge anywhere else in the scene.
+Matches [[project_district_design_docs]]'s standing note that only
+Price Hill has had a real build pass. Did NOT invent placeholder
+bridge geometry to test against — there's genuinely nothing to hook a
+trigger into yet, reporting that as the real finding per instruction.
+
+[NOTE] Proposed minimal HeatSystem-level design (FOR REVIEW — no code
+written this pass):
+  Keep the existing single-currentHeat/single-encounterFaction model
+  exactly as today for the "primary" pursuer — zero changes to
+  AddHeat, TryTriggerWave, ClearHeat, the public API, or any consumer.
+  Add one small additive-only extension:
+    - A private PursuitGroup {FactionData faction; float heat; int
+      wavesTriggered;} record, used only for factions that have been
+      de-escalated to secondary (not exposed to HUD/consumers).
+    - A new public method, e.g. HandleJurisdictionCrossing(FactionData
+      enteringFaction):
+      1. If there's a current primary (encounterFaction != null), park
+         it as a secondary PursuitGroup, retaining its exact current
+         heat and wave count — no reset, no clear, matches the decided
+         "handoff not reset" behavior.
+      2. If enteringFaction already has a parked secondary group
+         (re-crossing back), restore it as the new primary from where
+         it left off; otherwise start it fresh as primary.
+      3. Existing EnemyAI instances belonging to the demoted faction
+         are NOT touched by this method — they keep running their own
+         Chase/Attack state machine untouched, which already satisfies
+         "keeps pursuing" for free, no new EnemyAI code needed.
+  Entirely testable the Myth Walk way: no real bridge geometry or even
+  spawned GameObjects required, just a temporary HeatSystem component +
+  two real FactionData assets exercised directly via execute_code,
+  verified, then torn down.
+
+[FLAG] Open decisions needed before this gets built (not guessed at):
+  1. Is "jurisdiction" here gang-faction pursuit (buildable now on
+     EnemyAI/FactionData) or literal police jurisdiction (OH PD vs KY
+     PD, which has no pursuing AI yet)? Very different scope.
+  2. What heat value a freshly-promoted entering faction starts at on
+     a FIRST crossing (no prior parked group) — 0, or a floor value so
+     it doesn't feel like a soft reset even though the number isn't
+     technically cleared?
+  3. Should the evasion/heat-clear countdown apply per-group once a
+     secondary exists, or stay a single global check (its current
+     construction)? As proposed, a demoted secondary could keep
+     chasing indefinitely with no way to independently evade off them
+     while only primary heat drives the visible clear.
+  4. Confirm only one "primary" pursuer at a time is intended (matches
+     "a handoff" language) — no scenario where two jurisdictions are
+     both primary simultaneously.
+  5. What actually calls HandleJurisdictionCrossing and how a
+     zone/bridge gets identified is undefined until real Newport
+     bridge trigger geometry exists in a future district build pass.
+
+[DONE] Memory updated: [[project_district_design_docs]] now records
+this audit's findings so the next session doesn't have to re-derive
+them before the flagged decisions get resolved.
