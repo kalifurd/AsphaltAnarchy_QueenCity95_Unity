@@ -67,3 +67,13 @@ Numbered, append new ones at the bottom, don't renumber old ones.
   tools — and the only fix is closing and reopening a fresh session once
   Unity's already up. This has hit three sessions in a row; it's a
   startup-order habit now, not a bug to keep working around each time.
+- **Rival faction territory/spawn placement needs real separation, not
+  just narrative rivalry.** Factions can be close rivals in lore without
+  their turf nodes or spawn points sitting immediately adjacent on the
+  map — nobody should be able to walk out of their own clubhouse into an
+  active rival encounter. No coordinate plan exists yet for any district
+  (every level design doc has placeholder/no coordinates so far), so
+  this has to be an explicit check once real district coordinates get
+  assigned, not something that happens to work out. Flagged first when
+  Enemy_NeonSaints' spawn point turned out to sit ~15 units from the new
+  Price Hill InclineHouse cluster.

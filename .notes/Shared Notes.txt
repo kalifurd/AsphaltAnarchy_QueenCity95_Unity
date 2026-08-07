@@ -1856,3 +1856,34 @@ applies to this new node same as the rest).
 TurfNode_InclineHouse as built (8 nodes total) and the PlayerFaction
 assignment as confirmed-good, correcting the "one known gap" framing
 that no longer fully applies.
+
+[2026-08-07, continued] Clubhouse-cluster screenshot follow-up — Claude Code
+(investigation + notes_rules.md read only; no scene/script changes)
+
+[NOTE] User asked what the small capsule-like shapes were in the
+game-view screenshot of the clubhouse cluster (Assets/Screenshots/
+screenshot-20260807-100910.png). Identified via WorldToScreenPoint math
+against the exact camera transform used for the shot (temp probe
+Camera, same position/rotation/FOV, destroyed after) rather than
+guessing from the image alone:
+  - The two capsules near the bottom of frame = Player (world origin
+    0,1,0) and NPC_Test_Info (2,1,0) — both use a plain capsule
+    primitive as a placeholder body mesh.
+  - The capsule along the ramp = Enemy_NeonSaints, a faction spawn
+    placeholder at (10,1,-60).
+  All three are pre-existing scene objects (not gizmo icons, not
+  leftovers from the milestone build) that happen to sit near enough to
+  the new InclineHouse cluster's coordinates (-40,0,-50 area) to land
+  in this particular camera framing. Flagged to the user that
+  Enemy_NeonSaints' spawn sits only ~15 units from the
+  InclineCut_Stub's top end — coincidental, not a bug, but worth
+  accounting for once Price Hill gets a real coordinate plan.
+
+[DONE] notes_rules.md was updated (by the user) with a new Key
+Invariant directly from that finding: rival faction territory/spawn
+points need real physical separation, not just narrative rivalry, and
+this must be an explicit check once real district coordinates exist
+for any district (none do yet). Read and acknowledged this session —
+no further action needed right now, just carrying it forward as
+standing guidance for whenever Price Hill (or any district) gets a
+real coordinate plan.
