@@ -2345,3 +2345,118 @@ OPEN ITEMS for whoever picks this up next, in rough priority order:
      .glb files, Ducati model unassigned.
 Working tree at pause: clean at commit a266f60, same untracked
 Screenshots/TripoModels as always.
+
+[2026-08-07] Norwood doc + TurfNode_AbandonedSubway neutral reassignment — Claude Code
+
+[DONE] Docs/LevelDesign_Norwood_1995.md added — the first deliberately
+NEUTRAL district doc (no owning faction), same structural role as Price
+Hill's TurfNode_WarsawAve/TurfNode_AndersonFerry but for a whole
+district. Thesis: Norwood's real independent-city status (own
+PD/fire/schools since 1903, fully encircled by Cincinnati) as the
+generator of "nobody controls it." GM Norwood Assembly's 1987 "Black
+Wednesday" closure + demolished plant site (Smith Rd/Norwood Lateral) is
+the contested-ground centerpiece; US Playing Card Co. (Beech Ave) is the
+working counterpoint. Proposes two new Neutral TurfNodes
+(TurfNode_NorwoodPlantSite, TurfNode_MontgomeryPike) — neither created
+yet, doc-only. Sensitivity handling: the real 1990 BASF explosion
+(Norwood/Evanston border) given the same restraint as Newport's Beverly
+Hills fire — background NPC mention at most, never a location.
+
+[NOTE] Faction-fit check flagged in the doc, not decided: a Rust Barons
+secondary-claim alternative (industrial-scrapper thematic fit with the
+dead plant site) was considered and the doc recommends against it (no
+Queensgate border contiguity, cuts against the neutral thesis) — left as
+a one-line swap in the doc's own §6 if the user wants that instead.
+
+[DONE] TurfNode_AbandonedSubway reassigned to neutral (startingFaction =
+null), resolving the real canon conflict the Downtown/OTR doc surfaced:
+the node's own description says "The Phantoms' lair," but
+Phantoms.asset's actual canon territory is East End (primary) / Lower
+Price Hill (secondary) — Central Parkway/downtown was never actually
+Phantoms ground per their own FactionData. Same neutral pattern already
+used by TurfNode_WarsawAve/TurfNode_AndersonFerry (both proposed-only,
+never built) — this one is a real, already-existing scene node, so it's
+a one-field edit, not new content, per Dev Note #1 (K.I.S.S. FIRST).
+Sequence: git commit checkpoint first (f444c65, also picked up the
+uncommitted Price Hill InclineHouse scene changes and the new Norwood
+doc sitting in the working tree), then
+manage_components.set_property(TurfNode.startingFaction = null) on
+instance 27240, verified via the component resource (both
+StartingFaction and startingFaction read null, ControllingFaction also
+null/unassigned). Live-tested in Play mode via UnityMCP: confirmed the
+node is present in TurfWarManager.allNodes with ControllingFaction=null
+and StartingFaction=null; console clean (0 errors/warnings) through the
+whole play/stop cycle. Scene saved after.
+
+[NOTE] The node's description text ("The Phantoms' lair in the
+abandoned Cincinnati subway tunnels beneath Central Parkway") was left
+as-is — only the faction assignment field changed, not the flavor text.
+Flavor-text cleanup (if wanted) is a separate, smaller decision; noted
+here so it doesn't get silently forgotten, not acted on.
+
+Working tree: commit f444c65 (checkpoint) + this session's uncommitted
+scene edit (TurfNode_AbandonedSubway neutral, scene saved, not yet
+committed) — same untracked Screenshots/TripoModels as every prior
+session.
+
+[DONE] Docs/LevelDesign_EastEnd_1995.md added — Phantoms MC's real
+primary territory per Phantoms.asset (canon-first, read before writing,
+same discipline as Newport/Queensgate/Downtown-OTR). Supersedes the old
+TurfNode_AbandonedSubway guess in spirit (that node stays neutral, per
+this session's earlier reassignment — this doc doesn't touch it, it
+proposes a new node instead). Thesis built from the full stat block:
+lowest coordination in the game (0.2), high fear threshold (0.6),
+mildest playerRelation (-0.3) of any rival faction. Unprompted technical
+find: Phantoms.asset doesn't override hasFiniteManpower/startingManpower
+(stays at script default false/20, effectively uncapped) — unlike Rust
+Barons' explicit 3-manpower cap — used directly to back the canon line
+"nobody agrees how many there are" as a real mechanical fact, not just
+flavor text. Clubhouse "The Icehouse" [F] designed to be visually
+indistinguishable from neighboring warehouse husks, no visible front
+door, matching the faction's anonymity identity by construction, not
+just by name. Proposes one new TurfNode (TurfNode_EastEndIcehouse,
+Phantoms, hasSafehouse=true) — doesn't exist in-scene yet. Receives
+Downtown/OTR's existing G5 (Columbia Pkwy through Mount Adams) rather
+than re-deriving it.
+
+[FLAG] Re-flagged, not resolved: Phantoms.asset.secondaryTerritory =
+"Lower Price Hill" still contradicts the Price Hill doc's own §6 text
+("Phantoms: no presence here"). First surfaced in the Downtown/OTR doc,
+now logged a third time in the East End doc itself. Needs a human
+decision: which document is wrong, or clear/reassign the
+secondaryTerritory field. Not self-resolved per Dev Note #1/Rule 3 —
+this is exactly the kind of ambiguity that gets flagged, not guessed.
+
+[NOTE] New system suggested, not built: a Turkey Bottoms fog/reduced-
+visibility zone (§6 of the East End doc) — the first environmental-
+visibility mechanic proposed for the game. Flagged as new scope in the
+doc itself, not implemented here.
+
+Working tree: same as above (checkpoint f444c65 + uncommitted
+TurfNode_AbandonedSubway scene edit) plus this new untracked doc file —
+nothing further committed this session beyond the earlier checkpoint.
+
+[2026-08-07, continued] KISS cleanup: commit the pending
+TurfNode_AbandonedSubway edit + East End doc — Claude Code
+
+[DONE] Fixed the last loose end from the neutral reassignment above:
+the node's description field still read "The Phantoms' lair in the
+abandoned Cincinnati subway tunnels beneath Central Parkway" despite
+startingFaction already being null — flavor text hadn't been touched,
+per the earlier [NOTE]. Updated to "Abandoned Cincinnati subway tunnels
+beneath Central Parkway. No gang controls this ground." (Assets/Scenes/
+QueenCity_Main.unity, TurfNode component on the AbandonedSubway
+GameObject, line ~7066).
+
+[DONE] Committed only the two items this cleanup targeted — scene file
+(TurfNode_AbandonedSubway startingFaction=null + the description fix
+above) and Docs/LevelDesign_EastEnd_1995.md (previously untracked).
+Commit 888a47e. Deliberately left everything else in the working tree
+untouched (same standing practice as every prior checkpoint): the
+pre-existing uncommitted .notes/notes_rules.md edits (unrelated,
+already there before this cleanup started, not part of this task) and
+the usual untracked Screenshots/TripoModels churn.
+
+Working tree after: commit 888a47e, clean except .notes/notes_rules.md
+(pre-existing uncommitted edits, not this session's) and the standing
+untracked Screenshots/TripoModels files.
