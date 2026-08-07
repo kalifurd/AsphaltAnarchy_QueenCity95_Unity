@@ -7063,9 +7063,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AsphaltAnarchy.Factions.TurfNode
   nodeName: Abandoned Subway
-  description: The Phantoms' lair in the abandoned Cincinnati subway tunnels beneath
-    Central Parkway.
-  startingFaction: {fileID: 11400000, guid: 545134168f57f59449333df41d76afac, type: 2}
+  description: Abandoned Cincinnati subway tunnels beneath Central Parkway. No
+    gang controls this ground.
+  startingFaction: {fileID: 0}
   captureType: 2
   difficultyRating: 7
   enemyCount: 3
