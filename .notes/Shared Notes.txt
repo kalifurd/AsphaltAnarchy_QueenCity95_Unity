@@ -1757,3 +1757,102 @@ this session. Awaiting user decisions before any build work starts:
   (c) housing-kit and hero-building art source,
   (d) whether "cops in cars" needs a car vehicle type built now or
       stays deferred/narrative.
+
+[2026-08-07, continued] Price Hill first milestone BUILT — Claude Code
+(scene changes this entry: 4 new GameObjects in QueenCity_Main, scene
+saved and live-tested via UnityMCP; no script changes)
+
+[NOTE] Scope: exactly the milestone proposed in the prior planning
+pass, nothing beyond it (K.I.S.S. FIRST) — TurfNode_InclineHouse, the
+clubhouse placeholder, and a State Ave stub toward the incline cut's
+mouth. All other Price Hill content (the other 3 proposed nodes, full
+terrain tiers, remaining hero buildings, kits, gateways) intentionally
+untouched.
+
+[DONE] Step 1 checkpoint: committed the only tracked change (last
+pass's Shared Notes.txt entry) before starting build work.
+
+[DONE] Step 2 blocker check: FactionManager.PlayerFaction is NOT
+unassigned — verified live via UnityMCP SerializedObject inspection
+that Systems/FactionManager.playerFaction points at a real asset,
+Assets/ScriptableObjects/Factions/PlayerCrew.asset, and it's present in
+allFactions (7 entries: NeonSaints, RustBarons, OTRSyndicate,
+KentuckyKings, Phantoms, HighwayKin, PlayerCrew). This open item from
+the original "Player" string-lookup fix is CLOSED — no longer a
+blocker for PlayerCrew-owned turf. Not something this session created;
+it was already correctly assigned in the scene.
+
+[DONE] Step 3 elevation anchor applied exactly as given: 21.6m rise
+used directly (no recalculation) as the vertical dimension of the
+incline-cut climb geometry — see below.
+
+[DONE] Step 4 — TurfNode_InclineHouse created at (-40, 0, -50), matching
+the existing node pattern (SphereCollider radius 10 trigger,
+TerritoryBorder child: flattened Cylinder scale (10,0.02,10) local pos
+(0,0.05,0), same as TurfNode_OTRAlley). nodeName="The Incline House",
+startingFaction=PlayerCrew, hasSafehouse=true, safehouseSpawnPoint = new
+child Transform at local (0,0,-8) (in the yard, toward the clubhouse).
+Manually appended to TurfWarManager.allNodes (index 7, count 4->8) —
+the standing gotcha from notes_rules.md/[[project_turf_heat_wiring]]
+was handled, not hit.
+
+[DONE] Step 5 — clubhouse block-out: "InclineHouse_Clubhouse_PLACEHOLDER",
+a plain Cube primitive, 20x8x15 units, centered (-40,4,-65) (base at
+y=0), tinted brick-brown as a visual placeholder only — no real art,
+per instruction. Sits just off the State Ave stub, not overlapping it.
+
+[DONE] Step 6 — State Ave stub + incline-cut climb, geometry only, no
+vehicle-gating logic added (confirmed via grep: only MotorcycleController
+exists, no car class, so there's nothing to gate against yet — matches
+PoliceUnit having no movement/pursuit logic beyond isDiverted from the
+Myth Walk task):
+  - StateAve_Stub: flat Cube, 20(long)x0.2x8 units, y=0.1, from
+    (-40,0,-50) to (-20,0,-50). Tagged "Asphalt", layer "Ground" (both
+    pre-existing project tags/layers, matched to MotorcycleController's
+    DetectSurface() tag switch and the existing Ground object's layer).
+  - InclineCut_Stub: rotated Cube ramp climbing from (-20,0,-50) to
+    (20,21.6,-50) — horizontal run of 40 units is this session's own
+    placeholder choice (flagged, not doc-specified); the 21.6m rise is
+    the user's mandated number, applied unmodified. Tagged "Dirt" (also
+    pre-existing, matches the doc's "dirt scar" description and gives
+    it correctly lower grip via MotorcycleController once driven).
+    Angle ~28.4 deg from horizontal.
+
+[DONE] Step 7 playtest, live via UnityMCP manage_editor(play/stop):
+  - Time.frameCount advanced normally between calls (619 frames over
+    ~2.7s) — no repeat of the focus-freeze gotcha this session.
+  - TurfNode_InclineHouse.ControllingFaction == PlayerCrew ==
+    FactionManager.PlayerFaction at runtime (TurfWarManager.Initialize()
+    applied StartingFaction correctly). TurfWarManager.GetPlayerClaimedNodes()
+    returned exactly 1 node: "The Incline House."
+  - Console stayed clean through Start()/Initialize() — only the
+    expected "[GameManager] State changed to: Exploring" log, no
+    errors or warnings.
+  - Incline ramp's measured bounds height = 22.48 units (vs. the exact
+    21.6 analytic rise baked into its endpoints — the ~0.9 unit
+    difference is just the rotated box's own thickness padding the
+    axis-aligned bounding box, not a real discrepancy). Matches "roughly
+    ~21.6m" as specified.
+  - Exited play mode cleanly; edit-mode scene state (8 nodes incl. the
+    new one) confirmed intact afterward, matching what was saved before
+    entering play.
+
+[NOTE] Screenshots taken via UnityMCP positioned capture confirm the
+ramp, node, and clubhouse placeholder sit together sensibly (ramp
+rising away from the clubhouse/node cluster). Saved under
+Assets/Screenshots/ (not committed as part of this entry — same
+untracked-screenshot situation as the rest of the project's screenshot
+folder).
+
+[FLAG] Nothing broke, but flagging choices made without a spec so they
+can be revisited: the 40-unit horizontal run for the incline-cut climb
+(only the 21.6m rise was mandated), and the exact world coordinates
+chosen for this cluster (-40,0,-50 area) — picked for clearance from
+the 7 existing abstract-placeholder nodes, not from any real coordinate
+plan (Price Hill still doesn't have one; doc §8.7's caveat still
+applies to this new node same as the rest).
+
+[DONE] Memory updated: [[project_turf_heat_wiring]] now reflects
+TurfNode_InclineHouse as built (8 nodes total) and the PlayerFaction
+assignment as confirmed-good, correcting the "one known gap" framing
+that no longer fully applies.
