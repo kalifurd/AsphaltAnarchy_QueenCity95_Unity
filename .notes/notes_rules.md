@@ -50,10 +50,14 @@ Numbered, append new ones at the bottom, don't renumber old ones.
   / `.Factions` / `.AI` — cross-namespace references need explicit
   `using` directives, this codebase has been bitten by missing ones
   before.
-- **6 FactionData assets exist, not 5** — the 5 visible gangs plus a
-  `PlayerFaction` reference on `FactionManager` (`playerFaction` field).
-  Turf ownership checks compare against this reference, not a
-  string-matched "Player" faction name.
+- **7 FactionData assets exist, not 5 or 6** — 6 gangs (Rust Barons,
+  OTR Syndicate, Neon Saints, Kentucky Kings, Phantoms, Highway Kin)
+  plus a `PlayerFaction` reference on `FactionManager` (`playerFaction`
+  field, points at PlayerCrew.asset). Turf ownership checks compare
+  against this reference, not a string-matched "Player" faction name.
+  (This invariant went stale once before, when Highway Kin was added as
+  a real 6th gang on 2026-08-06 — worth double-checking this line is
+  still accurate if another faction is ever added.)
 - **Tripo3D GLB imports land at a normalized ~1-unit bounding box, not
   real-world meters.** Rescale on import (~2x for a real-world-length
   motorcycle) or physics/camera distances will be wrong.
@@ -77,3 +81,17 @@ Numbered, append new ones at the bottom, don't renumber old ones.
   assigned, not something that happens to work out. Flagged first when
   Enemy_NeonSaints' spawn point turned out to sit ~15 units from the new
   Price Hill InclineHouse cluster.
+- **The Tripo DCC Bridge Unity plugin has a fragile, easy-to-lose fix.**
+  Its bundled websocket-sharp.dll negotiates compression by default,
+  which silently breaks large file-transfer frames — the connection
+  looks fully healthy (handshake succeeds, ping/pong works) but the
+  actual model data never arrives. Fixed once in WebSocketSharpServer.cs
+  (IgnoreExtensions=true on the service initializer, plus wiring the
+  server's Log to the plugin's own log output) — but it's a local file:
+  package, not git-tracked, and re-downloading a fresh copy from
+  Tripo.ai silently overwrites the fix. This already happened once
+  (2026-08-06) and had to be reapplied. If Tripo transfers start
+  silently failing again despite showing "connected," check
+  Packages/manifest.json for the current plugin path and reapply this
+  fix before assuming it's a Tripo.ai service outage — full details in
+  project_tripo_dcc_bridge_websocket_fix.md.
