@@ -2928,3 +2928,140 @@ position) were tool-mechanics issues caught and self-corrected via
 verification, not design decisions. WarsawAve/AndersonFerry remain
 untouched, still blocked on the terrain-plan decision logged
 previously. Committing this work now per instruction.
+
+[2026-08-08, continued] WarsawAve/AndersonFerry terrain planning pass
+— Claude Code (planning only, per instruction — no scene/terrain
+changes made this session; git status confirmed clean throughout)
+
+[DONE] Checkpoint check: working tree was already clean at commit
+ddc3d20 (pushed to origin/master) — that commit served as the
+checkpoint, no new commit needed before starting.
+
+[DONE] Investigated InclineCut_Stub's actual geometry live via Unity
+MCP (position/rotation/scale, not assumed) to answer whether
+TurfNode_WarsawAve can reuse its existing top endpoint rather than
+needing a disconnected new elevated area. Computed the ramp's true
+walking-surface landing points (not just a box corner): bottom landing
+at world (-20.24, 0.44, -50) — sits right at StateAve_Stub's east edge,
+confirms the ramp correctly starts at the flats; top landing at world
+(19.76, 22.04, -50). Measured rise (22.04 - 0.44 = 21.6 units) matches
+the user's real-topo-derived elevation anchor (Western Hills Viaduct
+159m -> West Price Hill crest 267m, 5:1 compression) EXACTLY — this
+was cross-checked against the original figure logged when InclineHouse
+was built, not re-derived or guessed.
+
+[DONE] Cross-checked against the doc's own topology before concluding
+anything: §2's road table explicitly places "Price Hill Incline
+right-of-way [R]: 2->3, motorcycle-only... between W. 8th at the
+bottom and Matson Place at the crest," and §4's East Price Hill list
+names "Incline overlook (Price Hill House site/Olden View)... The
+crest of the dead incline at Matson Place... Top of the bike-only
+incline cut" as its own P1 landmark — a DIFFERENT specific spot from
+Warsaw Ave itself (Warsaw Ave is its own east-west street per §2, not
+the same point as the incline top). Both are Tier 3 crest content
+though, per §1's tier table (East Price Hill crest = Tier 3), and §5's
+"Local-knowledge loop" route (8th St hill up -> incline cut down ->
+State Ave) treats the incline top as part of the same connected
+crest neighborhood.
+
+**Answer to the question asked:** YES, reuse — not for the exact X/Z
+(Warsaw Ave itself isn't literally at Matson Place), but the
+ELEVATION is directly reusable: the ramp's top landing already carries
+the real-topo-derived crest Y-value (22.04, i.e. the established
+21.6-unit rise applied). The simplest, most doc-consistent move is to
+extend a small flat crest stub outward from that existing top landing
+(same Y) rather than inventing a second, disconnected crest elevation
+from scratch — matching how the doc's own §5 chase route already
+treats the incline top and the crest street network as one connected
+place.
+
+[DONE] Checked for existing river-tier elevation data before assuming
+none exists, per instruction: grepped the Price Hill doc for
+elevation/feet/meters/topo/contour near every Anderson Ferry mention —
+zero numeric elevation data anywhere for the river tier, Delhi bluffs,
+or Anderson Ferry landing (the doc only has topological description:
+"Anderson Ferry Road: drops off the Delhi bluffs to the ferry landing
+on River Rd," tier-transition table row "Anderson Ferry Rd | 4->1 |
+Delhi bluffs to ferry"). Also grepped Shared Notes.txt in full for
+"Western Hills Viaduct," "topo-derived," "21.6" and any Delhi/Anderson-
+Ferry elevation mentions — the only real-world elevation lookup that
+has ever been done on this project is the one already used for
+InclineCut_Stub (Tier 2->3). No equivalent lookup exists for Tier 4
+(Delhi) or Tier 1 (river) anywhere in the docs, notes, or memory.
+
+[FLAG — needs a real answer from you before any AndersonFerry geometry
+gets built, same process as before: real clicked topo/map data, not
+Claude estimating or interpolating a number] Per the doc's own
+tier-transition table, Anderson Ferry Road is explicitly a **4->1**
+descent (Delhi bluffs straight down to the river landing), not a
+2->1 or 3->1 — meaning it doesn't connect to any elevation this
+project has already established (Tier 2's y=0 baseline is NOT one of
+its endpoints per the doc's own topology, unlike the incline cut which
+is explicitly 2->3). Two ways to unblock, your call which is easier to
+actually look up on a real map:
+  (a) the doc-accurate pair: real-world elevation at a Delhi
+      Township bluff-top point vs. the Ohio River waterline at the
+      Anderson Ferry landing (mirrors the "Western Hills Viaduct ->
+      West Price Hill crest" precedent exactly, but requires a Tier-4
+      reference point that doesn't exist in the scene yet either —
+      building the node would then need an abstract/placeholder Y for
+      "Delhi" separately, since nothing anchors Tier 4 yet); or
+  (b) a simpler substitute: real-world elevation at the Lower Price
+      Hill flats/River Road area near Sedamsville (already anchored at
+      this project's y=0 baseline) vs. the Ohio River waterline at
+      Anderson Ferry — skips needing a Tier-4 reference entirely,
+      giving a single number that plugs directly into the same "rise
+      applied to a rotated box" method used for InclineCut_Stub, just
+      inverted (a fall instead of a rise). This is the option that
+      actually mirrors InclineCut_Stub's build pattern with the fewest
+      new unknowns.
+Not picking between these — flagging both so you can decide which
+real-world points to pull the number from. No number has been invented
+or estimated to unblock this in the meantime.
+
+[PROPOSED — TurfNode_WarsawAve, awaiting review, nothing built] Extend
+a single flat road-stub box, "WarsawAve_Stub" (tag Asphalt, matching
+StateAve_Stub's tagging), from the incline ramp's existing top landing
+rather than placing new terrain from scratch: center (30, 22.04, -50),
+scale (20, 0.2, 8) — identical profile to StateAve_Stub, just relocated
+to crest height, its west edge touching the ramp's top landing edge
+(x=19.76) so the two connect rather than floating separately.
+TurfNode_WarsawAve placed at the stub's center (30, 22.04, -50):
+TurfNode + SphereCollider (radius 10, trigger=true) + TerritoryBorder
+child disc, same pattern as InclineHouse/EighthAndState.
+startingFaction = None/neutral (left unassigned, same pattern as
+TurfNode_AbandonedSubway/the original 4 nodes — matches §6's explicit
+"none starting-faction case" framing for this node), captureType=Race
+(per §6's table), hasSafehouse=false. No placeholder building proposed
+this time, unlike EighthAndState's Meyer's Carryout box — the doc
+doesn't name one hero-anchor building for this node the way it did for
+the crossroads (Warsaw Ave block is a whole street of P1-tier
+businesses collectively, not one landmark), so a building placeholder
+here would be inventing scope the doc doesn't call for; the road stub
++ node alone is enough to make the node placeable and functional, same
+"don't over-build" standard as every node so far. Same simple-primitive
+approach as InclineCut_Stub throughout — no Terrain/heightmap system
+used or needed for either node in this plan.
+
+[PROPOSED — TurfNode_AndersonFerry, blocked pending the elevation
+answer above, nothing built] Once a real elevation number exists,
+propose mirroring InclineCut_Stub's exact method: a single rotated Cube
+ramp (tag Asphalt, since River Road is paved unlike the incline's dirt
+scar) descending from whichever reference point the chosen option
+above anchors to, down to the new river-level Y. Horizontal run would
+be this pass's own placeholder choice same as InclineCut_Stub's
+unspecified 40-unit run (flagged, not doc-specified, picked for scene
+clearance only) — not something to solve now, since it depends on
+where the ramp's top reference ends up. TurfNode_AndersonFerry placed
+at the ramp's bottom landing: TurfNode + SphereCollider + TerritoryBorder
+child, startingFaction=None/neutral, captureType=Race, hasSafehouse=false
+— same node pattern as WarsawAve. The doc's P2 "Anderson Ferry landing"
+(ramp, snack shack, ferry queue) would be the natural landmark to
+anchor a placeholder for, same weight class as Meyer's Carryout, but
+proposing that is premature until the elevation question is answered
+and the actual landing position exists to place it at.
+
+No scene or terrain changes were made this session — this is a
+proposal for review only, exactly as instructed. WarsawAve is ready to
+build as soon as it's approved; AndersonFerry cannot proceed until you
+provide a real elevation anchor per the flag above.
