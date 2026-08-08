@@ -3262,3 +3262,160 @@ PlayerCrew), AndersonFerry (river gateway, neutral), WarsawAve
 proposal, so nothing needed a stop-and-ask. Committing this work now
 per instruction, without waiting for a separate "commit this," since
 this closes out the milestone.
+
+[2026-08-08, continued] Newport first-milestone scoping pass — Claude
+Code (K.I.S.S. FIRST per notes_rules.md Dev Note #1: planning only, no
+build this pass)
+
+[DONE] Checkpoint check: working tree was already clean at commit
+827d581 — that commit served as the checkpoint, no new commit needed
+before starting.
+
+[DONE] Read Docs/LevelDesign_Newport_1995.md in full (all 8 sections).
+District thesis: "last call in Sin City" — Newport's identity is the
+three Ohio river bridges (the Kings' true territory, state line
+mid-river), not the ground. TurfNode_NewportRiverfront's §6 entry maps
+it onto Riverboat Row/the Kingfish ground outside the floodwall, and
+explicitly asks to reframe its existing Race captureType as a bridge
+run rather than a lap.
+
+[DONE] Verified live scene state via Unity MCP before proposing
+anything (same discipline as every Price Hill pass, not assumed):
+  - TurfNode_NewportRiverfront exists at world (70, 0, -40),
+    startingFaction=KentuckyKings, captureType=Race (already, matching
+    the doc's §6 ask — reframing the race as a bridge run is a content
+    change to an existing node, not a new mechanic), hasSafehouse=False,
+    description="Kentucky Kings turf along the Newport riverfront."
+    Registered in TurfWarManager.allNodes (11/11 nodes, confirmed via
+    SerializedObject read, nothing missing).
+  - Full scene hierarchy scan (31 root objects, get_hierarchy at
+    max_depth 1, not truncated): zero Newport-area terrain or
+    placeholder geometry exists — no Kingfish/clubhouse object, no
+    dock/gangway, no floodwall, no bridge stubs, no road stubs of any
+    kind near (70, 0, -40). TurfNode_NewportRiverfront is the only
+    Newport-related object in the scene. Matches the task's expectation
+    ("likely nothing, but verify") — confirmed, not assumed.
+
+[FLAG] No real-world elevation/scale anchors exist for Newport in the
+doc — same gap Price Hill's terrain numbers were in before its topo
+lookups happened. §6 and §8.8 both explicitly call the current
+TurfNode_NewportRiverfront position "abstract placeholder spacing" and
+say to "plan district coordinates before relocating" — no doc-supplied
+numbers to build against. Needs a topo/elevation lookup pass (Newport's
+riverfront sits below the 1937 floodwall, so real grade matters for
+"outside the wall" to read correctly) before anything gets placed at a
+final position. Not resolving this myself — flagging for the same
+human call Price Hill got.
+
+[NOTE] Proposed first buildable milestone (for review, not started):
+**The Kingfish clubhouse + its one-gangway entrance + immediate dock
+apron**, nothing else this pass. Reasoning:
+  - Doc's own hero-building budget (§4) treats the three-bridge system
+    as one hero terrain system separate from the Kingfish — building
+    "a bridge" without the others breaks the doc's core mechanic
+    ("the player always has a bridge choice," §2 G1, §8.1 "the bridges
+    are the level"). A single bridge in isolation is a scope trap:
+    either build a real one-off span to nowhere, or half-build the
+    three-bridge system, both against K.I.S.S.
+  - The Kingfish is the doc's P1 clubhouse (§4), already has a home
+    (TurfNode_NewportRiverfront, existing, no new node needed), and its
+    gangway is called out twice as the hero mechanic (§5 "the most
+    defensible front door in the game," §8.5 "the one-plank entrance is
+    a gameplay promise") — same shape as InclineHouse being Price
+    Hill's first real build.
+  - Explicitly deferred to later passes: all three Ohio bridges (§2,
+    §8.1 — a hero terrain system of their own, doc says build these
+    "first" for the district overall, but that's a district-completion
+    order, not a first-*milestone* order — Price Hill didn't build
+    Anderson Ferry before InclineHouse either), the floodwall/gates
+    (§8.2, needs the riverfront-vs-city-grid edge to mean anything),
+    the Point vista, Monmouth strip hero block, Wiedemann brewery, and
+    the jurisdiction-seam heat mechanic (§6 — explicitly flagged in the
+    doc itself as needing its own HeatSystem pass before building).
+  - Scope for the milestone itself: Kingfish hull/deck placeholder
+    (boat-as-building per §8.5, water treatment faked, gangway/dock
+    apron/water-gap colliders real per the doc's own instruction),
+    single gangway entrance collider, small dock apron stub under the
+    floodwall (no floodwall geometry itself, no gates yet — the apron
+    just needs to exist under the existing TurfNode's position).
+    TurfNode_NewportRiverfront's captureType reframing (race-as-bridge-
+    run) stays deferred with the bridges — can't reframe a bridge run
+    before any bridge exists to run it on.
+  - Awaiting go-ahead before building anything — this is a real scope
+    decision per the task instructions, not decided unilaterally.
+
+No scene changes made this pass — planning only, per instruction.
+
+[2026-08-08, continued] Build The Kingfish (Newport's first milestone)
+— Claude Code, go-ahead given for the scope proposed above
+
+[DONE] Built 4 new root objects (31 -> 35, confirmed via
+manage_scene.get_active), all anchored off TurfNode_NewportRiverfront
+(70,0,-40) which stays unmoved:
+  - Kingfish_DockApron_Stub @ (70, 0.1, -40), scale (16, 0.2, 12), tag
+    Asphalt, layer 10 — same flat-slab profile/layer as StateAve_Stub.
+    Real BoxCollider (pavement, not decorative).
+  - Kingfish_Gangway @ (80, 0.6, -40), scale (4, 0.2, 3), real
+    BoxCollider (walkable/driveable), brown-tinted material. Live
+    bounds-checked, not just trusted from input: left edge sits at
+    x=78.000 exactly touching the dock apron's right edge (gap 0),
+    right edge at x=82.000 exactly touching the Kingfish hull's near
+    edge (gap 0) — the gangway is the only object bridging the 4-unit
+    span, per doc §5/§8.5 "one-plank entrance."
+  - Kingfish_WaterGap_VISUAL @ (80, -0.05, -40), scale (4, 0.05, 12) —
+    cosmetic dark-blue marker only, NO collider added on purpose.
+  - Kingfish_PLACEHOLDER @ (87, 4, -40), scale (10, 8, 30) — single-box
+    boat-as-building placeholder (moored parallel to the dock, long
+    axis along Z), same pattern as InclineHouse_Clubhouse_PLACEHOLDER
+    (one box, no hull/deck split — that's a later art pass). Real
+    BoxCollider.
+  - Updated TurfNode_NewportRiverfront.description via
+    SerializedObject to name the Kingfish/gangway/dock apron
+    specifically (was generic "Kentucky Kings turf along the Newport
+    riverfront."). startingFaction/captureType/position left
+    untouched — captureType stays Race, reframing it as a bridge run
+    stays deferred with the bridges per the proposal above.
+
+[FLAG] The "water gap must be real" instruction (doc §8.5) is only
+PARTIALLY satisfied. The gangway/dock apron are real solid colliders,
+but the gap between them is NOT actually a hole — Ground (the shared
+200x200 flat plane at y=0, MeshCollider, covers the entire map
+including this spot) still provides a walkable floor straight through
+where the water should stop foot/vehicle traffic. Kingfish_WaterGap_
+VISUAL is cosmetic-only, no collider, so it doesn't block anything
+either. Making the gap mechanically real would mean cutting a hole in
+Ground's shared mesh/collider — that's a global, harder-to-reverse
+change touching every other unbuilt district's placeholder floor at
+once, not a small first-milestone edit, so it was deliberately NOT
+done this pass. Right now the gangway reads correctly but isn't yet a
+true chokepoint (§5's "most defensible front door" claim isn't
+mechanically enforced) — a vehicle can still drive around it across
+Ground. Needs a human call on how to solve this later (real water
+volume/hazard trigger vs. a per-district floor cutout vs. accepting it
+as a visual-only boundary for now) — not resolved here.
+
+[DONE] No elevation number was invented for this pass (per the FLAG
+raised above about missing real-world anchors) — everything built flat
+at the existing Ground's y=0 baseline, same simplification as the
+original 4 nodes (OTRAlley/QueensgateYard/DowntownOverpass) which also
+sit on flat ground with no topo pass done yet. If/when a real Newport
+elevation anchor shows up, expect this whole cluster to need
+repositioning, same caveat as every other district doc.
+
+[DONE] Live-tested via Unity MCP, same standard as every prior build:
+entered Play mode, confirmed Time.frameCount advancing across two
+calls (frame 1 -> 466, no focus-freeze), read the real runtime
+TurfNode_NewportRiverfront (ControllingFaction=KentuckyKings, matching
+startingFaction — Initialize() applied it correctly; CaptureMethod
+still Race), confirmed TurfWarManager.GetPlayerClaimedNodes() stayed
+at exactly 2 (Newport correctly NOT counted as player-owned), and
+confirmed all 4 new objects exist/active in Play mode. Console checked
+before entering Play and after exiting: 0 errors, 0 warnings both
+times. Exited Play mode cleanly, scene saved (isDirty=false after),
+rootCount confirmed at 35.
+
+Committing this work now per instruction. The Kingfish is built and
+live; the water-gap gap (see FLAG above) and everything else deferred
+in the original scoping pass (all three bridges, the floodwall/gates,
+the Point, Monmouth strip, Wiedemann brewery, the jurisdiction-seam
+heat mechanic) remain open for later passes.
