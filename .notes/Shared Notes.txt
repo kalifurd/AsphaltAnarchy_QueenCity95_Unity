@@ -2460,3 +2460,142 @@ the usual untracked Screenshots/TripoModels churn.
 Working tree after: commit 888a47e, clean except .notes/notes_rules.md
 (pre-existing uncommitted edits, not this session's) and the standing
 untracked Screenshots/TripoModels files.
+
+[2026-08-08] TurfNode startingFaction + manpower-cap gauntlet fix — Claude Code
+
+[DONE] Checkpoint commit d5d36a2 made before touching anything (staged
+the standing untracked Screenshots/TripoModels churn from prior
+sessions, nothing else pending).
+
+[DONE] Task 1: set startingFaction on the 4 original TurfNodes to match
+what their own description text already named — OTRAlley->OTR
+Syndicate, QueensgateYard->Rust Barons, DowntownOverpass->Neon Saints,
+NewportRiverfront->Kentucky Kings. Pure data fix: TurfWarManager.
+Initialize() already calls node.SetController(node.StartingFaction) for
+every node, so no logic changed, just wired the previously-null field.
+Verified live in Play mode via MCP — all 4 nodes' ControllingFaction
+resolves correctly at scene start.
+
+[DONE] Task 2: TurfNode.StartCombatGauntlet() (Assets/Scripts/Factions/
+TurfNode.cs) was spawning its raw enemyCount directly, ignoring
+FactionManager's manpower cap that HeatSystem.SpawnReinforcementWave()
+already respects. Mirrored that exact pattern: clamp count to
+factionManager.GetManpower(controllingFaction) when
+HasFiniteManpower() is true, ConsumeManpower() for the amount actually
+spawned, and return early (spawn nothing) if manpower is already 0.
+Live-tested via MCP execute_code on TurfNode_QueensgateYard (enemyCount
+8, Rust Barons startingManpower 3, hasFiniteManpower=1 per the .asset
+file): first StartCaptureChallenge() call spawned exactly 3 enemies and
+dropped manpower 3->0; a second call with manpower already 0 spawned 0
+more. Console clean (0 errors/warnings) through the whole test.
+
+[NOTE] Saving the scene to persist the startingFaction changes also
+flushed 4 previously-unsaved SphereCollider m_Material references (one
+each on the 4 touched nodes) from `fileID: 0` to real embedded
+PhysicsMaterial blocks (friction 0.6/0.6, bounciness 0 — Unity's stock
+defaults). This looks like pre-existing in-memory editor state that had
+never been serialized to disk before this session's save, not something
+either fix caused directly — confirmed by diff: only the 4 nodes I
+touched picked up a material, TurfNode_AbandonedSubway (untouched,
+startingFaction stays fileID: 0 per the 2026-08-07 neutral reassignment)
+did not. Harmless defaults; flagging for visibility only, not treating
+as an open issue.
+
+[DONE] Committed both fixes together, commit 59af2dc. Diff scoped to
+exactly the two changes above (TurfNode.cs StartCombatGauntlet() +
+Assets/Scenes/QueenCity_Main.unity's 4 startingFaction fields, plus the
+incidental physics-material flush noted above). Working tree after:
+clean except the standing untracked Screenshots/TripoModels files and
+.notes/notes_rules.md's pre-existing uncommitted edits (not this
+session's).
+
+[2026-08-08] Loose Tripo-object scene-root audit — Claude Code
+(confirmation pass only, per the 2026-08-06 [FLAG] above; KISS-first,
+nothing deleted this session)
+
+[DONE] Theory confirmed at the source, not guessed. Read
+Editor/ModelImporter.cs in the Tripo DCC Bridge plugin (file: package at
+C:\Users\T1NK3R\Documents\Tripo3d_Unity_Bridge-latest\
+Tripo3d_Unity_Bridge — the same plugin with the websocket fix from
+2026-08-05, see [[project_tripo_dcc_bridge_websocket_fix]]). Its main
+import pipeline unconditionally calls `AddToScene()` (line ~123) after
+every single successful import — no checkbox, no EditorPrefs flag, no
+settings gate anywhere in the plugin (grepped for autoAdd/AddToScene-
+related toggles, zero matches). AddToScene() does exactly what the
+theory predicted: PrefabUtility.InstantiatePrefab() on the imported
+model straight into `EditorSceneManager.GetActiveScene()` (i.e.
+whatever scene happens to be open), renames the instance to the
+display name, and marks the scene dirty. Confirmed, not assumed: this
+is a real, permanent, structural behavior of the plugin — it will keep
+happening on every future import into any open scene until either the
+plugin is patched or models are imported with QueenCity_Main closed.
+
+[DONE] Full audit of QueenCity_Main.unity's scene root via MCP
+(get_hierarchy + execute_code, live Editor state, not the raw YAML):
+43 total root objects. 19 of them are loose Tripo-named leftovers
+matching the theory (the 2026-08-06 flag listed 15 of these by name;
+4 more have accumulated since then from later import sessions:
+harley_davidson_motorcycle_3d_model as a literal EXACT-NAME duplicate
+— two separate root instances both named identically, no "_1" suffix
+unlike the other dupes — plus historic_train_station_3d_model and
+police_car_3d_model, both new since the last flag):
+  black_motorcycle_3d_model, dark_motorcycle_rider_3d_model,
+  sport_bike_3d_model, gangster_figure_3d_model, rugged_biker_3d_model,
+  harley_davidson_motorcycle_3d_model (x2, exact-name duplicate),
+  vintage_motorcycle_3d_model [+ "_1"], biker_character_3d_model [+ "_1"],
+  rusted_motorcycle_3d_model [+ "_1"], rusty_motorcycle_3d_model,
+  rugged_biker_character_3d_model, ducati_sport_motorcycle_3d_model,
+  military_pilot_3d_model, historic_train_station_3d_model,
+  police_car_3d_model.
+NPC_Test_Info was in the same 2026-08-06 flag list but is NOT part of
+this pile — it's the real, intentionally-wired NPCInteraction test
+instance from the 2026-08-05 NPC session, correctly excluded here.
+
+[DONE] Component check, live via execute_code (not just inspecting the
+componentTypes summary — walked every descendant of all 19 objects):
+every single one is Transform + (MeshFilter/MeshRenderer) or Transform +
+SkinnedMeshRenderer only. Zero colliders, zero scripts, zero
+Rigidbodies, zero of any project-defined component anywhere in any of
+their hierarchies. These are pure visual/render leftovers with no
+gameplay behavior whatsoever — matches the task's "pure visual
+leftovers with nothing attached" branch exactly, not the "actual
+working GameObjects" branch.
+
+[DONE] Reference check, live via execute_code: iterated every
+SerializedObject property on every component on every OTHER root
+object in the scene (Player, Systems, all 4/8 TurfNodes, all 5 placed
+enemies, HUD_Canvas, etc.), looking for any ObjectReference field
+pointing at any of the 19 objects or their descendants. Zero true
+external references found. (First pass surfaced 43 apparent "hits,"
+all `SkinnedMeshRenderer.m_RootBone -> Root` — turned out to be each
+rigged model's own internal bone-rig self-references, i.e.
+tripo_part_N/tripo_node_N children pointing at their own parent's
+"Root" bone transform, not anything external. Re-ran excluding each
+loose object's own subtree and confirmed 0 real hits.) Also sanity-
+checked project-side: Unity scene-object references can't be stored on
+asset-based ScriptableObjects like FactionData in the first place, so
+FactionData.bikePrefab (which correctly points at the Assets/Prefabs/
+Enemy_*.prefab files per the 2026-08-05 particle-effects session) was
+never at risk of pointing at any of these scene instances. Nothing in
+the scene is secretly load-bearing on this pile.
+
+[FLAG — decision needed, not acted on] Safe-to-remove conclusion: all
+19 are confirmed dead visual clutter, safe to delete from the SCENE
+(QueenCity_Main.unity root) without affecting anything else — this
+does NOT touch the underlying imported asset/prefab files under
+Assets/TripoModels or Assets_User, which are what FactionData.bikePrefab
+and friends actually reference; deleting the loose scene instances is
+scene-only cleanup, not an asset deletion. Proposed approach for
+whoever gets the go-ahead: delete all 19 GameObjects from
+QueenCity_Main's root in one pass (manage_gameobject delete, or a
+single execute_code loop over the same looseNames list used for this
+audit), save the scene, live-verify via read_console + a hierarchy
+re-check (rootCount should drop from 43 to 24) that nothing broke.
+Separately, since the plugin has no setting to stop this from
+recurring, worth a decision on whether to also patch AddToScene() to
+no-op or gate it behind an EditorPrefs toggle (same file, same style of
+fix as the websocket patch) so this pile doesn't just grow back on the
+next Tripo import — flagging that as a second, independent decision,
+not bundling it into "clean up the current pile." Nothing deleted, no
+scene changes made, no plugin file touched this session — pure
+confirmation pass per the task's KISS-first instruction.
