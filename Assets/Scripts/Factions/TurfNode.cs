@@ -126,7 +126,19 @@ namespace AsphaltAnarchy.Factions
                 var enemyAIManager = FindObjectOfType<EnemyAIManager>();
                 if (enemyAIManager != null)
                 {
-                    enemyAIManager.SpawnEnemyWave(controllingFaction, transform.position, enemyCount);
+                    int count = enemyCount;
+
+                    bool finiteManpower = factionManager != null && factionManager.HasFiniteManpower(controllingFaction);
+                    if (finiteManpower)
+                    {
+                        int available = factionManager.GetManpower(controllingFaction);
+                        count = Mathf.Min(count, available);
+                        if (count <= 0) return; // faction's roster is tapped out - no gauntlet
+
+                        factionManager.ConsumeManpower(controllingFaction, count);
+                    }
+
+                    enemyAIManager.SpawnEnemyWave(controllingFaction, transform.position, count);
                 }
             }
         }

@@ -1790,7 +1790,7 @@ SphereCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 351175813}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 578463760}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -1818,7 +1818,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AsphaltAnarchy.Factions.TurfNode
   nodeName: Newport Riverfront
   description: Kentucky Kings turf along the Newport riverfront.
-  startingFaction: {fileID: 0}
+  startingFaction: {fileID: 11400000, guid: 5a34d24297992bf47868b8e4cb5a6ccb, type: 2}
   captureType: 0
   difficultyRating: 6
   enemyCount: 6
@@ -3216,6 +3216,19 @@ Material:
     - _UnderlayColor: {r: 0, g: 0, b: 0, a: 0.5}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
+--- !u!134 &578463760
+PhysicsMaterial:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  serializedVersion: 2
+  m_DynamicFriction: 0.6
+  m_StaticFriction: 0.6
+  m_Bounciness: 0
+  m_FrictionCombine: 0
+  m_BounceCombine: 0
 --- !u!1001 &646413802
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4737,6 +4750,32 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8cff9b9db01f82540a532b2f76dc6baf, type: 3}
+--- !u!134 &1184568335
+PhysicsMaterial:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  serializedVersion: 2
+  m_DynamicFriction: 0.6
+  m_StaticFriction: 0.6
+  m_Bounciness: 0
+  m_FrictionCombine: 0
+  m_BounceCombine: 0
+--- !u!134 &1194791791
+PhysicsMaterial:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  serializedVersion: 2
+  m_DynamicFriction: 0.6
+  m_StaticFriction: 0.6
+  m_Bounciness: 0
+  m_FrictionCombine: 0
+  m_BounceCombine: 0
 --- !u!1 &1209764623
 GameObject:
   m_ObjectHideFlags: 0
@@ -5096,7 +5135,7 @@ SphereCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1286303921}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 1184568335}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -5124,7 +5163,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AsphaltAnarchy.Factions.TurfNode
   nodeName: Queensgate Yard
   description: A Rust Barons scrapyard and rail depot, heavily defended.
-  startingFaction: {fileID: 0}
+  startingFaction: {fileID: 11400000, guid: f5caaeb79f98f8e47a70a041605b8137, type: 2}
   captureType: 1
   difficultyRating: 5
   enemyCount: 8
@@ -7032,6 +7071,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!134 &1607200627
+PhysicsMaterial:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  serializedVersion: 2
+  m_DynamicFriction: 0.6
+  m_StaticFriction: 0.6
+  m_Bounciness: 0
+  m_FrictionCombine: 0
+  m_BounceCombine: 0
 --- !u!1 &1612325343
 GameObject:
   m_ObjectHideFlags: 0
@@ -7063,8 +7115,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AsphaltAnarchy.Factions.TurfNode
   nodeName: Abandoned Subway
-  description: Abandoned Cincinnati subway tunnels beneath Central Parkway. No
-    gang controls this ground.
+  description: Abandoned Cincinnati subway tunnels beneath Central Parkway. No gang
+    controls this ground.
   startingFaction: {fileID: 0}
   captureType: 2
   difficultyRating: 7
@@ -8169,7 +8221,7 @@ SphereCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1834805677}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 1194791791}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -8197,7 +8249,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AsphaltAnarchy.Factions.TurfNode
   nodeName: Downtown Overpass
   description: A Neon Saints stunt run across the Downtown overpasses.
-  startingFaction: {fileID: 0}
+  startingFaction: {fileID: 11400000, guid: efef8b3e265fce44ea954dd87bd4190b, type: 2}
   captureType: 2
   difficultyRating: 4
   enemyCount: 0
@@ -8398,7 +8450,7 @@ SphereCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1885533207}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 1607200627}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -8426,7 +8478,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AsphaltAnarchy.Factions.TurfNode
   nodeName: OTR Alley
   description: A narrow alley in Over-the-Rhine, controlled by the OTR Syndicate.
-  startingFaction: {fileID: 0}
+  startingFaction: {fileID: 11400000, guid: e71d5cecbdad0ff4bac8c22e3aef0527, type: 2}
   captureType: 0
   difficultyRating: 3
   enemyCount: 5
