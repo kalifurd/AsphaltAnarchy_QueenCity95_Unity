@@ -3593,3 +3593,132 @@ was explicitly planning-only ("apply the approach to the Kingfish's
 gangway gap... but don't build it yet"); the Kingfish's two blocker
 segment placements are already worked out above and ready to build in
 a follow-up pass once given an explicit go-ahead to build.
+
+[2026-08-08, continued] Build WaterHazard prefab + apply to The
+Kingfish — Claude Code, go-ahead given for Blocker mode specifically,
+no new script per the prior audit
+
+[DONE] Checkpoint check: working tree had the prior planning-pass
+Shared Notes.txt edit still uncommitted at start — committed it first
+(commit 3717e40) so it served as the checkpoint before any building
+started, per instruction.
+
+[DONE] Confirmed live before building (not assumed) that enemy AI
+would actually respect a solid Blocker with no extra code: read
+EnemyAI.cs's SteerToward() — it calls
+`bikeController.ApplyExternalForce(...)` / `ApplyExternalTorque(...)`,
+which resolve to real `Rigidbody.AddForce`/`AddTorque` on
+MotorcycleController's rb (confirmed in that file too). AI motion is
+genuine physics, not direct transform manipulation or NavMesh — so
+ordinary rigidbody-vs-collider collision applies to it exactly like
+the player. This was the one assumption in the original audit worth
+checking before building on it, and it held.
+
+[DONE] Built the reusable `WaterHazard` prefab at
+`Assets/Prefabs/WaterHazard.prefab` (componentCount=1 on root,
+childCount=2), matching the proposed design exactly:
+  - Root: empty transform. `localScale.x`/`.z` define the footprint
+    width/length for a given placement; `.y` stays 1. This is the only
+    thing that needs adjusting per future crossing.
+  - `Water_Visual` child: local pos (0,-0.05,0), local scale
+    (1,0.05,1) — cosmetic only, MeshRenderer with a blue-tinted
+    material (auto-extracted to
+    `Assets/Prefabs/Materials/Water_Visual_mat.mat` by Unity's prefab
+    creation), NO collider.
+  - `Blocker` child: local pos (0,1,0), local scale (1,2,1) — bare
+    GameObject (no mesh/renderer at all, genuinely invisible) with a
+    default `BoxCollider` (size 1,1,1, center 0,0,0). Because the
+    child's localScale multiplies through the parent's footprint
+    scale, the same prefab produces a correctly-sized invisible wall
+    for whatever footprint the root is scaled to — confirmed live:
+    root scale (4,1,4.5) produced a Blocker world-bounds size of
+    exactly (4,2,4.5), matching the target math with no manual
+    per-instance size entry needed beyond the root's X/Z.
+
+[DONE] Applied to the Kingfish using the exact anchors already worked
+out in the prior planning pass, not re-derived:
+  - `Kingfish_WaterBlocker_North`: pos (80,0,-43.75), scale
+    (4,1,4.5) — covers z:[-46,-41.5].
+  - `Kingfish_WaterBlocker_South`: new prefab instance
+    (`PrefabUtility.InstantiatePrefab`, proper prefab-linked instance,
+    not a disconnected copy), pos (80,0,-36.25), scale (4,1,4.5) —
+    covers z:[-38.5,-34].
+  - Both live bounds-checked after `Physics.SyncTransforms()` (a
+    BoxCollider.bounds read immediately after a transform-only move
+    was stale/showed the OLD position until synced — new MCP gotcha,
+    worth remembering for any future position-then-immediately-read
+    pattern). Confirmed: North blocker exactly fills z:[-46,-41.5],
+    South exactly fills z:[-38.5,-34], leaving the already-built
+    `Kingfish_Gangway`'s z:[-41.5,-38.5] span as the only untouched
+    gap — zero overlap, zero extra gap, same edge-matching precision
+    as the gangway itself.
+  - Deleted the old standalone `Kingfish_WaterGap_VISUAL` placeholder
+    (superseded — each new WaterHazard instance carries its own visual
+    matching its own segment, which is actually MORE correct than the
+    old single full-span visual: the area directly under the gangway
+    plank no longer incorrectly reads as open water).
+
+[DONE] Live play-tested via Unity MCP — this is the one pass so far
+that tested actual physics collision outcomes, not just object
+existence/component state:
+  - **Blocker test**: teleported the live Player rigidbody to
+    (70,1,-43.75) (dock side, aimed at the North blocker) and set
+    `rb.linearVelocity = (15,0,0)`. It advanced to x≈76.6–76.7 and
+    stopped dead (velocity collapsed to ~0) — short of the blocker's
+    near face at x=78, accounting for the player's own collider
+    radius. Re-applied the same velocity a second time; it snapped
+    right back to the same position with velocity zeroed again,
+    confirming a genuine physical stop, not just momentary
+    deceleration.
+  - **Gangway test**: repositioned to (70,1,-40) (aligned with the
+    gangway's z-span) with the same velocity. The bike crossed the
+    full water gap successfully, reaching x≈81.1 (right at the
+    Kingfish hull's face) — it did NOT fall into the water gap and was
+    NOT stopped by either Blocker segment. It then stopped at x≈81.1
+    because `Kingfish_PLACEHOLDER` (the boat) is one single solid box
+    for the whole hull+deck, per its own original build — there's no
+    separate walkable deck surface to step onto yet. **This is a
+    pre-existing placeholder-geometry limitation from the Kingfish
+    build pass, not a water-hazard defect** — flagging separately
+    below, not fixing here (out of this task's scope).
+  - **Enemy AI test**: same test repeated on the live
+    `Enemy_KentuckyKings` object at (70,1,-43.75) with velocity
+    (15,0,0). First attempt was confounded by its own active `EnemyAI`
+    component steering it away mid-test (expected — it has its own
+    patrol/chase behavior actively adding forces); disabled `EnemyAI`
+    temporarily to isolate the collision test cleanly, re-ran, and it
+    stopped at x≈76.5 — same stopping point as the player, confirming
+    the Blocker works identically on enemy rigidbodies with zero
+    additional code, exactly as the audit predicted. Re-enabled
+    `EnemyAI` afterward (Play-mode-only change, doesn't persist to the
+    scene asset regardless).
+  - Console checked before entering Play mode and after exiting: 0
+    errors, 0 warnings both times, through the whole test sequence.
+  - Exited Play mode cleanly, scene saved (was isDirty=true from the
+    new/deleted objects, confirmed clean save after), rootCount 35 ->
+    36 (net: -1 old visual, +2 new WaterHazard instances).
+
+[FLAG] Confirmed by direct testing, not assumed: the Kingfish's
+gangway currently leads to a dead end at the boat's solid hull face,
+not a walkable deck. `Kingfish_PLACEHOLDER` is a single solid
+BoxCollider for the entire boat (hull+deck+cabin combined) from the
+original Kingfish build — there's no hollow interior or separate deck
+surface yet, so "crossing the gangway" currently means walking up to a
+wall instead of boarding the clubhouse. This doesn't block or weaken
+today's result (the water-hazard system itself — block the water,
+allow the plank — works exactly as designed) but it does mean The
+Kingfish isn't actually enterable yet. Not fixing here — this is a
+Kingfish-geometry gap, not a water-hazard gap, and today's task was
+scoped to the water system only. Worth a dedicated follow-up pass
+(likely: split the placeholder into a real deck surface + separate
+hull/cabin volumes, or at minimum carve a walkable top surface).
+
+[DONE] Per instruction, WaterHazard was NOT applied anywhere else this
+pass — not Anderson Ferry, not any other crossing. The prefab exists
+and is reusable, but every other river crossing in the project (Newport's
+2 remaining Ohio bridges, Milford/Batavia's Little Miami,
+Hamilton/Fairfield's Great Miami, and Anderson Ferry's Ohio River
+landing, which still has zero hazard alongside its ramp) remains
+untouched and open for a future pass.
+
+Committing this work now per instruction.
