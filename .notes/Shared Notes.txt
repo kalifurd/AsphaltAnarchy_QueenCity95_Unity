@@ -3180,7 +3180,7 @@ directly:
 
 TurfNode_AndersonFerry is now built and live-verified, using the exact
 confirmed elevation anchors with zero recalculation or substitution.
-Price Hill now has all 4 of its §6-proposed TurfNodes live: InclineHouse
+Price Hill now has 3 of its 4 §6-proposed TurfNodes live: InclineHouse
 (clubhouse/safehouse), EighthAndState (crossroads), and now
 AndersonFerry (river gateway) — WarsawAve is the only one left, already
 proposed and unblocked (prior session's entry above), just awaiting a
@@ -3188,3 +3188,77 @@ go-ahead to build. No real ambiguity was hit that needed a stop-and-ask
 this pass — the single judgment call (ramp run length/grade) was
 explicitly invited by the task and is logged with its reasoning above
 for review, not silently decided.
+
+[2026-08-08, continued] Build TurfNode_WarsawAve — Claude Code (closes
+out the last of Price Hill's 4 proposed §6 nodes; user stepping away
+after sending this task, no live back-and-forth possible this pass)
+
+[DONE] Checkpoint check: working tree was already clean at commit
+2887c66 (pushed to origin/master) — that commit served as the
+checkpoint, no new commit needed before starting.
+
+[DONE] Re-verified InclineCut_Stub's top landing live before building
+anything (didn't just trust the number from two sessions back) —
+confirmed unchanged at world (19.762, 22.040, -50.000), matching the
+already-approved proposal exactly.
+
+[DONE] Built WarsawAve_Stub: a flat, unrotated road box (tag Asphalt,
+matching StateAve_Stub's profile exactly: scale 20x0.2x8) at
+(29.76, 22.04, -50) — its west edge positioned to touch the ramp's top
+landing edge (x=19.76) rather than floating separately. Verified live
+via the object's actual MeshRenderer.bounds, same discipline as
+AndersonFerryRd_Stub, not just trusting the input numbers: west edge
+measured at x=19.760 (target 19.762, gap -0.0024 — effectively
+touching/connected), y stayed exactly 22.040 (confirms no new rise was
+introduced, purely extending the existing crest elevation as
+instructed), east edge at x=39.760. Nothing rotated this time (unlike
+the two ramps) since this is flat crest ground, not a climb/descent —
+bounds matched the flat input scale exactly, no rotated-box padding to
+account for.
+
+[DONE] Built TurfNode_WarsawAve at the stub's center (29.76, 22.04,
+-50): TurfNode + SphereCollider (radius=10, isTrigger=true) +
+TerritoryBorder child (thin disc, same pattern as every prior node;
+child created with correct LOCAL position (0,0.05,0) this time — no
+repeat of the EighthAndState build's local-vs-world mixup — and its
+auto-added CapsuleCollider removed to match precedent immediately,
+also no repeat of that earlier hiccup). nodeName="Warsaw Ave",
+description references the doc's storefronts/churches/CPD District 3
+and "contested ground" framing from §2/§6. startingFaction left
+unassigned (neutral, per §6's explicit table entry for this node).
+captureType=Race (per §6). hasSafehouse=false. No building placeholder
+built — per instruction, the doc names no single hero-anchor location
+for this specific node (Warsaw Ave block is a whole street of P1-tier
+businesses collectively, not one landmark), same reasoning already
+applied to AndersonFerry's shack.
+
+[DONE] Registered TurfNode_WarsawAve in TurfWarManager.allNodes
+(Systems GameObject) via SerializedObject array insert — array grew
+from 10 to 11 entries, all 10 prior entries undisturbed, new entry
+correctly at index 10.
+
+[DONE] Live play-tested via Unity MCP, same standard as every prior
+node: entered Play mode, confirmed Time.frameCount advancing across
+two calls (no focus-freeze), then read the real runtime objects:
+  - TurfNode_WarsawAve.NodeName = "Warsaw Ave"
+  - StartingFaction = NULL, ControllingFaction = NULL — correctly
+    neutral/uncontrolled.
+  - CaptureMethod = Race, HasSafehouse = False — both as intended.
+  - TurfWarManager.GetPlayerClaimedNodes() stayed at exactly 2 (The
+    Incline House + 8th & State only) — confirms WarsawAve correctly
+    does NOT count as player-owned, same check as AndersonFerry's.
+  - Console checked before entering Play mode, again after all checks:
+    0 errors, 0 warnings both times.
+  - Exited Play mode cleanly. Scene confirmed isDirty=false after
+    (already saved before entering Play), rootCount=31 (29 + the 2 new
+    root objects: WarsawAve_Stub and TurfNode_WarsawAve).
+
+All 4 of Price Hill's §6-proposed TurfNodes are now live: InclineHouse
+(clubhouse/safehouse, PlayerCrew), EighthAndState (crossroads,
+PlayerCrew), AndersonFerry (river gateway, neutral), WarsawAve
+(contested main street, neutral). No real ambiguity was hit this pass
+— every number either came from a previously-verified live measurement
+(the ramp landing) or was a direct match to the already-approved
+proposal, so nothing needed a stop-and-ask. Committing this work now
+per instruction, without waiting for a separate "commit this," since
+this closes out the milestone.
