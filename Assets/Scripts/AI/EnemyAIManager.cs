@@ -44,8 +44,10 @@ namespace AsphaltAnarchy.AI
             }
         }
 
-        public void SpawnEnemyWave(FactionData faction, Vector3 location, int count)
+        public List<EnemyAI> SpawnEnemyWave(FactionData faction, Vector3 location, int count)
         {
+            var spawned = new List<EnemyAI>();
+
             for (int i = 0; i < count; i++)
             {
                 if (activeEnemies.Count >= maxActiveEnemies) break;
@@ -58,11 +60,15 @@ namespace AsphaltAnarchy.AI
                 var enemyAI = instance.GetComponent<EnemyAI>();
                 if (enemyAI != null)
                 {
-                    // Configure faction
-                    // enemyAI.SetFaction(faction);
+                    // Faction identity comes from the prefab itself (each faction's
+                    // bikePrefab has its own FactionData pre-set on EnemyAI), not a
+                    // runtime setter.
                     RegisterEnemy(enemyAI);
+                    spawned.Add(enemyAI);
                 }
             }
+
+            return spawned;
         }
 
         public void ClearAllEnemies()

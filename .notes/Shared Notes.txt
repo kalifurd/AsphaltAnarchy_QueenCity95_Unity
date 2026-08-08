@@ -4294,3 +4294,186 @@ No scene or code changes made this pass — planning only, per
 instruction. Two things block any build: the D1-vs-D2 flow decision
 above, and (only if D1 is chosen) the `SpawnEnemyWave` signature change
 plus new per-node wave-tracking state it would require.
+
+[2026-08-08, continued] Implement node defense (D1, real combat wave)
+— Claude Code (K.I.S.S. FIRST; decision declared final by user: D1,
+not re-litigating D1-vs-D2 — EighthAndState only, InclineHouse
+untouched)
+
+[DONE] Checkpoint check: working tree had one dirty file
+(`.notes/Shared Notes.txt`, the planning-pass log itself) at start —
+committed it (`08f72c8`) as the checkpoint before touching any code,
+per instruction.
+
+[DONE] `EnemyAIManager.SpawnEnemyWave()` signature change: now returns
+`List<EnemyAI>` of what it actually spawned (was `void`). Existing
+callers (`HeatSystem.cs`, `TurfNode.StartCombatGauntlet()`) call it
+without using the return value — compiles fine as a discarded
+expression, zero changes needed at those call sites. Also removed the
+dead `// enemyAI.SetFaction(faction)` comment and replaced it with a
+note explaining faction identity already comes from the prefab
+(confirmed in the planning pass, re-confirmed here: no `SetFaction`
+method exists on `EnemyAI` at all).
+
+[DONE] `TurfNode.cs` changes, all reusing `StartCombatGauntlet()`'s
+shape with `assaultingFaction` substituted for `controllingFaction`,
+exactly as scoped:
+  - New field `assaultWaveEnemies` (`List<EnemyHealth>`) tracks the
+    live wave for THIS node's assault specifically — necessary because
+    `EnemyAIManager.GetActiveEnemies()`/`OnEnemyDied` are both global
+    (shared with HeatSystem reinforcements and anything else spawning
+    enemies at the same time), confirmed in the planning pass.
+  - `BeginAssault()` now calls the new `SpawnAssaultWave(attacker)`
+    right after starting the grace period (before firing
+    `OnNodeAssaultStarted`).
+  - `SpawnAssaultWave(FactionData attacker)` (new, private): same
+    finite-manpower gate as `StartCombatGauntlet()`
+    (`HasFiniteManpower`/`GetManpower`/`ConsumeManpower`), keyed off
+    `attacker` instead of `controllingFaction`. Calls the now-returning
+    `SpawnEnemyWave(attacker, transform.position, count)`, grabs each
+    spawned `EnemyAI`'s `EnemyHealth` component, populates
+    `assaultWaveEnemies`. If the attacker's manpower is exhausted,
+    no wave spawns and the assault still resolves via the existing
+    undefended timer — same silent-no-op shape `StartCombatGauntlet()`
+    already had for the forward case; didn't invent new behavior here.
+  - `OnEnable()`/`OnDisable()` (new — `TurfNode` had neither before):
+    subscribe/unsubscribe `EnemyHealth.OnEnemyDied` →
+    `HandleAssaultEnemyDied()`. This is the actual new win-detection
+    plumbing the planning pass identified as missing — `OnEnemyDied`
+    already existed and already fired correctly, just had zero
+    subscribers anywhere in the codebase before this.
+  - `HandleAssaultEnemyDied(EnemyHealth enemy)` (new, private): no-ops
+    if this node isn't currently under assault (cheap global-event
+    filter — this fires for EVERY enemy death game-wide, not just this
+    node's wave). Removes `enemy` from `assaultWaveEnemies`; if that
+    was the last one AND the removal actually happened (i.e. it really
+    was this node's enemy), calls `DefendAssault()`.
+  - `DefendAssault()` (new, private): the actual win path, sibling to
+    `ResolveAssault()`'s loss path. Clears assault state
+    (`isUnderAssault`/`assaultingFaction`/`assaultWaveEnemies`) and
+    fires `OnNodeAssaultResolved` — but, unlike `ResolveAssault()`,
+    never calls `CompleteEnemyCapture()`. The node's `controllingFaction`
+    is never touched — confirmed by construction (no `SetController`/
+    `ClaimNode` call anywhere in this method) and by the live test
+    below.
+  - `ResolveAssault()` (existing loss path): added one line,
+    `assaultWaveEnemies.Clear()`, so stale wave-tracking state doesn't
+    linger past a resolved assault. No other changes — the existing
+    flip logic is completely untouched, confirmed live in the
+    regression test below.
+
+[DONE] Compiled clean: `refresh_unity` (force recompile) then `read_console`
+showed 0 errors/warnings before touching Play mode.
+
+[DONE] Live play-tested via Unity MCP on `TurfNode_EighthAndState`
+(`instanceID=27428`), exactly per instruction — **win path first**:
+  - Baseline: `controller=The Renegades` (PlayerFaction's display
+    name — confirmed live, matches the "The ___" prefix gotcha logged
+    in the prior session), `isUnderAssault=False`,
+    `activeEnemies=5` (pre-existing world enemies already patrolling —
+    confirms why a global count/event alone wouldn't have worked for
+    win-detection, exactly as flagged in the planning pass).
+  - Grabbed a real `FactionData` reference for `RustBarons` off
+    `FactionManager.GetAllFactions()` (not `GetFactionByName` — same
+    "The ___" display-name gotcha as last session, avoided this time
+    by construction) and called `node.BeginAssault(rustBarons)`
+    directly.
+  - Confirmed: `isUnderAssault=True`, `assaultingFaction=The Rust
+    Barons`, `timeRemaining=30`, `activeEnemies` went 5→8 (exactly 3
+    new), and reflected into the private `assaultWaveEnemies` field —
+    `waveCount=3`, matching `EighthAndState`'s own `enemyCount` value
+    exactly. Spawning-in-reverse confirmed working end-to-end, not
+    just by reading the code.
+  - Grabbed the 3 tracked `EnemyHealth` instances directly (reflection
+    on `assaultWaveEnemies`) and called `TakeDamage(9999f)` on 2 of the
+    3, leaving 1 alive on purpose: confirmed `isUnderAssault` stayed
+    `True` and `assaultingFaction` stayed `The Rust Barons` — a
+    **partial** defeat correctly does NOT resolve the assault.
+  - Killed the 3rd (last) enemy: confirmed in the SAME call,
+    `isUnderAssault` flipped to `False`, `assaultingFaction` went to
+    `null`, `controller` stayed `The Renegades` (**no ownership
+    change** — the defense win path works), and the live
+    `assaultWaveEnemies` list itself dropped to `Count=0` (proves
+    `DefendAssault()`'s `Clear()` actually ran, not just that the flag
+    flipped).
+  - HUD: read immediately after the kill and got a STALE cached
+    string still showing the old countdown — this was a same-frame
+    read-before-`Update()`-ticked timing artifact from calling tools
+    faster than a frame boundary, not a bug in the feature. Re-read a
+    moment later: `HUD text=''`, `watchedNode=null` — confirms
+    `TurfAssaultHUD` correctly cleared once its own `Update()` had a
+    chance to run. Noting this explicitly so a future session doesn't
+    mistake tool-call-cadence timing for a real defect if it sees the
+    same stale-read pattern.
+  - `TurfWarManager.GetPlayerClaimedNodes()` confirmed still `Count=2`
+    (`The Incline House`, `8th & State`) after the win — unaffected,
+    as expected.
+
+[NOTE] **Unplanned but informative**: while resetting for the
+regression test, discovered the REAL organic trigger
+(`CheckPlayerNodeAssaults`' 60s-tick roll) had independently captured
+`EighthAndState` for `The Neon Saints` in the background, between my
+own manual test calls — real Play-mode time had passed (agentic
+tool-call latency, not frame time) and the organic system fired on
+its own normal cadence and this time resolved as an actual loss (no
+defense happened, node genuinely undefended). This wasn't the
+DELIBERATE regression test the task asked for, but it's a real,
+independent confirmation that `ResolveAssault()`'s existing flip logic
+still works correctly with the new wave-spawning code layered on top,
+observed in the wild rather than staged. Reset the node back to
+`PlayerFaction` via `SetController()` (test-harness use only, not a
+product code change) to get a clean baseline before running the
+actually-controlled regression test below.
+
+[DONE] Live play-tested via Unity MCP on `TurfNode_EighthAndState` —
+**regression check, undefended-loss path**, deliberately not defending
+this time:
+  - Re-armed with `BeginAssault(rustBarons)` at `Time.time=188.38`,
+    confirmed `isUnderAssault=True`, `timeRemaining=30`,
+    `controller=The Renegades`. Left the freshly spawned wave alone —
+    did not touch it.
+  - Because `BeginAssault()`'s existing guard skips re-triggering while
+    `isUnderAssault` is already true, and `CheckPlayerNodeAssaults()`
+    explicitly skips nodes already under assault, the organic system
+    could not interfere with this specific node once armed — confirmed
+    this reasoning rather than just hoping the wait would be clean.
+  - Polled `Time.time`/`isUnderAssault`/`timeRemaining` at intervals
+    (208s: 10.3s remaining, still active; 214.6s: still active,
+    `PlayerClaimedNodes=2`) waiting for the real 30s grace period to
+    elapse in Play-mode time.
+  - At `Time.time=221.88` (grace period had elapsed relative to the
+    188.38 start): confirmed `isUnderAssault=False`,
+    `assaultingFaction=null`, **`controller=The Rust Barons`** (the
+    node flipped), `assaultWaveEnemies` count back to 0,
+    `WasRecentlyLost=True`, `PlayerClaimedNodes` dropped 2→1
+    (`The Incline House` only). Existing undefended-loss path confirmed
+    completely intact with the new defense code layered on top — this
+    IS the deliberate, controlled version of the same result the
+    unplanned organic capture above already hinted at.
+  - HUD confirmed cleared (`text=''`) after this resolution too.
+
+[DONE] Console checked after both the win test and the loss regression
+test, and again after exiting Play mode: 0 errors, 0 warnings
+throughout the entire session.
+
+[DONE] Exited Play mode. No scene changes were made this pass (no new
+GameObjects/components, only script edits) — confirmed via `git status`
+showing only `EnemyAIManager.cs`/`TurfNode.cs` as modified, nothing
+scene-related. Play-mode-only state (both nodes' `controllingFaction`,
+`assaultWaveEnemies`, etc.) does not persist to the saved scene
+regardless, per the established pattern from prior sessions.
+
+[DONE] Per instruction, `InclineHouse` was not touched, tested, or
+referenced by any code change this pass — its `Race` captureType
+mismatch with combat-based defense and its untested
+`safehouseSpawnPoint` dependency both remain exactly as flagged,
+untouched.
+
+[FLAG] Carried forward, not addressed this pass: `CompleteCapture(bool
+playerWon)` (the player-attacks-enemy-node path) still has no losing
+branch and no live callers anywhere — confirmed again this session.
+This task only needed the ENEMY-attacks-PLAYER-node direction (which
+now has a real win path via `DefendAssault()`), so the symmetric gap
+on the other side was left alone, exactly as scoped. Worth its own
+future pass if the forward CombatGauntlet path ever needs a real loss
+condition.

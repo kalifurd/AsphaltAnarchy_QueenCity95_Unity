@@ -1,7 +1,9 @@
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 using AsphaltAnarchy.Core;
 using AsphaltAnarchy.AI;
+using AsphaltAnarchy.Combat;
 
 namespace AsphaltAnarchy.Factions
 {
@@ -47,6 +49,7 @@ namespace AsphaltAnarchy.Factions
         private bool isUnderAssault;
         private FactionData assaultingFaction;
         private float assaultStartTime;
+        private readonly List<EnemyHealth> assaultWaveEnemies = new List<EnemyHealth>();
 
         public string NodeName => nodeName;
         public FactionData ControllingFaction => controllingFaction;
@@ -69,6 +72,16 @@ namespace AsphaltAnarchy.Factions
             turfManager = manager;
             factionManager = factions;
             UpdateVisuals();
+        }
+
+        private void OnEnable()
+        {
+            EnemyHealth.OnEnemyDied += HandleAssaultEnemyDied;
+        }
+
+        private void OnDisable()
+        {
+            EnemyHealth.OnEnemyDied -= HandleAssaultEnemyDied;
         }
 
         public void SetController(FactionData faction)
@@ -181,10 +194,13 @@ namespace AsphaltAnarchy.Factions
         }
 
         /// <summary>
-        /// Starts the undefended-passive-capture grace period for a PlayerCrew-owned
-        /// node under assault by a hostile faction. Does not resolve immediately —
-        /// see ResolveAssault(), called from Update() once assaultGracePeriod elapses.
-        /// Deliberately independent of PlayerStats.OnPlayerDied/GameState.GameOver.
+        /// Starts the grace period for a PlayerCrew-owned node under assault by a
+        /// hostile faction, and spawns that faction's wave for the player to fight
+        /// off (see SpawnAssaultWave()). Does not resolve immediately — either
+        /// DefendAssault() (all spawned enemies defeated in time, via
+        /// HandleAssaultEnemyDied()) or ResolveAssault() (grace period elapses
+        /// first, called from Update()) ends it. Deliberately independent of
+        /// PlayerStats.OnPlayerDied/GameState.GameOver.
         /// </summary>
         public void BeginAssault(FactionData attacker)
         {
@@ -193,7 +209,74 @@ namespace AsphaltAnarchy.Factions
             isUnderAssault = true;
             assaultingFaction = attacker;
             assaultStartTime = Time.time;
+            SpawnAssaultWave(attacker);
             OnNodeAssaultStarted?.Invoke(this);
+        }
+
+        /// <summary>
+        /// Sibling to StartCombatGauntlet(), spawning the ATTACKING faction's wave
+        /// instead of controllingFaction's — same SpawnEnemyWave/manpower-gating
+        /// shape, just inverted, per the planning pass's confirmed reuse. Populates
+        /// assaultWaveEnemies so HandleAssaultEnemyDied() can detect a successful
+        /// defense. If the attacker has finite manpower and none is available, no
+        /// wave spawns and the assault still resolves via the existing undefended
+        /// timer — same silent-no-op shape StartCombatGauntlet() already has.
+        /// </summary>
+        private void SpawnAssaultWave(FactionData attacker)
+        {
+            assaultWaveEnemies.Clear();
+
+            var enemyAIManager = FindObjectOfType<EnemyAIManager>();
+            if (enemyAIManager == null) return;
+
+            int count = enemyCount;
+
+            bool finiteManpower = factionManager != null && factionManager.HasFiniteManpower(attacker);
+            if (finiteManpower)
+            {
+                int available = factionManager.GetManpower(attacker);
+                count = Mathf.Min(count, available);
+                if (count <= 0) return; // attacker's roster is tapped out - no wave
+
+                factionManager.ConsumeManpower(attacker, count);
+            }
+
+            var spawned = enemyAIManager.SpawnEnemyWave(attacker, transform.position, count);
+            foreach (var enemyAI in spawned)
+            {
+                var health = enemyAI != null ? enemyAI.GetComponent<EnemyHealth>() : null;
+                if (health != null) assaultWaveEnemies.Add(health);
+            }
+        }
+
+        /// <summary>
+        /// Subscribed to EnemyHealth.OnEnemyDied (static, fires for every enemy
+        /// death game-wide) — filters down to just this node's assault wave via
+        /// assaultWaveEnemies. When the last one dies before the grace period
+        /// expires, the defense succeeded.
+        /// </summary>
+        private void HandleAssaultEnemyDied(EnemyHealth enemy)
+        {
+            if (!isUnderAssault) return;
+            if (assaultWaveEnemies.Remove(enemy) && assaultWaveEnemies.Count == 0)
+            {
+                DefendAssault();
+            }
+        }
+
+        /// <summary>
+        /// Win path, sibling to ResolveAssault()'s loss path. The node stays with
+        /// its current controller — no ClaimNode() call, unlike ResolveAssault().
+        /// </summary>
+        private void DefendAssault()
+        {
+            if (!isUnderAssault) return;
+
+            isUnderAssault = false;
+            assaultingFaction = null;
+            assaultWaveEnemies.Clear();
+
+            OnNodeAssaultResolved?.Invoke(this);
         }
 
         /// <summary>
@@ -211,6 +294,7 @@ namespace AsphaltAnarchy.Factions
             var attacker = assaultingFaction;
             isUnderAssault = false;
             assaultingFaction = null;
+            assaultWaveEnemies.Clear();
 
             // Defensive check: if something else already moved this node off the
             // player (not possible via any path that exists today, but cheap to guard).
