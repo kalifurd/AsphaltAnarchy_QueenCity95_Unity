@@ -3950,3 +3950,214 @@ No scene or code changes made this pass — planning only, per
 instruction. Two flagged decisions (trigger condition, resolution
 logic) block any build; recommend EighthAndState-only for whichever
 gets picked.
+
+[2026-08-08, continued] Implement enemy capture of PlayerCrew-owned
+nodes — Claude Code (K.I.S.S. FIRST; decisions declared final by user:
+passive-timer trigger mirroring CheckReclaims' cadence,
+undefended-timer resolution, no PlayerStats.OnPlayerDied/GameOver)
+
+[DONE] Checkpoint check: working tree was already clean at commit
+123cd0d (the scoping-pass notes, already pushed) — that commit served
+as the checkpoint, no new commit needed before starting.
+
+[DONE] Investigated whether the passive-timer trigger and the
+already-flagged CheckReclaims()/TriggerDefenseEvent() bug are the same
+fix, per instruction — **they are NOT**, confirmed by re-reading both
+methods and TurfNode.SetController()/Update() closely rather than
+assuming either way:
+  - `CheckReclaims()`'s eligibility gate is `node.WasRecentlyLost`,
+    which only becomes true when `SetController()` sees
+    `controllingFaction != null && faction != controllingFaction` —
+    i.e., the node must have ALREADY changed hands at least once.
+    Traced `TurfWarManager.Initialize()`'s startup call,
+    `node.SetController(node.StartingFaction)`: at that call
+    `controllingFaction` is still its C# default (null), so
+    `wasRecentlyLost` stays false forever for a node that's never been
+    captured. `TurfNode_EighthAndState` has never changed hands since
+    game start, so this gate would never let it qualify even with the
+    player-node skip removed — CheckReclaims' logic is structurally
+    unusable for a first-time assault on a virgin player node.
+  - Even where `CheckReclaims()` doesn't skip a node, `TriggerDefenseEvent()`
+    never changes `controllingFaction` at all — it only spawns a wave
+    belonging to the node's CURRENT owner (reinforcement, not attack).
+    Confirmed (again, from the prior scoping pass) this mechanic
+    doesn't flip ownership for ANY node today. Repurposing it in place
+    would mean inverting its explicit player-skip, changing which
+    faction gets spawned, and replacing its eligibility gate — at that
+    point it's not "the same fix," it's a rewrite wearing the same
+    method name.
+  - Conclusion acted on: built a genuinely separate method,
+    `CheckPlayerNodeAssaults()`, but **not a second timer** — it's
+    called from the exact same `Update()` tick as `CheckReclaims()`,
+    sharing `reclaimTimer`/`reclaimCheckInterval` so there's still only
+    one periodic heartbeat in `TurfWarManager`. `CheckReclaims()` and
+    `TriggerDefenseEvent()` were left completely untouched — that
+    pre-existing bug (doesn't flip ownership for non-player nodes
+    either) stays exactly as flagged before, out of scope here.
+
+[DONE] Added the enemy-win path, all in `TurfNode.cs`:
+  - New fields: `assaultGracePeriod` (serialized, default 30s — my own
+    placeholder choice, not user-specified; picked to be a real,
+    noticeable window per the task's fairness requirement while still
+    being practical to observe within a live MCP test), `isUnderAssault`,
+    `assaultingFaction`, `assaultStartTime`. New public
+    `IsUnderAssault`/`AssaultingFaction`/`AssaultTimeRemaining`
+    properties and `OnNodeAssaultStarted`/`OnNodeAssaultResolved`
+    static events.
+  - `BeginAssault(FactionData attacker)`: starts the grace period
+    (no-ops if already under assault or attacker is null — won't
+    restart/pile onto an active assault).
+  - `CompleteEnemyCapture(FactionData attackingFaction)`: the literal
+    sibling to `CompleteCapture(bool playerWon)` the task asked for.
+    Calls `turfManager.ClaimNode(this, attackingFaction)` —
+    **`ClaimNode()` itself was not touched**, exactly as instructed;
+    it was already faction-agnostic and needed nothing.
+  - `ResolveAssault()` (private, called from `Update()` once
+    `Time.time - assaultStartTime >= assaultGracePeriod`): guards that
+    the node is still player-owned before flipping (cheap defensive
+    check — nothing else can currently interfere, but costs nothing to
+    verify), calls `CompleteEnemyCapture()`, fires
+    `OnNodeAssaultResolved`.
+  - Did NOT touch `PlayerStats.OnPlayerDied` or
+    `GameState.GameOver` anywhere — confirmed by construction (this
+    path never references either) and by the live test below (GameState
+    stayed `Exploring` throughout).
+
+[DONE] Added the trigger, all in `TurfWarManager.cs`:
+  - New field `assaultChance` (default 0.2, mirrors `reclaimChance`'s
+    value but is its own independently-tunable field, not a shared
+    knob — deliberate, so tuning player-node-assault frequency later
+    can't accidentally retune the unrelated non-player reclaim
+    mechanic).
+  - `CheckPlayerNodeAssaults()`: loops `allNodes`, skips anything not
+    currently player-owned and anything already `IsUnderAssault`, rolls
+    `assaultChance`, and on success calls `PickAssaultingFaction()` then
+    `node.BeginAssault(attacker)`.
+  - `PickAssaultingFaction()`: reuses `FactionManager.GetHostileFactions()`
+    (already existed, untouched) and picks randomly among the result —
+    no new FactionManager code needed at all.
+
+[DONE] Added the visible warning, `TurfAssaultHUD.cs` (new file,
+`Assets/Scripts/Factions/`, co-located with the system it displays —
+same convention as `HeatHUD.cs` living next to `HeatSystem.cs`):
+  - Checked for an existing wired Text element to reuse first, per
+    "don't over-build new UI" — found `InteractionMessageText` under
+    `HUD_Canvas`, but live-inspected `NPCInteraction`'s serialized
+    fields before touching it and confirmed both its `messagePanel`
+    AND `messageText` already point at that exact GameObject. Reusing
+    it would have meant two independent systems fighting over the same
+    Text component (NPC info messages vs. turf-assault warnings would
+    silently overwrite/interrupt each other) — correctly did NOT reuse
+    it, confirmed live rather than assumed safe from the name alone.
+  - Built one new dedicated `TurfAssaultWarningText` (TextMeshProUGUI)
+    under `HUD_Canvas`, top-center, positioned below the existing
+    `RaceTimeText`/`LapText` block with no overlap (checked live
+    RectTransform anchors of every existing HUD child first). This is
+    the ONE new UI element for this pass — no panel system, no queueing
+    UI, matching "simplest workable signal."
+  - `TurfAssaultHUD` subscribes to the two new static events, shows
+    `"{NodeName} is under attack! Defend in {N}s"` while
+    `watchedNode.IsUnderAssault`, clears on resolve. Tracks a single
+    node at a time — **known, flagged limitation**: if two player nodes
+    were ever under assault simultaneously, only the most recent shows.
+    Not fixed here; only 2 PlayerCrew nodes exist today and this pass's
+    test only touches one, so it wasn't worth building a queue for.
+
+[DONE] Compiled clean: `refresh_unity` (force recompile) then
+confirmed `EditorApplication.isCompiling == false` and 0
+errors/warnings in console before touching the scene further.
+
+[DONE] Live play-tested via Unity MCP, exactly per instruction — test
+case `TurfNode_EighthAndState`, not `InclineHouse`:
+  - Baseline confirmed: `EighthAndState.ControllingFaction=PlayerCrew`,
+    `IsUnderAssault=False`, `GetPlayerClaimedNodes()` count=2,
+    `GameState=Exploring`.
+  - Live-read `FactionManager.GetHostileFactions()` before forcing
+    anything — confirmed 5 real hostile factions (NeonSaints,
+    RustBarons, OTRSyndicate, KentuckyKings, HighwayKin, all relation
+    < -0.3) exist and are selectable, validating `PickAssaultingFaction()`
+    against real data, not just reading the method's source.
+  - **First attempt at forcing the assault hit a real bug in my own
+    test code, not the feature**: called
+    `FactionManager.GetFactionByName("RustBarons")` expecting it to
+    match, got null back silently (BeginAssault's own null-guard
+    correctly no-op'd rather than crashing). Live-checked and found
+    `GetFactionByName` matches the `factionName` FIELD
+    ("The Rust Barons"), not the asset filename ("RustBarons") — every
+    faction asset's field value has a "The ___" prefix that differs
+    from its filename. Fixed the TEST (grabbed the FactionData
+    reference directly from `GetAllFactions()` instead of by name
+    string) — no product code was wrong here, this was purely a test
+    authoring mistake, caught and corrected before drawing any
+    conclusion. Worth remembering for any FUTURE `GetFactionByName`
+    call in this codebase: the string must be the "The ___" display
+    name, not the asset's filename.
+  - With the correct reference, `BeginAssault(RustBarons)` on
+    `EighthAndState` correctly set `IsUnderAssault=True`,
+    `AssaultingFaction=RustBarons`, `AssaultTimeRemaining=30`.
+  - HUD text confirmed live: `"8th & State is under attack! Defend in
+    27s"` shortly after, ticking down correctly on subsequent reads
+    (27s -> 20.4s -> 13.8s -> 9.4s -> 5.5s -> 1.9s) as real Play-mode
+    time passed between tool calls — the countdown is genuinely live,
+    not a static string.
+  - At `Time.time=58.01` (grace period had elapsed relative to the
+    `Time.time=26.007` start), confirmed `IsUnderAssault=False` and
+    `ControllingFaction=RustBarons` — **the flip happened via the real
+    elapsed-timer path in `Update()`**, not a manually-forced call.
+  - Confirmed `GetPlayerClaimedNodes()` count dropped from 2 to 1,
+    correctly containing only "The Incline House" (EighthAndState
+    correctly excluded).
+  - Confirmed `GameState` was still `Exploring` — never touched
+    `GameOver`, exactly as instructed.
+  - Confirmed `EighthAndState.WasRecentlyLost` flipped to `True` as a
+    free side effect of going through the real `SetController()` path
+    (via `ClaimNode`) — nice bonus symmetry, not something I had to
+    build, just something `ClaimNode`'s existing generic logic already
+    does correctly for any faction change.
+  - **Unplanned bonus confirmation**: by the time of the final check,
+    the HUD text had changed to `"The Incline House is under attack!
+    Defend in 24s"` — the REAL passive trigger
+    (`CheckPlayerNodeAssaults()`'s 60s-tick random roll, not a forced
+    call) had independently fired on `InclineHouse` during the same
+    test window. This confirms the natural/organic trigger path works
+    end-to-end too, not just the manually-forced `BeginAssault()` path
+    — genuinely unplanned, caught by watching the HUD rather than
+    assumed.
+  - Per instruction, `InclineHouse` was explicitly out of scope for
+    this test (its live `safehouseSpawnPoint` dependency is untraced) —
+    **did not let that second assault resolve**. Exited Play mode
+    promptly instead of waiting out its remaining ~24s, since Play-mode
+    object state never persists to the saved scene regardless (verified
+    after stopping: both nodes' runtime `controllingFaction` read back
+    as `null`, i.e. reset to un-Initialized state, confirming nothing
+    from the Play-mode session leaked into the saved asset).
+  - Console checked before entering Play mode and after exiting: 0
+    errors, 0 warnings both times, through the whole test sequence.
+
+[DONE] Scene saved (`TurfAssaultWarningText`, the one new HUD object,
+was the only actual persistent scene change — added before Play mode,
+confirmed via `isDirty`/`rootCount` 36->37 after exiting). Both
+TurfNode components' new serialized field (`assaultGracePeriod`)
+carries its 30s default; nothing else about `EighthAndState` or
+`InclineHouse`'s saved data changed (their runtime capture state was
+never serialized to begin with).
+
+[FLAG] Carried forward, not resolved this pass: a node under assault
+currently has NO way to be defended/cancelled — once `BeginAssault()`
+fires, the flip after `assaultGracePeriod` is unconditional (barring
+the node somehow losing player ownership through some other path first,
+which nothing today can do). The original R2 proposal described
+"heat/presence must drop out for N seconds to count as defended" as
+part of the undefended-timer design, but building that cancellation
+path wasn't part of this task's steps — only the undefended case was
+asked for and tested. Whether/how a defend mechanic gets added is a
+separate follow-up, not silently assumed to be "fine as-is."
+
+[FLAG] `InclineHouse` remains genuinely untested end-to-end for this
+system — the organic trigger firing on it mid-test (see above) proves
+`CheckPlayerNodeAssaults()` will target it in real play (it's a
+PlayerCrew node, no code excludes it), but its `safehouseSpawnPoint`
+consequence-on-loss question is exactly as open as it was in the
+scoping pass. Recommend deciding that question explicitly before ever
+letting an InclineHouse assault actually resolve in real play, not
+just in a controlled test.

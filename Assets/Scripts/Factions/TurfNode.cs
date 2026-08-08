@@ -36,11 +36,17 @@ namespace AsphaltAnarchy.Factions
         [SerializeField] private bool hasSafehouse = false;
         [SerializeField] private Transform safehouseSpawnPoint;
 
+        [Header("Passive Assault (undefended enemy capture)")]
+        [SerializeField] private float assaultGracePeriod = 30f; // placeholder default, not doc-specified — real window to notice/respond, tunable
+
         private TurfWarManager turfManager;
         private FactionManager factionManager;
         private FactionData controllingFaction;
         private bool wasRecentlyLost;
         private float timeSinceLost;
+        private bool isUnderAssault;
+        private FactionData assaultingFaction;
+        private float assaultStartTime;
 
         public string NodeName => nodeName;
         public FactionData ControllingFaction => controllingFaction;
@@ -49,9 +55,14 @@ namespace AsphaltAnarchy.Factions
         public float Difficulty => difficultyRating;
         public bool WasRecentlyLost => wasRecentlyLost;
         public bool HasSafehouse => hasSafehouse;
+        public bool IsUnderAssault => isUnderAssault;
+        public FactionData AssaultingFaction => assaultingFaction;
+        public float AssaultTimeRemaining => isUnderAssault ? Mathf.Max(0f, assaultGracePeriod - (Time.time - assaultStartTime)) : 0f;
 
         public static event Action<TurfNode> OnNodeEntered;
         public static event Action<TurfNode> OnNodeExited;
+        public static event Action<TurfNode> OnNodeAssaultStarted;
+        public static event Action<TurfNode> OnNodeAssaultResolved;
 
         public void Initialize(TurfWarManager manager, FactionManager factions)
         {
@@ -77,6 +88,11 @@ namespace AsphaltAnarchy.Factions
             if (wasRecentlyLost && Time.time - timeSinceLost > 300f)
             {
                 wasRecentlyLost = false;
+            }
+
+            if (isUnderAssault && Time.time - assaultStartTime >= assaultGracePeriod)
+            {
+                ResolveAssault();
             }
         }
 
@@ -162,6 +178,48 @@ namespace AsphaltAnarchy.Factions
             playerStats?.AddTokens(tokenReward);
 
             GameManager.Instance?.ChangeState(GameState.Exploring);
+        }
+
+        /// <summary>
+        /// Starts the undefended-passive-capture grace period for a PlayerCrew-owned
+        /// node under assault by a hostile faction. Does not resolve immediately —
+        /// see ResolveAssault(), called from Update() once assaultGracePeriod elapses.
+        /// Deliberately independent of PlayerStats.OnPlayerDied/GameState.GameOver.
+        /// </summary>
+        public void BeginAssault(FactionData attacker)
+        {
+            if (isUnderAssault || attacker == null) return;
+
+            isUnderAssault = true;
+            assaultingFaction = attacker;
+            assaultStartTime = Time.time;
+            OnNodeAssaultStarted?.Invoke(this);
+        }
+
+        /// <summary>
+        /// Sibling to CompleteCapture(bool playerWon), for the enemy-wins case.
+        /// Reuses TurfWarManager.ClaimNode() unchanged — it's already faction-agnostic.
+        /// </summary>
+        public void CompleteEnemyCapture(FactionData attackingFaction)
+        {
+            if (attackingFaction == null) return;
+            turfManager?.ClaimNode(this, attackingFaction);
+        }
+
+        private void ResolveAssault()
+        {
+            var attacker = assaultingFaction;
+            isUnderAssault = false;
+            assaultingFaction = null;
+
+            // Defensive check: if something else already moved this node off the
+            // player (not possible via any path that exists today, but cheap to guard).
+            if (controllingFaction == factionManager?.PlayerFaction)
+            {
+                CompleteEnemyCapture(attacker);
+            }
+
+            OnNodeAssaultResolved?.Invoke(this);
         }
 
         private void OnTriggerEnter(Collider other)

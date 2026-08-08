@@ -18,6 +18,9 @@ namespace AsphaltAnarchy.Factions
         [SerializeField] private float reclaimCheckInterval = 60f;
         [SerializeField] private float reclaimChance = 0.2f;
 
+        [Header("Player Node Assault (shares reclaimCheckInterval's tick — no separate timer)")]
+        [SerializeField] private float assaultChance = 0.2f; // mirrors reclaimChance's value, independently tunable
+
         private FactionManager factionManager;
         private EchoSystem echoSystem;
         private EnemyAIManager enemyAIManager;
@@ -52,6 +55,7 @@ namespace AsphaltAnarchy.Factions
             {
                 reclaimTimer = 0f;
                 CheckReclaims();
+                CheckPlayerNodeAssaults();
             }
         }
 
@@ -68,6 +72,42 @@ namespace AsphaltAnarchy.Factions
                     TriggerDefenseEvent(node);
                 }
             }
+        }
+
+        /// <summary>
+        /// Separate mechanism from CheckReclaims() above, not a shared code path — see
+        /// Shared Notes.txt's 2026-08-08 investigation for why: CheckReclaims() targets
+        /// non-player nodes gated on WasRecentlyLost (only true after a node has already
+        /// changed hands once) and, via TriggerDefenseEvent(), only ever reinforces the
+        /// CURRENT controller — it never flips ownership for anyone. A player node that
+        /// has never been captured needs to be a valid assault target from the start, and
+        /// the attacker here is a hostile OUTSIDE faction, not the current (player) owner.
+        /// Deliberately reuses this method's own Update() tick instead of a second timer.
+        /// </summary>
+        private void CheckPlayerNodeAssaults()
+        {
+            var playerFaction = factionManager?.PlayerFaction;
+            if (playerFaction == null) return;
+
+            foreach (var node in allNodes)
+            {
+                if (node.ControllingFaction != playerFaction) continue;
+                if (node.IsUnderAssault) continue;
+
+                if (UnityEngine.Random.value < assaultChance)
+                {
+                    var attacker = PickAssaultingFaction();
+                    if (attacker != null)
+                        node.BeginAssault(attacker);
+                }
+            }
+        }
+
+        private FactionData PickAssaultingFaction()
+        {
+            var hostile = factionManager?.GetHostileFactions();
+            if (hostile == null || hostile.Count == 0) return null;
+            return hostile[UnityEngine.Random.Range(0, hostile.Count)];
         }
 
         public void ClaimNode(TurfNode node, FactionData newFaction)
