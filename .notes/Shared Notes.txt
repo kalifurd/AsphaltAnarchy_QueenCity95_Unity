@@ -4161,3 +4161,136 @@ consequence-on-loss question is exactly as open as it was in the
 scoping pass. Recommend deciding that question explicitly before ever
 letting an InclineHouse assault actually resolve in real play, not
 just in a controlled test.
+
+[2026-08-08, continued] Defend-a-node-under-assault — planning pass
+only, Claude Code (K.I.S.S. FIRST; directly follows up on the
+"[FLAG] Carried forward" item above — `BeginAssault()` is currently a
+pure unconditional countdown to loss with no intervention path)
+
+[DONE] Checkpoint check: working tree was already clean at commit
+fb0c341 (the enemy-capture build, already pushed) — that commit served
+as the checkpoint, no new commit needed before starting.
+
+[DONE] Read `TurfNode.cs`'s existing `CaptureType.CombatGauntlet`
+resolution in full (`StartCombatGauntlet()` / `CompleteCapture(bool
+playerWon)`), and traced into `EnemyAIManager.cs` / `EnemyAI.cs` /
+`EnemyHealth.cs` to check what "reuse it in reverse" would actually
+require. It's a partial reuse, not a clean drop-in either direction:
+  - **Spawning IS reusable as a straight parameter swap.**
+    `StartCombatGauntlet()` calls
+    `enemyAIManager.SpawnEnemyWave(controllingFaction, transform.position,
+    count)` — for a defense wave this becomes
+    `SpawnEnemyWave(assaultingFaction, ...)`, i.e. spawn the ATTACKER's
+    faction for the player to fight, not the current owner's. Confirmed
+    this works mechanically with zero changes to `SpawnEnemyWave` itself:
+    `faction?.bikePrefab` already picks the correct per-faction prefab,
+    and each prefab already carries its own faction's `EnemyAI.faction`
+    baked in via the Inspector — the `// enemyAI.SetFaction(faction)`
+    line inside `SpawnEnemyWave` is dead/vestigial (no `SetFaction`
+    method exists anywhere on `EnemyAI`), so nothing runtime-side needs
+    wiring for faction identity to be correct. Same swap applies cleanly
+    to the finite-manpower gate too (`factionManager.HasFiniteManpower`/
+    `GetManpower`/`ConsumeManpower` would key off `assaultingFaction`
+    instead of `controllingFaction`, same call shape).
+  - **Resolution is NOT reusable as-is — and turns out to be unfinished
+    even on the existing player-attacks path.** `CompleteCapture(bool
+    playerWon)` is `if (!playerWon) return;` then unconditionally awards
+    the PLAYER the node — there is no losing branch at all. Grepped for
+    every call site of `CompleteCapture`: none exist anywhere live
+    (only the method definition and doc comments). So today, starting a
+    CombatGauntlet on an enemy node has no code path that ever calls
+    `CompleteCapture(false)` on a loss — the forward case has never had
+    a working "you lost the gauntlet" outcome either. This isn't a gap
+    specific to defense; it's a pre-existing incompleteness the defense
+    feature would inherit if it copied the same shape unchanged.
+  - **Win-detection is the real missing piece, on both sides.**
+    `EnemyAIManager` has no "wave cleared" event — only
+    `GetActiveEnemies()`, which returns the GLOBAL active-enemy list
+    (shared with HeatSystem reinforcement spawns and any other
+    simultaneous gauntlet), so counting "all active enemies dead" would
+    be wrong the moment two things spawn enemies at once. `SpawnEnemyWave`
+    also doesn't return or expose the instances it just created, so a
+    caller can't currently isolate "the enemies that belong to THIS
+    wave" without a small signature change (e.g. return
+    `List<EnemyAI>`). The building block for a fix does exist, though:
+    `EnemyHealth.OnEnemyDied` (static `Action<EnemyHealth>`) already
+    fires per-instance on death — a caller that tracked its own spawned
+    list could subscribe and count down. Confirmed this event exists and
+    fires correctly (`Die()` → `OnEnemyDied?.Invoke(this)`) but nothing
+    in the codebase currently subscribes to it for gauntlet-resolution
+    purposes.
+  - **Lose-detection already exists for the DEFENSE case specifically** —
+    it's `ResolveAssault()`, already built and live-tested (see above):
+    if nothing intervenes before `assaultGracePeriod` elapses, the node
+    flips. That's a working "you failed to defend" outcome already. What
+    doesn't exist is a way to short-circuit it on a win.
+
+[FLAG] **Defense flow shape — needs sign-off, not decided here**, per
+the task's explicit framing as a real decision. Two candidates:
+  - **D1, real combat gauntlet (reuse-in-reverse).** On `BeginAssault()`
+    (or on player entering the node's trigger while under assault, to
+    avoid spawning a fight nobody's there to have), spawn a wave of
+    `assaultingFaction` via `SpawnEnemyWave` exactly as sketched above,
+    track the returned/registered instances for this specific assault,
+    and wire a per-node counter against `EnemyHealth.OnEnemyDied` that,
+    on reaching zero before the grace period expires, cancels the
+    assault instead of letting `ResolveAssault()` flip the node. Pro:
+    reuses the same "fight for turf" pattern the player already knows
+    from attacking enemy nodes — consistent framing. Con: real new code
+    on three fronts — `SpawnEnemyWave` needs to expose what it spawned,
+    `TurfNode` needs new per-assault wave-tracking state and a
+    cancel-instead-of-resolve branch, and a product call is needed on
+    whether the wave spawns immediately at `BeginAssault()` (could fight
+    happen with nobody around to see it) or is gated on player presence
+    (in which case: what happens if the player never arrives before the
+    grace period runs out — does it just silently resolve as a loss
+    per the existing timer, meaning combat never even triggers unless
+    the player happens to be nearby in time?).
+  - **D2, presence-based signal (no spawned combat).** Reuse
+    `OnNodeEntered`/`OnNodeExited` (already firing unconditionally for
+    every node) directly: if the player is inside the node's trigger
+    when the grace period would expire (or has been inside for some
+    portion of it), treat the node as defended and cancel the assault
+    instead of resolving it — no new enemies, no `EnemyAIManager`
+    involvement at all. This is structurally the same idea the earlier
+    scoping pass's R2 proposal already named ("heat/presence must drop
+    out for N seconds to count as defended," just inverted: presence
+    now DEFENDS instead of presence being what starts a HeatSystem
+    encounter). Pro: cheap, no new spawn-tracking machinery, works
+    identically regardless of a node's own `captureType`. Con: no actual
+    risk or skill check — the player could just idle inside the node's
+    radius and keep it for free, which likely undercuts the tension
+    `TurfAssaultHUD`'s live countdown is going for, and is inconsistent
+    with every OTHER capture path in this game (Race/CombatGauntlet/
+    Stunt) requiring the player to actually do something.
+  Not picking one — this is exactly the "real decision, not something to
+  pick solo" the task called out.
+
+[DONE] Checked how this interacts with `InclineHouse` specifically, per
+instruction (not testing it — its `safehouseSpawnPoint` dependency is
+still untraced from the prior pass):
+  - `InclineHouse` has `captureType = Race`, not `CombatGauntlet`. If D1
+    is picked, spawning a "fight off the attackers" wave there bolts
+    combat framing onto a node whose own defined capture method is a
+    race — the same category of captureType/mechanic mismatch already
+    on record from the prior faction-assets work, just in a new spot.
+    Whether defense should always be combat regardless of the node's own
+    `captureType`, or should mirror each node's own capture method
+    (which `InclineHouse` doesn't have a "race the attacker off" flow
+    for today, and would need one built), is an open question D1 would
+    need answered — not assumed here either way.
+  - If D2 is picked instead, it's `captureType`-agnostic by construction
+    — presence works identically whether the node's own capture method
+    is `Race`, `CombatGauntlet`, or `Stunt`, so `InclineHouse` raises no
+    NEW mismatch under D2.
+  - Either way, the already-flagged `safehouseSpawnPoint`
+    consequence-on-loss question is untouched by this proposal and still
+    needs its own explicit answer before any `InclineHouse` assault is
+    allowed to resolve in real play. D1 specifically would add one more
+    wrinkle worth naming if it's the path chosen: combat literally
+    happening at the player's own safehouse/respawn point.
+
+No scene or code changes made this pass — planning only, per
+instruction. Two things block any build: the D1-vs-D2 flow decision
+above, and (only if D1 is chosen) the `SpawnEnemyWave` signature change
+plus new per-node wave-tracking state it would require.
