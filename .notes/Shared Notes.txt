@@ -2648,3 +2648,154 @@ after: 0 errors, 0 warnings.
 Both corrections are pure data/doc fixes — no code touched, no scene
 touched. git diff confirmed minimal and scoped: one line each in
 HighwayKin.asset and the Price Hill doc.
+
+[2026-08-08, continued] Cleanup pass + Price Hill node-3 planning pass —
+Claude Code
+
+[DONE] Checkpoint check: working tree was already clean at commit
+3d60e1b (pushed to origin/master at the start of this session) — that
+commit served as the checkpoint, no new commit needed before starting.
+
+--- PART 1: CLEANUP ---
+
+[DONE] Verified before assuming: re-checked the live scene root count
+first rather than trusting the prior session's audit was already acted
+on. Root count was still 43, all 19 loose Tripo objects from the
+2026-08-08 audit ([[project_loose_tripo_scene_objects]]) were still
+present exactly as found — nothing had been cleaned up yet.
+
+[DONE] Deleted 18 of the 19 loose scene-root objects via Unity MCP
+execute_code, targeting each by exact instance ID (not by name — one
+of them, harley_davidson_motorcycle_3d_model, existed as two separate
+root instances with the identical literal name, so name-based deletion
+would have been ambiguous/risky). ducati_sport_motorcycle_3d_model
+intentionally excluded per instruction (see flag below). Root count
+confirmed 43 -> 25 immediately after (exactly 18 fewer), console
+checked clean (0 errors/warnings), scene saved successfully to
+Assets/Scenes/QueenCity_Main.unity.
+
+[DONE] Deleted the 3 confirmed-broken superseded model files from
+Assets/TripoModels/: Rust_Baron_Bike.glb, "Rust Baron NPC.glb.txt",
+OTR_Syn_Bike.glb.txt. Re-verified before deleting rather than trusting
+the task description alone: manage_asset get_info confirmed
+Rust_Baron_Bike.glb imports as UnityEditor.DefaultAsset (Unity has no
+importer for raw .glb — no glTF package installed, matches the
+"DefaultImporter, no glTF package" description) and both ".txt"-suffixed
+files import as plain UnityEngine.TextAsset (unusable as 3D content by
+construction). Grepped all 3 GUIDs across Assets/ before deleting —
+each GUID's only hit was its own .meta file, confirming zero references
+anywhere else in the project (no prefab, scene, or script points at
+any of them). All 3 deleted cleanly via manage_asset.
+
+[FLAG — decision needed, not acted on] ducati_sport_motorcycle_3d_model
+left untouched and still sitting at scene root, per instruction — this
+one is categorically different from the other 18: it's a real, working,
+Tripo-bridge-delivered model (MeshFilter+MeshRenderer, not broken, not
+a DefaultAsset) that simply isn't wired to anything yet, unlike the
+confirmed-dead visual clutter or the confirmed-broken pre-bridge files.
+Needs a decision: keep it in reserve (e.g. as a future 7th-faction or
+variant bike option) or actually delete it. Not decided either way this
+session.
+
+[DONE] Final live verification: scene hierarchy re-checked after all
+deletions — root count 25 (down from 43), ducati_sport_motorcycle_3d_model
+confirmed still present and untouched, console clean (0
+errors/warnings), scene saved.
+
+--- PART 2: PRICE HILL NODE-3 PLANNING PASS (no build this session) ---
+
+[DONE] Re-read Docs/LevelDesign_PriceHill_Delhi_1995.md §6 in full for
+the 3 remaining proposed nodes: TurfNode_EighthAndState (PlayerCrew
+start-owned, CombatGauntlet, "The crossroads. Losing it = losing the
+flats."), TurfNode_WarsawAve (Neutral, Race, "Contested main street"),
+TurfNode_AndersonFerry (Neutral, Race, "Gateway prize; whoever holds it
+taxes the southern exit"). Cross-referenced each against its location-
+list entry: EighthAndState maps to Meyer's Carryout (P2, "8th & State"
+crossroads corner store) in the Lower Price Hill section; WarsawAve
+maps to the Warsaw Ave block (P1, includes real CPD District 3) in the
+East Price Hill section; AndersonFerry maps to the Anderson Ferry
+landing (P2, ramp/shack/queue) in the Delhi Township section, tied to
+the doc's own separately-flagged "scripted timed crossing" mechanic
+(§6) that isn't wired anywhere yet.
+
+[DONE] Checked live scene state before proposing anything, same
+discipline as the InclineHouse milestone: find_gameobjects by name
+confirmed zero hits anywhere in the scene for "Warsaw", "Ferry", "8th",
+or "EighthAndState" — none of the 3 nodes or any related content exist
+yet, clean slate.
+
+[DONE] Pulled the actual InclineHouse milestone's build contents via
+MCP (not assumed from memory) to calibrate real scope instead of
+guessing uniform weight across all 3 nodes: TurfNode_InclineHouse
+itself is lightweight (TurfNode component + 10-unit trigger
+SphereCollider + a SafehouseSpawnPoint child + a TerritoryBorder
+MeshRenderer child) at (-40,0,-50). The "milestone" content around it
+is equally lightweight — InclineHouse_Clubhouse_PLACEHOLDER is a bare
+box primitive (BoxCollider+MeshRenderer, no real model) at
+(-40,4,-65), and StateAve_Stub / InclineCut_Stub are likewise flat box
+road-stub primitives, not built terrain. Notably InclineCut_Stub sits
+at y=10.8 — a ramp stub climbing from the flats toward the crest, but
+it dangles: nothing exists at the top it climbs toward. Ground itself
+is a single flat plane at the origin; none of Price Hill's 4-tier
+vertical structure is actually built yet.
+
+[FLAG — scope finding, central to the proposal below] The 3 nodes are
+NOT uniform in what they need, confirmed by checking rather than
+assumed: TurfNode_EighthAndState sits in Tier 2 (the flats), the exact
+same elevation band as all existing Price Hill content (InclineHouse,
+the two stubs) — it can be placed using the same local coordinate
+neighborhood already established, no new terrain required.
+TurfNode_WarsawAve (Tier 3, the crest) and TurfNode_AndersonFerry (Tier
+4->1, the Delhi bluffs dropping to the river landing) each sit on a
+tier that doesn't exist as built geometry anywhere in the scene — only
+a single flat Ground plane and one dangling incline-cut ramp exist
+today. Placing either of those 2 nodes now would mean a TurfNode marker
+floating with no matching ground beneath it — exactly the trap the
+doc's own §8 build note warns against ("current TurfNode positions use
+abstract coordinates... this district will need a real coordinate plan
+before its proposed nodes are placed — don't inherit the placeholder
+spacing").
+
+[FLAG — functional gap found, not a doc problem, worth knowing before
+building EighthAndState specifically] Read TurfWarManager.cs in full to
+check whether "Losing it = losing the flats" (EighthAndState's stated
+design purpose) is actually mechanically possible today. It is not:
+TurfNode.CompleteCapture() only ever assigns the *player's* faction as
+the new controller on a player win; TurfWarManager.CheckReclaims()/
+TriggerDefenseEvent() only handle non-player factions defending or
+reclaiming nodes from *other* non-player factions
+(`if (node.ControllingFaction == factionManager.PlayerFaction) continue;`
+skips player-owned nodes entirely). There is currently no code path
+anywhere by which an enemy faction can capture a PlayerCrew-controlled
+node. Building TurfNode_EighthAndState is still worthwhile (§6 is
+explicitly "SUGGESTIONS — nothing here is wired; needs its own pass,"
+same as every other proposed node), but its "can be lost" hook won't
+actually do anything until a separate enemy-capture system exists —
+flagging so an idle, uncapturable node next session doesn't get
+mistaken for a placement bug.
+
+[PROPOSED — awaiting review, nothing built] Next milestone: build
+TurfNode_EighthAndState only, matching InclineHouse's lightweight
+pattern (TurfNode + trigger SphereCollider, startingFaction=PlayerCrew,
+captureType=CombatGauntlet per §6's table, positioned in the existing
+Tier-2 coordinate neighborhood near StateAve_Stub/InclineHouse — exact
+numbers are a build-time call, same as InclineHouse's own placement;
+the doc is intentionally abstract on distances). Optionally a small
+placeholder box for Meyer's Carryout (P2 corner store at the literal
+"8th & State" crossroads) mirroring InclineHouse_Clubhouse_PLACEHOLDER
+but scaled down for a corner store rather than a clubhouse — proposed
+as light dressing, not required for the node to function. No safehouse
+fields (hasSafehouse/safehouseSpawnPoint) — only InclineHouse is the
+safehouse.
+
+TurfNode_WarsawAve and TurfNode_AndersonFerry are NOT proposed for this
+milestone — both are blocked on a real terrain/coordinate plan for
+their tiers that doesn't exist yet. Two ways to unblock, flagging as a
+decision rather than picking one: (a) do a dedicated terrain/coordinate
+pass for Price Hill's 4-tier structure first, building these 2 (and
+eventually the rest of the district) on real ground; or (b) accept
+bare abstract-coordinate placement now — same treatment the original 4
+city-wide TurfNodes (OTRAlley, QueensgateYard, DowntownOverpass,
+NewportRiverfront) got before their districts had any built terrain —
+if turf-war systems coverage is wanted ahead of the art pass. Not
+decided either way this session.
