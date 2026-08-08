@@ -3722,3 +3722,83 @@ landing, which still has zero hazard alongside its ramp) remains
 untouched and open for a future pass.
 
 Committing this work now per instruction.
+
+[2026-08-08, continued] Apply WaterHazard to TurfNode_AndersonFerry —
+Claude Code (K.I.S.S. FIRST: reuse the proven prefab, this is
+placement, not new development)
+
+[DONE] Checkpoint check: working tree was already clean at commit
+c468ee8 (the WaterHazard/Kingfish build, already pushed) — that commit
+served as the checkpoint, no new commit needed before starting.
+
+[DONE] Re-read the Price Hill doc's Anderson Ferry references before
+placing anything, per instruction — confirmed this is NOT a
+Kingfish-style situation: "**Anderson Ferry** [R] — Across the Ohio to
+the Kentucky side... Real ferry, running since 1817. Timed crossing —
+see §6" (§2 G3), and §6: "scripted timed crossing (real ferry, ~every
+15 min in-fiction). Board = safe passage + heat decay during crossing;
+miss it = fight or reroute." There is no permanent far-side deck to
+flank a gap for — the ferry itself is a future scripted mechanic, not
+built geometry. §4's location entry confirms the landing is just
+"Ramp, small bait/snack shack, ferry queue," and §5 calls it "the only
+southern exit is a boat that leaves when it leaves." Correctly a
+single dead-end cap at the ramp's river edge, not a two-segment flank
+— the task's hypothesis held, confirmed rather than assumed.
+
+[DONE] Confirmed live geometry before placing anything: read
+`AndersonFerryRd_Stub`'s actual transform (pos -157.29,8.15,-50,
+rotation (0,0,24.65°), scale 60.50x1x6) and computed its low/river-end
+edge via `TransformPoint` rather than eyeballing world bounds (a
+rotated box's AABB extents are misleading for finding an exact edge).
+The computed edge, (-184.99,-4.02,-50), landed within 0.02 units of
+`TurfNode_AndersonFerry`'s own position (-185,-4,-50) — confirms the
+node really does sit at the landing, consistent with
+[[project_turf_heat_wiring]]'s original placement reasoning from when
+the ramp was built. Also confirmed the ramp's rotation is Z-axis-only,
+so its width axis (local Z, the 6-unit dimension) stays parallel to
+world Z regardless of the slope — meant the cap could be built by
+matching the ramp's own rotation rather than needing new geometry math.
+
+[DONE] Instantiated one `WaterHazard` prefab instance,
+`AndersonFerry_WaterBlocker_Cap`, oriented to match the ramp's own
+rotation (0,0,24.65°) so the wall sits flush across the road's end
+instead of floating at a world-axis-aligned angle:
+  - pos (-186.35,-4.64,-50), rotation (0,0,24.65°), scale (3,1,8) —
+    3 units thick along the slope/travel direction, 8 units wide
+    across the road (wider than the ramp's 6-unit width for margin).
+  - Live-verified with the same zero-gap technique as the Kingfish:
+    computed the blocker's near-face-bottom corner via
+    `transform.TransformPoint` and compared directly against the
+    ramp's own edge point — delta was exactly (0,0,0). Not eyeballed,
+    not assumed from the input math alone.
+  - This is a single cap, not a flanking pair — correct per the §2/§6
+    confirmation above (no far side to leave open).
+
+[DONE] Live play-tested via Unity MCP, same physics-injection method as
+the Kingfish's blocker test (not just object-existence checks):
+positioned the Player 15 units up-slope from the landing, aimed
+downhill (using the ramp's own computed downhill direction, not a
+world axis, since the road is tilted), set `rb.linearVelocity` to 15
+m/s downhill. It advanced to (-184.59,-2.73,-48.94) and stopped dead —
+just short of the landing edge, accounting for the player's own
+collider radius, same margin pattern as the Kingfish test. Re-applied
+the same velocity a second time; it snapped back to the identical
+position with velocity collapsed to ~0 again, confirming a genuine
+physical stop on a sloped surface, not merely deceleration from
+climbing/descending grade. Console checked before entering Play mode
+and after exiting: 0 errors, 0 warnings both times. Exited Play mode
+cleanly, scene saved.
+
+[DONE] `TurfNode_AndersonFerry` itself untouched — position,
+captureType (Race), neutral startingFaction all unchanged. Only the
+new blocker instance was added near it.
+
+[NOTE] Did not re-test enemy AI against this cap specifically — the
+Kingfish pass already confirmed enemy AI (real physics via
+`ApplyExternalForce`/`ApplyExternalTorque`) respects any solid
+Blocker instance identically to the player, with no per-instance
+retest needed; that conclusion is collider-mechanism-general, not
+Kingfish-specific, so retesting it here would just be re-proving the
+same physics fact on a second geometry.
+
+Committing this work now per instruction.
