@@ -3065,3 +3065,126 @@ No scene or terrain changes were made this session — this is a
 proposal for review only, exactly as instructed. WarsawAve is ready to
 build as soon as it's approved; AndersonFerry cannot proceed until you
 provide a real elevation anchor per the flag above.
+
+[2026-08-08, continued] Build TurfNode_AndersonFerry — Claude Code
+
+[DONE] Checkpoint check: working tree had the prior planning-pass notes
+entry (above) still uncommitted at session start — committed it first
+(741e1ab) as a clean checkpoint before touching anything new.
+
+[DONE] Confirmed anchors applied exactly as given, no recalculation:
+Delhi bluff top (Tier 4) y=+21.2, Ohio River normal pool waterline
+(Tier 1) y=-4.0, total descent 25.2 units.
+
+[DONE] Re-read the doc's actual Anderson Ferry text live before
+building, per instruction — confirmed where the node belongs rather
+than assuming: §2's road table describes Anderson Ferry Road only as
+"Drops off the Delhi bluffs to the ferry landing on River Rd... Steep
+rural descent ending at the river" — no switchbacks, hairpins, or
+multi-segment language, just a plain steep descent. The actual
+turf-relevant content sits at the BOTTOM, not the road itself: §4's
+Delhi Township list names "Anderson Ferry landing [P2]: Ramp, small
+bait/snack shack, ferry queue... G3 gateway... Stakeout the queue,"
+§5's stakeout table says "the only southern exit is a boat that leaves
+when it leaves. Make the ferry or fight on the ramp," and §6 itself
+frames the node as "whoever holds it taxes the southern exit." All
+three point at the landing (river level), not partway up the bluff or
+the top — built accordingly.
+
+**Judgment call on geometry, per instruction's explicit invitation to
+use judgment:** kept a SINGLE ramp (not stepped/multi-segment),
+because nothing in the doc's own description suggests switchbacks —
+just "steep rural descent." But did NOT reuse InclineCut_Stub's 40-unit
+horizontal run unmodified: chose a longer 55-unit run instead, since
+(a) 25.2 units of rise is measurably more than InclineCut_Stub's 21.6,
+and (b) this is a real paved public road [R] carrying normal traffic,
+unlike the incline cut's bike-only dirt shortcut — a real road
+reasonably gets a gentler grade than a deliberately extreme bike-only
+shortcut. Resulting angle ≈24.65° vs InclineCut_Stub's ≈28.37° —
+still clearly "steep rural descent," just not steeper than the game's
+existing most-extreme intentional outlier. The 55-unit run is this
+session's own placeholder choice, same as InclineCut_Stub's 40 was —
+flagged, not doc-specified.
+
+[DONE] Built AndersonFerryRd_Stub: a single rotated Cube ramp (tag
+Asphalt, matching the road's [R]-real-paved-road status — NOT tagged
+Dirt like InclineCut_Stub's dirt-scar bike shortcut), computed
+precisely (not eyeballed) so its walking-surface endpoints land on the
+exact anchors: center (-157.29, 8.145, -50), rotation.z=24.65°, scale
+(60.498, 1, 6). Live-verified afterward via the same landing-point
+method used to confirm InclineCut_Stub: measured top landing
+(-130.006, 21.216, -50) against target y=+21.2, measured bottom
+landing (-184.991, -4.017, -50) against target y=-4.0 — both within
+0.02 units, measured horizontal run 54.985 against target 55. Placed
+in a new area of the scene (~x=-157 to -185), clearly separate from
+the existing InclineHouse/EighthAndState/(proposed)WarsawAve cluster
+(x=-40 to +30) — arbitrary placement choice since the doc keeps
+distances abstract, flagged as such, not canon.
+
+[DONE] Built TurfNode_AndersonFerry at the ramp's bottom landing
+(-185, -4, -50) — the exact river-waterline anchor, not the ramp's
+slightly-rounded surface value, since the anchor itself is the
+authoritative number per instruction. TurfNode + SphereCollider
+(radius=10, isTrigger=true) + TerritoryBorder child (thin disc, same
+pattern as every prior node, CapsuleCollider removed to match
+precedent — same tool quirk as EighthAndState's build, caught
+immediately this time). nodeName="Anderson Ferry", description built
+from the doc's own landing description + "taxes the southern exit"
+line. startingFaction left unassigned (neutral — no faction currently
+controls the ferry crossing, matching the doc's "whoever holds it"
+framing and the same neutral pattern as TurfNode_AbandonedSubway/the
+original 4 nodes). captureType=Race (per §6's table). hasSafehouse
+left false.
+
+[NOTE] No building placeholder built for the "small bait/snack shack"
+mentioned in the doc's landing description, per instruction ("no
+building placeholder unless the doc actually names one for this
+location specifically"). Unlike Meyer's Carryout (a specific proper
+name), the shack here is generic scene-dressing alongside "ramp" and
+"ferry queue" — doesn't rise to the same bar. If a future pass wants
+a placeholder for it, that's a small, easy addition, not attempted
+here to avoid inventing scope.
+
+[DONE] Registered TurfNode_AndersonFerry in TurfWarManager.allNodes
+(Systems GameObject) via SerializedObject array insert, same as every
+prior node — array grew from 9 to 10 entries, all 9 prior entries
+undisturbed, new entry correctly at index 9.
+
+[DONE] Live play-tested via Unity MCP, same standard as every prior
+node: entered Play mode, confirmed Time.frameCount advancing across
+two calls (no focus-freeze), then read the real runtime objects
+directly:
+  - TurfNode_AndersonFerry.NodeName = "Anderson Ferry"
+  - StartingFaction = NULL, ControllingFaction = NULL — correctly
+    uncontrolled/neutral (unlike InclineHouse/EighthAndState, this one
+    is NOT expected to resolve to PlayerCrew, and didn't).
+  - CaptureMethod = Race, HasSafehouse = False — both as intended.
+  - TurfWarManager.GetPlayerClaimedNodes() stayed at 2 (InclineHouse +
+    EighthAndState only) — confirms AndersonFerry correctly does NOT
+    count as player-owned.
+  - Checked the ramp's actual live MeshRenderer.bounds (not just the
+    transform values used to build it) to catch anything genuinely
+    absurd: world bounds center (-157.29, 8.15, -50), min.y=-4.926,
+    max.y=21.216, vertical size=26.141, horizontal size=55.402. max.y
+    matches the +21.2 anchor almost exactly; the small padding beyond
+    the -4.0/25.2 targets (~0.7-0.9 units) is the same rotated-box
+    axis-aligned-bounding-box thickness effect already documented when
+    InclineCut_Stub was originally verified (22.48 measured vs 21.6
+    analytic) — not a new discrepancy, not a bug, expected and
+    consistent with precedent. Nothing absurd or oversized.
+  - Console checked before entering Play mode, again after all checks:
+    0 errors, 0 warnings both times.
+  - Exited Play mode cleanly. Scene confirmed isDirty=false after
+    (already saved before entering Play), rootCount=29 (27 + the 2 new
+    root objects: AndersonFerryRd_Stub and TurfNode_AndersonFerry).
+
+TurfNode_AndersonFerry is now built and live-verified, using the exact
+confirmed elevation anchors with zero recalculation or substitution.
+Price Hill now has all 4 of its §6-proposed TurfNodes live: InclineHouse
+(clubhouse/safehouse), EighthAndState (crossroads), and now
+AndersonFerry (river gateway) — WarsawAve is the only one left, already
+proposed and unblocked (prior session's entry above), just awaiting a
+go-ahead to build. No real ambiguity was hit that needed a stop-and-ask
+this pass — the single judgment call (ramp run length/grade) was
+explicitly invited by the task and is logged with its reasoning above
+for review, not silently decided.
