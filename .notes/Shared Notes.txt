@@ -3802,3 +3802,151 @@ Kingfish-specific, so retesting it here would just be re-proving the
 same physics fact on a second geometry.
 
 Committing this work now per instruction.
+
+[2026-08-08, continued] Enemy capture of PlayerCrew-owned nodes —
+scoping pass only, Claude Code (K.I.S.S. FIRST: this gap has been
+flagged twice in [[project_turf_heat_wiring]] without being addressed;
+planning before building, same discipline as every prior system pass)
+
+[DONE] Checkpoint check: working tree was already clean at commit
+41045c9 (Anderson Ferry cap, already pushed) — that commit served as
+the checkpoint, no new commit needed before starting.
+
+[DONE] Read `TurfNode.cs` and `TurfWarManager.cs` in full. Exactly
+what exists today for non-player capture, confirmed line-by-line, not
+assumed:
+  - `TurfWarManager.ClaimNode(TurfNode, FactionData)` is already
+    faction-agnostic — it branches `OnNodeClaimed`/`OnNodeLost` and
+    relation changes based on whether the new/old faction equals
+    `PlayerFaction`, but doesn't hardcode which faction can call it.
+    **This method needs no changes** — it already supports an enemy
+    faction as the new owner if something calls it that way.
+  - The ONLY caller of `ClaimNode` is
+    `TurfNode.CompleteCapture(bool playerWon)`, and it's unconditionally
+    player-directed: `if (!playerWon) return;` then always passes
+    `factionManager.PlayerFaction` as the new owner. There is no
+    sibling method anywhere for "an enemy faction won a capture
+    attempt" — this is the actual gap, not a missing generic mechanism.
+  - `TurfWarManager.CheckReclaims()` explicitly skips player-owned
+    nodes (`if (node.ControllingFaction == factionManager.PlayerFaction)
+    continue;`) — confirmed this is the skip the prior memory note
+    flagged. But also confirmed something the memory note didn't
+    capture: even for the NON-player nodes this method doesn't skip,
+    `TriggerDefenseEvent()` never actually changes `controllingFaction`
+    at all — it only calls `enemyAIManager.SpawnEnemyWave(...)` for the
+    node's CURRENT owner. Despite the "reclaim" naming and the "//
+    Factions attempt to reclaim lost nodes" comment, this mechanic
+    doesn't flip ownership for ANY node today, player-owned or not —
+    it's a defense-wave flavor event only. Worth its own note (not
+    fixing here, out of scope) since it means the underlying "reclaim"
+    concept doesn't fully work yet even on the non-player side.
+  - `TurfNode.StartCombatGauntlet()` spawns enemies of
+    `controllingFaction` — i.e., it defends whoever currently owns the
+    node against a player-initiated challenge. For a player-owned node,
+    `controllingFaction` IS `PlayerFaction`, so this method cannot be
+    reused as-is for "an enemy attacks my turf" — it would spawn
+    PlayerFaction-colored "enemies," which is meaningless. Any new
+    trigger needs to spawn the ATTACKING faction, not
+    `node.ControllingFaction` — confirmed this is a real code-shape
+    mismatch, not just a missing call site.
+  - Also checked `HeatSystem.cs`'s existing tie-in since the task
+    named it as a candidate trigger: `HandleTurfEntered()` (subscribed
+    to `TurfNode.OnNodeEntered`) explicitly ignores player-owned nodes
+    (`if (controller == factionManager.PlayerFaction) return;`) — today
+    there is zero interaction between HeatSystem and a player's own
+    turf. `TryTriggerWave()`/`SpawnReinforcementWave()` are purely
+    player-position-based (spawn at `playerTransform.position`, not at
+    any TurfNode) and know nothing about node ownership at all.
+  - Checked what "player defeated" signal already exists, since any
+    resolution logic needs one: `PlayerStats.OnPlayerDied` fires when
+    `CurrentHealth <= 0`, but in the SAME breath also calls
+    `GameManager.Instance?.ChangeState(GameState.GameOver)` — losing
+    ANY fight today is a full game-over, not a soft per-encounter loss.
+    Reusing this for "you lost the defense of EighthAndState" is
+    technically free (the event already exists) but conflates a single
+    turf skirmish with ending the whole run — a real design question,
+    not assumed away here.
+  - Checked for a symmetric "player won the fight" signal:
+    `EnemyAIManager` has no `OnWaveDefeated`/"all enemies of this wave
+    cleared" event — only `GetActiveEnemies()` and count-based spawn
+    limits. Detecting "the defense succeeded" would need new polling
+    or a new event, unlike the free "player lost" signal above. This
+    asymmetry matters for scoping resolution logic minimally.
+
+[FLAG] **Trigger condition — needs sign-off, not decided here.** Two
+candidates, both explicitly named as options per the task's own
+framing (StartCombatGauntlet-adjacent vs. HeatSystem-adjacent):
+  - **T1, in-person/heat-linked**: while the player is physically
+    inside a player-owned node's trigger (`OnNodeEntered` already fires
+    unconditionally for any node) AND `HeatSystem.CurrentHeat` is above
+    some threshold with a hostile `EncounterFaction`, treat that as
+    "my turf is under attack right now" and spawn a wave of
+    `EncounterFaction` (not `ControllingFaction`) at the node —
+    reuses 100% of the existing `SpawnEnemyWave` machinery, needs zero
+    new per-node timer state, derivable live each frame from state that
+    already exists. Con: only resolves while the player is standing
+    there, so a player who simply never revisits a captured node could
+    make it uncapturable in practice — may be fine as an MVP
+    restriction, may feel unearned as a permanent invincibility, a
+    real product call either way.
+  - **T2, passive/timer-based**: mirrors `CheckReclaims()`'s existing
+    60-second tick structure exactly, but actually resolves to a
+    capture (unlike today's version) — periodically roll a chance for
+    a hostile faction to begin an assault on a player-owned node
+    regardless of where the player currently is. Structurally the
+    closest fit to the code that already exists, but raises "is it fair
+    to lose turf while away" as an explicit question, and doesn't
+    reuse `StartCombatGauntlet`'s pattern the way T1 does.
+
+[FLAG] **Resolution logic — needs sign-off, not decided here.** Two
+candidates, independent of which trigger gets picked:
+  - **R1, binary win/lose combat**: mirrors `CompleteCapture(bool
+    playerWon)`'s existing shape exactly, just inverted. If the player
+    is defeated during the spawned wave, reuse the already-free
+    `PlayerStats.OnPlayerDied` to call
+    `turfManager.ClaimNode(node, attackingFaction)`. If the player
+    clears the wave, defense succeeds — but this half needs new
+    plumbing since no "wave cleared" event exists yet (see above).
+    Directly reuses the existing win/lose shape of the player-attacks
+    path, smallest conceptual addition, but inherits the
+    OnPlayerDied-means-GameOver conflation flagged above — losing a
+    single node defense would currently end the run, not just cost you
+    that node, unless GameOver's own handling already treats it as a
+    soft "you get to keep playing, just poorer" outcome (didn't check
+    GameManager's GameOver handling — out of this scoping pass, but
+    relevant to whichever resolution gets picked).
+  - **R2, undefended timer**: the node flips automatically if the
+    assault condition persists for some duration without being
+    cleared (e.g., heat/presence must drop out for N seconds to count
+    as "defended," otherwise it flips after a timer). Doesn't depend on
+    a working "player defeated" OR "wave cleared" signal at all — more
+    forgiving, but needs new per-node timer state that doesn't exist
+    today (`TurfNode` currently only tracks `wasRecentlyLost`/
+    `timeSinceLost` for the OPPOSITE case — a node that already
+    changed hands recently, not an in-progress assault).
+
+[DONE] Confirmed whether InclineHouse and EighthAndState are both
+realistic live test cases, per instruction — they are NOT
+equally suited, confirmed live rather than assumed from memory:
+  - `TurfNode_EighthAndState`: `captureType=CombatGauntlet`,
+    `hasSafehouse=False`, no `safehouseSpawnPoint` reference. Clean
+    test case — losing it has no other system depending on it, and its
+    existing `CombatGauntlet` captureType already matches the
+    combat-flavored resolution both trigger options above would need.
+    The Price Hill doc's own text ("Losing it = losing the flats," §6)
+    narratively anticipates this specific node being the one that can
+    change hands.
+  - `TurfNode_InclineHouse`: `captureType=Race`, `hasSafehouse=True`,
+    with a real, live `safehouseSpawnPoint` Transform reference
+    attached. This is the player's respawn/safehouse anchor — losing it
+    would orphan whatever currently reads `safehouseSpawnPoint` (not
+    traced in this pass; out of scope), a second-order dependency this
+    system doesn't account for yet. **Recommend EighthAndState as the
+    only live test case for now**; InclineHouse should stay out of
+    scope until the safehouse-loss question gets its own explicit
+    answer — flagging rather than assuming it's fine.
+
+No scene or code changes made this pass — planning only, per
+instruction. Two flagged decisions (trigger condition, resolution
+logic) block any build; recommend EighthAndState-only for whichever
+gets picked.
