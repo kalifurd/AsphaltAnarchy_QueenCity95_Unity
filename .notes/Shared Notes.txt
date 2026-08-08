@@ -2799,3 +2799,132 @@ city-wide TurfNodes (OTRAlley, QueensgateYard, DowntownOverpass,
 NewportRiverfront) got before their districts had any built terrain —
 if turf-war systems coverage is wanted ahead of the art pass. Not
 decided either way this session.
+
+[2026-08-08, continued] Build TurfNode_EighthAndState — Claude Code
+(user stepped away after sending this task; no live back-and-forth
+possible this pass, per standing protocol — flag-and-log rather than
+guess on any real ambiguity, which is why this entry is more verbose
+than usual)
+
+[DONE] Checkpoint commit made first: the prior session's cleanup pass
+(loose Tripo deletions + 3 broken model file deletions) was still
+sitting uncommitted in the working tree at the start of this session —
+committed it as its own commit (8f13b90) before touching anything new,
+so it serves as a clean checkpoint distinct from this session's work.
+
+[DONE] Re-read Docs/LevelDesign_PriceHill_Delhi_1995.md §6 + its
+Lower Price Hill location-list entry (P2, line 130) before building
+anything, per instruction. Confirmed exactly what this node represents
+and that it's NOT a duplicate of InclineHouse's role: §6 describes
+TurfNode_EighthAndState as "The crossroads. Losing it = losing the
+flats" (PlayerCrew start-owned, captureType=CombatGauntlet, no
+hasSafehouse mentioned) — distinct from InclineHouse's clubhouse/
+safehouse/player-spawn role. The location list anchors the crossroads
+with "Meyer's Carryout — 8th & State" (P2, [F]): "Corner store at the
+neighborhood's crossroads. Barred windows, lottery signs, payphone
+outside," gameplay tag "Info-hub NPC, mission board flavor, buy
+point." Built the node and its placeholder around that landmark, not a
+second clubhouse.
+
+[DONE] Created TurfNode_EighthAndState (TurfNode + SphereCollider
+radius=10/isTrigger=true) at (-22, 0, -50) — same Tier-2 flats
+elevation as InclineHouse (-40,0,-50) and sitting directly on the
+already-existing StateAve_Stub geometry (which spans x -40 to -20 at
+z=-50), not beyond it — no new road/elevation invented, matching the
+instruction. 18 units east of InclineHouse along the same street,
+distinct but clearly in the same neighborhood. nodeName="8th & State",
+description paraphrases the doc's own "crossroads/losing the flats"
+line plus the Meyer's Carryout anchor. startingFaction=PlayerCrew,
+captureType=CombatGauntlet (both per §6's table exactly).
+difficultyRating/enemyCount/rewards left at TurfNode.cs's class
+defaults (3 / 5 / 50 / 10 / 25) — same choice InclineHouse made, not
+inventing new balance numbers for a node whose capture flow the
+codebase can't actually trigger yet (see flag below). hasSafehouse
+left false, no safehouseSpawnPoint — deliberately not duplicating
+InclineHouse's home-base role, matching this task's explicit
+instruction.
+
+[DONE] TerritoryBorder child (thin Cylinder disc, scale 10x0.02x10,
+local pos (0,0.05,0)) added and wired to TurfNode.territoryBorder,
+mirroring InclineHouse's exact pattern. One build hiccup caught and
+fixed before it became a real bug: creating a Cylinder primitive as a
+child auto-added a CapsuleCollider (Unity's default primitive
+behavior) that InclineHouse's own TerritoryBorder does NOT have —
+removed it via components_to_remove to match the precedent exactly
+(an untouched CapsuleCollider here would've added an unwanted physical
+collider on top of the node's own trigger sphere). Also caught: the
+create tool's `position` parameter for a child object is LOCAL, not
+world — first attempt used the values (-22, 0.05, -50) intending them
+as a local offset like InclineHouse's, which instead placed the child
+at world (-44, 0.05, -100), doubled up with the parent's own position.
+Fixed by re-setting to local (0, 0.05, 0), confirmed via the returned
+world position matching the parent (-22, 0.05, -50) exactly. Worth
+remembering for any future child-object creation via this tool.
+
+[DONE] Registered the node in TurfWarManager.allNodes (Systems
+GameObject) via SerializedObject array insert, same as InclineHouse —
+confirmed the array grew from 8 to 9 entries with
+TurfNode_EighthAndState correctly appended at index 8, all 8 prior
+entries undisturbed.
+
+[DONE] Built MeyersCarryout_PLACEHOLDER: a bare Cube primitive
+(Transform+MeshFilter+BoxCollider+MeshRenderer, no real art — same
+"primitive blockout only" standard as InclineHouse_Clubhouse_
+PLACEHOLDER), scale (6,3,6) — a one-story corner-store footprint,
+deliberately much smaller than InclineHouse's clubhouse box (20,8,15),
+matching the doc's own priority tier (Meyer's Carryout is P2 identity
+dressing, not a P1 hero building) rather than over-building it to
+clubhouse scale. Positioned at (-22, 1.5, -58), offset 8 units south
+of the node and raised to half its own height — same offset-and-raise
+relationship InclineHouse used for its own placeholder relative to its
+node, scaled down proportionally for the smaller building.
+
+[NOTE] No new road stub was built for "8th Street" itself (only
+State Ave's existing stub was used/extended against). The doc's
+location-list entry for Meyer's Carryout doesn't call for new road
+geometry, and the task said match InclineHouse's minimal scope /
+don't over-build — a full N-S 8th Street stub would have been
+additional unrequested terrain work. If a future pass wants the
+literal street crossing modeled, that's a separate, larger ask.
+
+[FLAG — re-logged only because it's specifically relevant to what got
+built this pass, per instruction] The previously-found capture-
+mechanic gap (TurfWarManager has no code path for an enemy faction to
+capture a PlayerCrew-owned node — CompleteCapture() always assigns the
+player's own faction, CheckReclaims()/TriggerDefenseEvent() explicitly
+skip player-owned nodes) applies to this new node exactly as it did to
+InclineHouse. TurfNode_EighthAndState now exists and correctly reports
+itself as PlayerCrew-controlled, but its doc-stated "Losing it = losing
+the flats" premise has no way to actually fire yet — nothing in the
+game can currently take it away. Not attempted this pass, per
+instruction. Not a new finding, just confirming it's still the same
+known, separate limitation and applies here too.
+
+[DONE] Live play-tested via Unity MCP, same verification standard as
+InclineHouse: entered Play mode, confirmed Time.frameCount advancing
+across two calls (no focus-freeze), then read the real runtime
+objects directly (no reflection needed, all fields are public):
+  - TurfNode_EighthAndState.NodeName = "8th & State"
+  - StartingFaction = ControllingFaction = "The Renegades" (PlayerCrew's
+    real factionName) — confirms TurfWarManager.Initialize() applied
+    the startingFaction via SetController() correctly on scene start.
+  - ControllingFaction == FactionManager.PlayerFaction: True.
+  - CaptureMethod = CombatGauntlet, HasSafehouse = False — both as
+    intended, confirms this is NOT a duplicate safehouse.
+  - TurfWarManager.GetPlayerClaimedNodes() returned 2 nodes
+    (InclineHouse + EighthAndState), both correctly present.
+  - Console checked before entering Play mode, again after all checks,
+    and again after Stop: 0 errors, 0 warnings every time.
+  - Exited Play mode cleanly. Scene confirmed isDirty=false after
+    (already saved before entering Play), rootCount=27 (25 + the 2 new
+    root objects: TurfNode_EighthAndState and
+    MeyersCarryout_PLACEHOLDER).
+
+TurfNode_EighthAndState milestone considered complete and matches the
+vetted scope exactly — nothing beyond what was planned in the prior
+session's proposal. No real ambiguity was hit that needed a stop-and-
+ask; the two build hiccups above (CapsuleCollider, local-vs-world
+position) were tool-mechanics issues caught and self-corrected via
+verification, not design decisions. WarsawAve/AndersonFerry remain
+untouched, still blocked on the terrain-plan decision logged
+previously. Committing this work now per instruction.
