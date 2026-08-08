@@ -18,7 +18,7 @@ MonoBehaviour:
   factionColor: {r: 0.25, g: 0.45, b: 0.2, a: 1}
   emblem: {fileID: 0}
   primaryTerritory: The Outerbelt
-  secondaryTerritory: Colerain
+  secondaryTerritory: Hamilton
   combatStyle: "CB-radio convoy tactics \u2014 rolling blockades and tailgating that
     box you in on the shoulder."
   bikePrefab: {fileID: 3053585765504227048, guid: d286457aa6361ad469038ef5d1f73ebe, type: 3}

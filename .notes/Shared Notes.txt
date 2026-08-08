@@ -2599,3 +2599,52 @@ next Tripo import — flagging that as a second, independent decision,
 not bundling it into "clean up the current pile." Nothing deleted, no
 scene changes made, no plugin file touched this session — pure
 confirmation pass per the task's KISS-first instruction.
+
+[2026-08-08, continued] Phantoms/HighwayKin FactionData territory
+corrections — Claude Code
+
+[DONE] Checkpoint commit a48f1de made first (the loose-Tripo-audit notes
+entry above was the only dirty file at session start; committed as its
+own checkpoint before touching anything).
+
+[DONE] Phantoms.asset: left secondaryTerritory = "Lower Price Hill"
+untouched, as instructed — the asset field was correct, the doc was
+wrong. Fixed Docs/LevelDesign_PriceHill_Delhi_1995.md instead: its
+Systems tie-ins section (§6) had a line flatly stating "Phantoms: no
+presence here — their subway node is downtown," which directly
+contradicted the faction's own secondaryTerritory data. Replaced with a
+one-line "Phantoms brush" entry mirroring the doc's existing
+"Highway Kin brush" pattern immediately above it (same section, same
+"faction touches this district lightly, not turf overlap" idiom used
+for every other faction's secondary presence) — kept the original
+"watched rail spur ... flavor, not turf" detail intact (nothing
+contradicted, tone preserved) and added the Lower Price Hill mention as
+ghost-rider sightings drifting through the LPH flats after dark. One
+mention, not built out, matching the doc's own established pattern.
+
+[DONE] HighwayKin.asset: secondaryTerritory changed from "Colerain"
+(an unrelated, unbuilt real Cincinnati neighborhood with zero presence
+anywhere in either Kin doc) to "Hamilton" — the western half of Kin
+territory per Docs/LevelDesign_Hamilton_Fairfield_1995.md, which is a
+real built district (TurfNode_Hamilton already exists there, anchored
+at "The Vault" clubhouse per that doc's §6). Matches the single-word
+neighborhood-name convention every other faction's secondaryTerritory
+already uses (Mount Adams, Pendleton, West End, Covington, etc.) rather
+than the doc's occasional "Hamilton/Fairfield" long-form district
+title. primaryTerritory ("The Outerbelt") was left untouched — not part
+of the ask, and confirmed correct as-is: both Kin district docs
+explicitly use "The Outerbelt" as the faction's primary-territory lore
+(the loop is what stitches the Milford/Batavia and Hamilton/Fairfield
+halves together, per both docs' §6 "Kin convoy behavior" notes), so
+that field already matches canon.
+
+[DONE] Live-verified via Unity MCP: AssetDatabase.LoadAssetAtPath on
+both .asset files after the edit reads back correctly —
+Phantoms.primaryTerritory="East End"/secondaryTerritory="Lower Price
+Hill" (unchanged), HighwayKin.primaryTerritory="The Outerbelt"
+(unchanged)/secondaryTerritory="Hamilton" (updated). Console checked
+after: 0 errors, 0 warnings.
+
+Both corrections are pure data/doc fixes — no code touched, no scene
+touched. git diff confirmed minimal and scoped: one line each in
+HighwayKin.asset and the Price Hill doc.

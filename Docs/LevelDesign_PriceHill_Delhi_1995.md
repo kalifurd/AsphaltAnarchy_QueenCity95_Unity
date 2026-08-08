@@ -230,7 +230,7 @@ Clubhouse roof (rail yards), Considine vacants (Warsaw/District 3), chili parlor
 - **Queensgate adjacency:** G1 viaduct physically links home turf to the existing Rust Barons node — natural first-conflict corridor.
 - **Highway Kin brush:** their outer-belt patrols touch G4 (Cleves Warsaw / Glenway west) — occasional convoy sightings, not turf overlap.
 - **Anderson Ferry:** scripted timed crossing (real ferry, ~every 15 min in-fiction). Board = safe passage + heat decay during crossing; miss it = fight or reroute. KY landing connects toward the airport side of the loop, giving a back-door approach to Kentucky Kings territory.
-- **Phantoms:** no presence here — their subway node is downtown. At most, a watched rail spur in the yards visible from the clubhouse roof (flavor, not turf).
+- **Phantoms brush:** their anchor is downtown's subway node, but Lower Price Hill is named as secondary territory in faction data — ghost-rider sightings drifting through the LPH flats after dark, and a watched rail spur in the yards visible from the clubhouse roof; flavor only, not turf overlap.
 
 ---
 
