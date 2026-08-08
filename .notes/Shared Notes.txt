@@ -3419,3 +3419,177 @@ live; the water-gap gap (see FLAG above) and everything else deferred
 in the original scoping pass (all three bridges, the floodwall/gates,
 the Point, Monmouth strip, Wiedemann brewery, the jurisdiction-seam
 heat mechanic) remain open for later passes.
+
+[2026-08-08, continued] Water-crossing general solution — scoping pass
+only, Claude Code (K.I.S.S. FIRST: this is cross-cutting, not a
+Newport-only patch, so getting the approach right came before any
+build; Kingfish's gangway gap used as the concrete test case only)
+
+[DONE] Checkpoint check: working tree was already clean at commit
+e2ba989 (the Kingfish build) — that commit served as the checkpoint,
+no new commit needed before starting.
+
+[DONE] Confirmed live, not assumed, how the shared Ground collider and
+MotorcycleController's surface/ground detection actually work —this
+directly decides whether a trigger-based approach can avoid touching
+Ground:
+  - Ground is one Unity primitive Plane mesh (121 verts), scale
+    (20,1,20) -> 200x200 world units, MeshCollider (non-convex,
+    non-trigger, default PhysicMaterial), layer 10 ("Ground"), tag
+    "Asphalt". Covers the entire map including every unbuilt district,
+    confirmed via live MeshRenderer/MeshCollider.bounds.
+  - `WheelCollider` (checked via unity_reflect on the live type) has NO
+    layer-mask property of its own — it isn't in the exposed
+    properties/fields/methods list at all. It's a physics Collider
+    subclass that contacts whatever solid geometry is physically under
+    it, unfiltered by layer. This means: **a trigger volume placed on
+    top of Ground CANNOT make the wheels fall through** — the wheels
+    will still physically rest on Ground's mesh regardless of what
+    trigger/visual is stacked above it. Confirmed by checking the
+    Player's live `frontWheel`/`rearWheel` WheelCollider instances
+    directly, not just the class doc.
+  - `MotorcycleController.surfaceLayer` (the separate raycast used only
+    for the grip-multiplier surface-type read, `DetectSurface()`) is
+    currently set to layer 10 ("Ground") only — read live off the
+    Player's actual serialized field, not assumed from the script
+    default. This is a DIFFERENT system from wheel grounding: it's a
+    cosmetic/grip raycast keyed by tag (Asphalt/WetAsphalt/Brick/
+    MetalGrating/Dirt), not a physical block. Kingfish_DockApron_Stub
+    (built last pass on layer 10, tag Asphalt) is correctly detected by
+    both systems already — nothing to fix there.
+  - Checked `PlayerStats.TakeDamage(float, DamageType)` and
+    `EnemyHealth.TakeDamage(float, bool)` — both already exist and are
+    already called elsewhere (GrabSystem.cs uses
+    `playerStats?.TakeDamage(30f, DamageType.Fall)` for a fall-damage
+    case; WeaponManager.cs calls `enemyHealth.TakeDamage(...)` off
+    `targetCollider.GetComponent<EnemyHealth>()`). A "damage" hazard
+    mode would reuse this existing convention exactly, not invent a new
+    damage pathway. `DamageType` has Generic/Melee/Crash/Fall/Explosion
+    — no Water-specific case exists yet (flagged as a small enum
+    addition if the damage option gets picked, not decided here).
+
+[NOTE] **Conclusion from the above: Ground does NOT need modifying.**
+A trigger-only "water" volume sitting on/inside the existing flat plane
+is fully additive and safe (matches instruction #4's ask) — but for the
+exact same reason (WheelCollider has no layer filter and will always
+find Ground underneath), a trigger alone can only change how driving
+into water *feels* via script (stopping/damaging the vehicle on
+contact), it can NOT make the crossing genuinely impassable — true "no
+walkable surface" would require an actual hole in Ground's shared mesh,
+which is the big/risky global change instruction #4 was checking for
+and which stays explicitly out of scope (touches every other unbuilt
+district's placeholder floor at once, not reversible per-hazard).
+
+[NOTE] Proposed general solution: one reusable `WaterHazard` prefab,
+droppable at any river crossing, built from two pieces already
+established as patterns in this project:
+  1. **Visual water plane** — same cosmetic thin-box pattern as
+     Kingfish_WaterGap_VISUAL already is (no collider, just a tinted
+     box matching the footprint). No change needed to this part.
+  2. **A configurable hazard-response piece**, offering two possible
+     modes (see the FLAG below — deliberately not picked here):
+     - **Blocker mode**: a solid (non-trigger) BoxCollider "wall"
+       spanning the water footprint, tall enough (~2 units, tunable
+       once playtested — not fabricated as a final number) to stop a
+       motorcycle via ordinary collision, the same mechanism every
+       existing placeholder box (buildings, the Kingfish hull itself)
+       already uses to block movement. Requires NO new script — pure
+       geometry, matching this project's existing pattern of solid
+       BoxColliders as barriers. Automatically works against enemy
+       AI-driven bikes too (solid collision blocks any Rigidbody, no
+       per-faction logic needed) — relevant since Newport's doc (§6)
+       calls for bridge-speed AI convoys crossing these same rivers.
+       This is a proxy for "impassable," not a literal hole — flagged
+       as a deliberate compromise below.
+     - **Active-response mode**: a trigger BoxCollider at the water
+       footprint + a small new `WaterHazard.cs` script
+       (OnTriggerEnter/Stay), resolving the same way WeaponManager
+       already resolves damage targets (`GetComponent<EnemyHealth>()`
+       off the trigger's target, or `PlayerStats` for the player) —
+       zeroing `rb.linearVelocity` (stop) and/or calling the existing
+       `TakeDamage()` API (damage), reusing established APIs rather
+       than inventing new ones.
+  3. Both modes are placed with the SAME edge-matching technique
+     already proven on Kingfish_Gangway this session (live
+     bounds-checked touching, zero gap) — a hazard spans the full
+     river footprint EXCEPT wherever a real crossing (gangway, bridge
+     deck, ferry landing) is deliberately left open, so the real
+     crossing stays the only passable route without needing per-hazard
+     custom logic.
+  4. Reusable across every future river crossing named in the task:
+     Newport's 2 remaining Ohio bridges, Milford/Batavia's Little
+     Miami, Hamilton/Fairfield's Great Miami, and Anderson Ferry's Ohio
+     River landing (already built, currently has no hazard at all
+     alongside its ramp — same gap, same fix would apply there once
+     this is resolved).
+  5. **Long-term note, not a task for now**: this whole approach is an
+     interim fix for as long as Ground stays one flat 200x200
+     placeholder plane under every district. Once a district gets real
+     terrain (replacing Ground's footprint there with actual modeled
+     geometry, same "beyond placeholders" gap already tracked for Price
+     Hill), a real river gap will likely exist naturally in that terrain
+     and the Blocker piece becomes redundant/removable at that time —
+     worth remembering so it isn't mistaken for the final answer later.
+
+[FLAG] **Gameplay-feel decision, not made here per instruction**:
+should driving into water actively stop/damage the vehicle (Active-
+response mode: velocity killed and/or `TakeDamage()` called, playing
+like a punishing mistake), or should it just read as an impassable gap
+with no walkable surface, forcing the player around/through the real
+crossing (Blocker mode: an invisible wall, no damage, no drama — just
+"you can't go that way")? Tradeoffs, for review:
+  - Blocker is simpler (zero new script), automatically covers enemy AI
+    without extra logic, and matches the doc's own framing of the
+    bridges/gangway as *chokepoints to route pursuit through*, not
+    punishment zones — but it's an invisible-wall compromise, not a
+    literal hole, and could feel arbitrary right at the water's edge if
+    not paired with clear visual signage (a barrier, buoys, whatever
+    reads as "stop here" without being explained by a wall you can't
+    see).
+  - Active-response feels more "real" (you tried to drive into a river,
+    something happens to you) and gives a natural hook for a splash
+    VFX/SFX moment, but needs the new script, needs per-faction target
+    resolution to also work on enemy AI convoys (doable, per WeaponManager's
+    existing pattern, just more moving parts), and risks feeling
+    unfair/frustrating if the hazard footprint is large (a whole Ohio
+    River bridge's-width gap) rather than a narrow single gangway.
+  - Nothing stops a hybrid (Blocker geometry + a small speed-loss/
+    splash trigger right at its face for feedback) if that reads best
+    once playtested — not proposing that as final either, just noting
+    the two modes aren't mutually exclusive.
+
+[NOTE] Applied to the Kingfish's gangway gap as the concrete test case
+(plan only, NOT built this pass): the existing
+`Kingfish_WaterGap_VISUAL` box (80,-0.05,-40, scale 4x0.05x12, no
+collider) would be supplemented — not replaced — by two Blocker-mode
+segments (if Blocker mode is the chosen answer) sized to leave the
+gangway's exact z-span open:
+  - `Kingfish_WaterBlocker_North`: x=80 (matching the gap's x-center),
+    z=-43.75 (halfway between the dock/boat's z=-46 edge and the
+    gangway's z=-41.5 edge), scale (4, 2, 4.5) — covers z:[-46,-41.5].
+  - `Kingfish_WaterBlocker_South`: x=80, z=-36.25 (halfway between the
+    gangway's z=-38.5 edge and the dock/boat's z=-34 edge), scale
+    (4, 2, 4.5) — covers z:[-38.5,-34].
+  - Gangway's own z-span (-41.5 to -38.5, exactly the 3-unit width
+    already built) stays the sole gap in the blocker line, mirroring
+    the same edge-touching precision already verified live on the
+    gangway itself last pass. Both numbers are placement math off
+    already-built live geometry, not new estimates.
+  - If Active-response mode is chosen instead, the same two footprints
+    would carry trigger colliders + `WaterHazard.cs` instead of solid
+    BoxColliders — the layout doesn't change, only the collider/script
+    swap does.
+
+Nothing built this pass — awaiting the gameplay-feel decision above
+before touching the scene again.
+
+[RESOLVED] Gameplay-feel decision above: user picked **Blocker mode**
+(invisible solid wall, no damage, no new script) over Active-response
+or a hybrid. WaterHazard prefab's Blocker piece is now the one to
+build; Active-response mode stays documented as a possible future
+addition (e.g. a feedback trigger layered on top later) but isn't
+being built. Nothing built yet this pass regardless — task instruction
+was explicitly planning-only ("apply the approach to the Kingfish's
+gangway gap... but don't build it yet"); the Kingfish's two blocker
+segment placements are already worked out above and ready to build in
+a follow-up pass once given an explicit go-ahead to build.
