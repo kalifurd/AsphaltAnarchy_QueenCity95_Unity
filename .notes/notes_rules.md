@@ -104,3 +104,14 @@ Numbered, append new ones at the bottom, don't renumber old ones.
   unprefixed name won't match. Worth fixing at the root (either strip
   the prefix in the lookup or standardize on it) rather than continuing
   to route around it session after session.
+- **HeatSystem auto-clears after 8 seconds with no active pursuer —
+  this can race a slow test cadence and look like a false negative.**
+  When testing jurisdiction-crossing triggers (or anything else reading
+  heat state right after it changes), a check that runs slower than
+  that 8-second window can read a value that's already auto-cleared
+  back to null/0, making a trigger that actually fired correctly look
+  like it didn't. Confirmed on the L&N Bridge test — a tight-cadence
+  retest showed the real result was correct the whole time. Likely
+  explains an inconclusive reading during the earlier Taylor-Southgate
+  test too. If a heat/jurisdiction test result looks wrong, re-check
+  with a faster read cadence before assuming the trigger itself failed.
