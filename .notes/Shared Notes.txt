@@ -4933,3 +4933,102 @@ position/alignment relative to the Kingfish remains a placeholder choice,
 not a final coordinate; (2) L&N and Big Mac still don't exist, so the
 doc's "always a bridge choice" mechanic still isn't complete — unchanged
 from the planning pass's own scoping, not a new gap.
+
+[2026-08-09] L&N Bridge (Newport's second crossing) — planning pass — Claude Code
+K.I.S.S. planning pass per notes_rules.md Dev Note #1, same two-step
+process as Taylor-Southgate. No scene or code changes this session —
+proposal only. Checkpoint: working tree already clean at HEAD 0d88180
+(prior session's build commit) — nothing to commit before this pass.
+
+[DONE] Re-read the doc's L&N description directly (§2 bridges table,
+§5 chokepoints, §7 period checklist) rather than assuming from memory.
+Confirmed real character: "Old, narrow, still carrying cars in '95
+(nobody calls it 'purple' — that's a later life)" — §7 repeats this
+explicitly ("nobody calls it purple — that's a 2000s afterlife"). Doc
+role: "the tight span: white-knuckle drafting duels, no room for error
+or cruisers" (§2); "Narrow lanes, old steel — the dueling span. Two
+bikes wide, no cruiser comfortable" (§5). Confirmed this is period-
+accurate and NOT the pedestrian-only "Purple People Bridge" it becomes
+in real life post-2001 — the doc already guards against that
+anachronism itself, nothing to correct.
+
+[DONE] Landing position relative to the built cluster — checked the
+doc's own schematic (line ~40-44), not assumed. Left-to-right order is
+L&N, then Taylor-Southgate, then Big Mac (I-471) — L&N sits WEST of
+Taylor-Southgate, closer to "The Point" (the Licking River confluence,
+also outside-the-floodwall riverfront per §1's own zone table, same
+riverfront band as Riverboat Row/the Kingfish, just further along it —
+not a separate location requiring a new Z-coordinate). Live-verified
+the built cluster is unchanged since last session (TaylorSouthgate_Deck
+and _WaterBlocker_West both found at their same instance IDs). Taylor-
+Southgate's own westmost extent is its west WaterHazard flank's outer
+edge at x=36 (deck at x:[40,50], flank footprint x:[36,40]). L&N should
+land further west of that, same z=-40 Kentucky-side riverfront line as
+both the Kingfish and Taylor-Southgate (no doc basis for a different Z).
+
+[FLAG] Vertical clearance — this is the real open question, explicitly
+NOT assumed to match Taylor-Southgate. The task's own instinct is
+correct: L&N is a different, older, narrower bridge type (period '95
+description: "old steel," through-truss-era construction, nothing like
+Taylor-Southgate's brand-new 1995 clean span), and real 19th-century
+truss bridges of this kind commonly carry meaningfully different
+vertical clearance than a modern span — plausible it's lower, but this
+is a real-world fact, not something to estimate or infer from period
+flavor text. No number is invented here. This needs the same real-
+world-anchor process as before (real clearance above normal pool,
+converted through the project's 5:1 compression) — not resolving it
+myself, flagging for the same human input Taylor-Southgate's y=+0.55
+came from. Horizontal (X) position, by contrast, does NOT need new
+lookup work — it can anchor directly off the already-built cluster
+(Taylor-Southgate's own west edge), same convention as before.
+
+[DONE] WaterHazard bank-flanking approach — confirmed it applies
+unchanged, not re-litigated from scratch per instruction, but actually
+checked rather than skipped: the mechanism proved at Taylor-Southgate
+(root X/Z scale sets an arbitrary footprint, Blocker child gives the
+standard wall height) is footprint-size-agnostic — a narrower deck just
+means the two flanking walls sit closer together, not a different
+prefab or a different technique. The one real difference this bridge
+introduces: the DECK itself should be built meaningfully narrower than
+Taylor-Southgate's 10-unit width, to actually read as "two bikes wide,
+no room for error" per the doc's own description (§5) — this is a
+build-time dimension choice, not a WaterHazard-approach change. No new
+prefab variant needed; flagging that there's nothing to flag here
+beyond confirming it, per the instruction's own framing ("flag only if
+the narrower deck genuinely changes anything about the approach" — it
+doesn't).
+
+[NOTE] Proposed milestone scope (illustrative, not final — real
+numbers/exact placement still pending the elevation flag above):
+  - Deck: same flat-slab primitive pattern as Taylor-Southgate, but
+    narrower (~4 units wide vs. 10) and positioned west of the existing
+    cluster with real clearance from Taylor-Southgate's west flank
+    (illustrative center ~x=15, giving roughly 15 units of separation
+    from Taylor-Southgate's own west edge at x=36) — same z=-40-anchored
+    Kentucky landing, same general span-length approach (~55 units,
+    matching Taylor-Southgate's own placeholder run) unless the real
+    elevation data changes that once supplied.
+  - WaterHazard: two flanking WaterHazard.prefab instances, same
+    4-unit-thick wall convention as Taylor-Southgate's, positioned
+    zero-gap against the new narrower deck's own edges (closer together
+    than Taylor-Southgate's, since the deck itself is narrower) — no new
+    variant, direct reuse.
+  - JurisdictionCrossingTrigger: two more instances of the EXISTING
+    script (Assets/Scripts/Heat/JurisdictionCrossingTrigger.cs, no new
+    code needed) split at L&N's own real mid-span point, same
+    KentuckyKings.asset/NeonSaints.asset assignment pattern as Taylor-
+    Southgate.
+  - No new TurfNode needed — same as Taylor-Southgate, this reuses the
+    existing TurfNode_NewportRiverfront, doc doesn't propose separate
+    turf per bridge (§6).
+  - Scope stays "this bridge's own bridgehead only," same explicit
+    framing as the Taylor-Southgate milestone — building L&N does NOT
+    complete the doc's "always a bridge choice" mechanic by itself,
+    that still needs Big Mac too. Two of three Ohio bridges would exist
+    after this milestone, not three.
+
+Net result: ready to build the moment a real vertical-clearance number
+exists for L&N, same blocking pattern as Taylor-Southgate before its
+own numbers arrived. Everything else (horizontal anchor, WaterHazard
+approach, trigger contract, scope) is already resolved and doesn't need
+re-deriving at build time.
