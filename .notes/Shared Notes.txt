@@ -5133,3 +5133,145 @@ genuinely reusable, not a one-off. Big Mac (I-471) is the one remaining
 bridge before the doc's "always a bridge choice" mechanic (§2 G1) is
 actually complete; TurfNode_NewportRiverfront's Race-as-bridge-run
 captureType reframing (§6) still deliberately deferred until then.
+
+[2026-08-09] Big Mac / I-471 Bridge (Newport's third crossing) — planning pass — Claude Code
+K.I.S.S. planning pass per notes_rules.md Dev Note #1. No scene or code
+changes this session — proposal only. Checkpoint: found an uncommitted
+change already sitting in the working tree at session start — a new
+Dev Note #2 in .notes/notes_rules.md documenting the HeatSystem
+auto-clear timing gotcha from the L&N test (matches what I logged in
+Shared Notes last session almost verbatim; per the rules file's own
+convention this is human-edited, not agent-edited, so treated it as a
+deliberate addition and committed it as-is, not authored by me, as this
+session's checkpoint (commit bbb418b) before starting new work.
+
+[DONE] Re-read the doc's Big Mac/I-471 description directly (§2
+arterials table, §2 bridges table, schematic) rather than assuming it
+clusters with Taylor-Southgate/L&N the way those two cluster with each
+other. Confirmed real character: "Daniel Carter Beard 'Big Mac' Bridge
+(I-471) — yellow twin arches, interstate speed... the fast span:
+full-throttle crossings" (§2 bridges table). Confirmed via a SEPARATE
+line the schematic doesn't make obvious on its own: the §2 ARTERIALS
+table (not the bridges table) says I-471 "**Cuts through Newport's east
+side**, over the Ohio on the yellow-arched 'Big Mac' bridge, south to
+I-275" — this is real doc support for genuine separation, not narrative
+flavor only.
+
+[DONE] Checked the schematic's own topology carefully rather than
+reading its left-to-right bridge ordering as the whole answer. The
+three bridges (L&N, Taylor-Southgate, Big Mac) do share one connecting
+row down to "THE POINT - floodwall - RIVERBOAT ROW - THE KINGFISH" —
+same riverfront band, consistent with all three landing somewhere along
+Newport's outside-the-floodwall riverfront (§1). But the connector under
+Big Mac ("I-471 ↓") continues down through a DIFFERENT vertical column
+than Taylor-Southgate/L&N's — it runs alongside "Mansion Hill (east)" in
+the neighborhoods list, distinctly separate from the "Monmouth/York
+strip"/"courthouse blocks"/"west side (shotgun blocks)" column that
+Taylor-Southgate and L&N's connectors align with. This matches the
+arterials table's "east side" line directly: Big Mac is real-doc-
+supported as genuinely elsewhere along the riverfront, past Mansion
+Hill, NOT clustered with the other two the way L&N clustered with
+Taylor-Southgate. Confirms the task's own instinct — checked, not
+assumed either way.
+
+[FLAG] The real, concrete blocker this pass surfaced — a technical
+constraint, not a narrative one. Live-verified before reasoning about
+placement (not assumed): Ground (the shared flat plane every district
+sits on) is centered at (0,0,0), scale (20,1,20) — a 200x200 unit mesh,
+bounds x:[-100,100], z:[-100,100]. The built Kingfish cluster's own
+EAST edge (Kingfish_PLACEHOLDER's hull, x:[82,92]) already sits only
+8 units short of Ground's real edge at x=100. Taylor-Southgate and L&N
+both had comfortable room because they were built WEST of the Kingfish,
+toward the open middle of the map (x=45 and x=15 respectively, with
+~honest tens of units of slack all the way to x=-100). Big Mac, if
+built genuinely separate/east per the doc finding above, would need to
+sit even further east than x=92 — but there is almost no room left on
+the currently-built Ground plane before running off its literal edge.
+This is a real, load-bearing finding, not a hypothetical: even a modest
+separation gap (comparable to L&N's own ~15-unit clearance from Taylor-
+Southgate) would already exceed the ~8 units of margin remaining.
+Three options, not resolving this myself — needs a human call, same
+category as the earlier "cut a hole in Ground's shared mesh" question
+that got explicitly escalated rather than decided unilaterally:
+  1. **Extend Ground's plane eastward.** Touches a shared, global asset
+     every other unbuilt district also sits on — same class of decision
+     this project has already treated as needing explicit sign-off, not
+     something to do quietly inside a single bridge's build pass.
+  2. **Accept a compressed placeholder gap** (whatever fits in the
+     remaining ~8 units) — technically buildable without touching
+     Ground, but this would NOT actually read as "genuinely separate,
+     east side" the way the doc describes it; it would look like a
+     third bridge crowded right up against the Kingfish, undermining
+     the exact distinction this planning pass just confirmed matters.
+  3. **Reconsider the whole cluster's X positions** so there's more
+     room on the east side to begin with — a bigger, retroactive change
+     touching the two already-built bridges, likely disproportionate
+     for what's meant to stay a placeholder coordinate scheme anyway
+     (every district doc still carries the "no real coordinate plan
+     yet" caveat).
+None of these were picked here — flagging the constraint and the three
+paths, not choosing one.
+
+[FLAG] Vertical clearance — following the task's own framing exactly,
+neither assumed nor treated as fully unknown. Taylor-Southgate and L&N
+landed within 0.1ft of each other (~74.7ft and ~74.8ft respectively),
+plausibly because a single regulatory minimum navigational clearance
+governs this whole reach of the Ohio River (a real, common pattern for
+navigable-river bridge clearances — federal/Coast Guard minimums are
+often set per river reach, not per bridge). That's a reasonable working
+hypothesis for Big Mac too, since it crosses the same stretch of river.
+But "reasonable hypothesis" is not the same as "confirmed" — this is a
+real-world fact this project's established discipline does not let get
+estimated or pattern-matched in (same standard both prior bridges were
+held to). Not applying the ~74.7ft figure here. Needs its own real,
+user-supplied number before building, same process as both prior
+bridges — flagged as "probably similar, needs confirmation," exactly
+the middle ground the task asked for, not either extreme.
+
+[DONE] WaterHazard/JurisdictionCrossingTrigger reuse — confirmed the
+mechanism itself still applies unchanged (proven twice now, genuinely
+footprint-agnostic and script-reusable with zero code changes both
+times). But checked rather than reflexively assumed on one real point
+the task specifically flagged: **deck width should NOT default to
+matching either prior bridge.** Big Mac's doc description ("interstate
+speed," "yellow twin arches," "full-throttle crossings") describes a
+full modern interstate span — more lanes, not fewer, than Taylor-
+Southgate's already-modern 10-unit "brand-new, wide" deck, and the
+opposite direction from L&N's narrow "two bikes wide" character. A
+reasonable illustrative width for the milestone (not a confirmed real
+lane-count) would be wider than 10, not narrower — flagging this as a
+genuine "does it change configuration" finding: the deck WIDTH
+convention needs its own choice for this bridge, not either prior
+number.
+
+[NOTE] Proposed milestone scope (illustrative, contingent on the two
+FLAGs above, especially the Ground-boundary one — this may need to wait
+on a human decision before any build-time coordinates get finalized):
+  - Deck: same flat-slab primitive pattern as the first two bridges,
+    wider than Taylor-Southgate's 10 units to read as a full interstate
+    span (illustrative only, no number committed here).
+  - Position: needs its own real east-side placement, NOT a small
+    offset from the existing cluster like L&N got — blocked on the
+    Ground-boundary flag above before any X/Z can be finalized.
+  - WaterHazard: same bank-flanking technique, zero prefab changes,
+    same convention proven twice — flank width/position just needs
+    the final deck footprint once position is resolved.
+  - JurisdictionCrossingTrigger: same existing script, two new
+    instances split at this bridge's own real mid-span — zero code
+    changes, same as both prior bridges.
+  - No new TurfNode — same as both prior bridges, this doesn't
+    introduce new turf, just reuses TurfNode_NewportRiverfront.
+  - Scope stays "this bridge's own bridgehead only" — but unlike the
+    first two milestones, completing Big Mac WOULD finish the doc's
+    "always a bridge choice" mechanic (§2 G1) — all three Ohio bridges
+    would exist. Worth noting as the actual stakes of this one, not
+    just "another bridge."
+
+Net result: Big Mac is NOT a copy-paste of the L&N pattern the way the
+task suspected it might look at first glance — real doc support exists
+for it being genuinely separate (east side, past Mansion Hill), but
+that separation runs straight into a real space constraint on the
+currently-built Ground plane that needs a human decision before this
+milestone can actually be built, not just planned. Vertical clearance
+and deck width both need their own confirmation too, flagged rather
+than pattern-matched from the first two bridges.
