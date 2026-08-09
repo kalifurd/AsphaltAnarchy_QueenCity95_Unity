@@ -5275,3 +5275,110 @@ currently-built Ground plane that needs a human decision before this
 milestone can actually be built, not just planned. Vertical clearance
 and deck width both need their own confirmation too, flagged rather
 than pattern-matched from the first two bridges.
+
+[2026-08-09] Extend Ground eastward for Big Mac's footprint (structural prep only, no bridge built) — Claude Code
+K.I.S.S. pass per notes_rules.md Dev Note #1, scoped exactly as
+instructed: clear the Ground-plane space blocker flagged in the last
+planning pass, do NOT build Big Mac's deck/hazard/triggers (still
+blocked on a real vertical clearance number, same standard as the first
+two bridges — not guessed at here). Checkpoint: working tree was clean
+at HEAD b2fa263 before this pass.
+
+[DONE] Computed the extension size from Big Mac's actual minimal
+footprint, not a round or generous number — showing the arithmetic so
+it's checkable, not just asserted:
+  - Kingfish cluster's real east edge (Kingfish_PLACEHOLDER hull, live-
+    confirmed): x=92.
+  - Gap from that edge to Big Mac's own west flank: 30 units — a
+    placeholder judgment call, flagged as such (not real-world-derived,
+    no real distance was supplied this session), reasoned as double
+    L&N's own 15-unit cluster-adjacent gap specifically because the doc
+    finding from the last planning pass (§2 arterials: "cuts through
+    Newport's east side," schematic's separate Mansion-Hill column)
+    calls for Big Mac to read as genuinely separate, not just "next in
+    the row" the way L&N sits next to Taylor-Southgate.
+  - Big Mac's own footprint, sized per the last planning pass's flagged
+    finding that this deck should be WIDER than Taylor-Southgate's 10
+    (interstate, not narrower like L&N): west WaterHazard flank 4 units
+    + deck 12 units + east WaterHazard flank 4 units = 20 units total.
+  - Safety margin beyond Big Mac's own east edge before Ground's new
+    edge: 5 units, matching the exact precedent already set for Taylor-
+    Southgate's own z=-95 edge vs. Ground's real z=-100 edge.
+  - Total: 92 (Kingfish edge) + 30 (gap) + 20 (Big Mac footprint) + 5
+    (margin) = 147. Ground's existing edge is x=100, so the extension
+    needed to cover x:[100,147] — a 47-unit-wide new piece, not a round
+    number, not padded "just in case."
+
+[DONE] Built the extension as a SEPARATE new object,
+`Ground_EastExtension` (Plane primitive, tag Asphalt, layer 10 "Ground",
+MeshCollider — matching the original Ground's exact component makeup),
+rather than resizing/moving the existing Ground object. Deliberate
+choice: Ground's own Plane primitive is centered on its local origin, so
+changing its scale.x to extend east would have symmetrically pushed the
+WEST edge out too (from x=-100 to something further west), which is
+exactly the kind of side effect the task warned against — an east-side
+spacing fix should not touch anything about the west side or accidentally
+imply a boundary decision there. A wholly separate, zero-gap-abutting
+piece avoids that entirely and keeps the original Ground object's
+transform provably untouched (confirmed byte-for-byte identical,
+position (0,0,0) scale (20,1,20), before and after this pass).
+Position (123.5, 0, 0), scale (4.7, 1, 20) — live bounds-checked (not
+just trusted from input): world bounds center (123.5, 0, 0), size
+(47, ~0, 200) → exactly x:[100,147], z:[-100,100]. Z-range matches the
+original Ground's own z:[-100,100] exactly, so the shared seam along
+x=100 lines up cleanly across the full depth of the map, zero-gap,
+zero-overlap.
+
+[NOTE] Explicitly did NOT let this become a real-boundary decision.
+This extension is scoped tightly to Big Mac's own computed footprint
+(47 units), not a broad or generous allowance for "future east-side
+districts" — RealGeography_Reference.md's own open item (NE/SE map
+edges not yet defined by real roads) is untouched by this pass and not
+implied to be resolved by it. If a real NE/SE boundary gets defined
+later, this 47-unit extension may need revisiting — that's expected,
+not a contradiction with what got built here.
+
+[DONE] Regression-tested live via UnityMCP (Time.frameCount confirmed
+advancing 1 -> 1724+ before testing, no focus-freeze) — nothing about a
+shared-plane change assumed safe without checking:
+  - Seam itself: player driven at 15 m/s from x=90 (original Ground)
+    across the x=100 boundary onto the new extension, reaching x=112.5
+    — Y height held perfectly flat at 1.099 the entire crossing, no
+    bump, no jitter, no fall-through. Confirms the seam is physically
+    clean.
+  - Taylor-Southgate: re-ran the full battery — deck drivable (KY
+    landing to mid-span, EncounterFaction=KentuckyKings/Heat=30 fired
+    correctly), west WaterHazard flank still stops a direct 15 m/s
+    approach dead short of its face, OH trigger re-confirmed with a
+    tight-cadence check (EncounterFaction=NeonSaints/Heat=30,
+    immediately after teleporting into its zone — same fast-check
+    technique documented in the new Dev Note #2 after the L&N test).
+  - L&N: same battery — deck drivable, KY trigger fires correctly
+    (KentuckyKings/30), west WaterHazard flank stops a direct approach
+    dead short of its face.
+  - Console read after every stage: 0 errors, 0 warnings throughout.
+  - All of Taylor-Southgate's and L&N's own geometry (decks, both sets
+    of WaterHazard flanks, all 4 trigger volumes) confirmed completely
+    unmoved — this pass added one new object and touched nothing else.
+
+[DONE] Big Mac's deck, water hazard, and jurisdiction triggers
+deliberately NOT built this pass, per instruction — still blocked on a
+real, user-supplied vertical clearance number, same requirement both
+prior bridges were held to. This pass only cleared the structural
+(Ground-space) blocker so that build is ready to start the moment the
+number arrives — no further scoping/planning work should be needed
+first, just the real number and then a build pass mirroring Taylor-
+Southgate/L&N's own process exactly.
+
+[DONE] Scene saved after testing. Committing and pushing this pass
+before session ends, per instruction — not leaving this uncommitted
+into a lockout.
+
+Net result: the Ground-plane space blocker flagged in the last planning
+pass is cleared. Big Mac's eventual footprint (x:[122,142], with 5
+units of margin to Ground's new edge at x=147) now sits on real,
+tested, seamless Ground. Both existing bridges regression-confirmed
+fully intact. The only remaining blocker before Big Mac can be built is
+the real vertical clearance number — everything else (position,
+WaterHazard approach, trigger contract, and now the ground itself) is
+ready.
