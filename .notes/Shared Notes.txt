@@ -5032,3 +5032,104 @@ exists for L&N, same blocking pattern as Taylor-Southgate before its
 own numbers arrived. Everything else (horizontal anchor, WaterHazard
 approach, trigger contract, scope) is already resolved and doesn't need
 re-deriving at build time.
+
+[2026-08-09] Build the L&N Bridge (Newport's second crossing) — Claude Code
+K.I.S.S. build pass per notes_rules.md Dev Note #1, executing the vetted
+plan from commit 9e5456a with the real clearance number now supplied.
+Checkpoint: working tree was clean at HEAD 9e5456a before this pass —
+nothing to commit before starting.
+
+[DONE] Scene geometry built exactly per the confirmed anchors (all
+live-verified via UnityMCP, not trusted from input), reusing the
+already-proven Taylor-Southgate pattern with no new script/prefab work:
+  - LNBridge_Deck @ (15, 0.56, -67.5), scale (4, 0.2, 55) — flat road
+    slab, tag Asphalt, layer 10 (Ground), real BoxCollider. Narrower
+    than Taylor-Southgate's 10-unit deck, matching the doc's "two bikes
+    wide, no room for error" description. Spans z:[-95,-40], same
+    Kentucky-side riverfront line as Taylor-Southgate/the Kingfish
+    (z=-40), positioned west of Taylor-Southgate's own west edge (x=36)
+    with 15 units of clearance (system spans x:[9,21], Taylor-Southgate
+    starts at x=36) — confirmed no overlap with anything already built.
+  - LNBridge_WaterBlocker_West @ (11, 0, -67.5), scale (4, 1, 55) —
+    WaterHazard.prefab instance, linked (PrefabUtility.InstantiatePrefab).
+    Footprint x:[9,13], zero-gap against the deck's west edge (x=13).
+  - LNBridge_WaterBlocker_East @ (19, 0, -67.5), scale (4, 1, 55) — same
+    prefab, footprint x:[17,21], zero-gap against the deck's east edge
+    (x=17).
+  - LNBridge_KYTrigger @ (15, 0.56, -53.75), scale (4, 3, 27.5) — bare
+    GameObject, BoxCollider (isTrigger=true, live-confirmed),
+    JurisdictionCrossingTrigger (no code changes — same existing script)
+    with assignedFaction=KentuckyKings.asset (live-confirmed). Covers
+    z:[-67.5,-40].
+  - LNBridge_OHTrigger @ (15, 0.56, -81.25), scale (4, 3, 27.5) — same
+    pattern, assignedFaction=NeonSaints.asset (live-confirmed). Covers
+    z:[-95,-67.5]. Split exactly at z=-67.5, the same real state-line
+    midpoint z-value as Taylor-Southgate (same doc-derived riverfront
+    span length, just at this bridge's own X).
+  - Nothing else touched — TurfNode_NewportRiverfront, the Kingfish
+    cluster, and the entire Taylor-Southgate bridgehead confirmed
+    unmoved (checked their instance IDs still resolve before building).
+
+[DONE] Confirmed WaterHazard's existing configurability handled the
+narrower footprint with zero changes needed — same prefab, same
+technique, just a smaller gap between the two flanking instances. No
+new variant, exactly as the planning pass predicted.
+
+[DONE] Play-tested live via UnityMCP (Time.frameCount confirmed
+advancing 1 -> 834+ before testing, no focus-freeze):
+  - Deck drivability: player positioned at the KY-side landing
+    (15,1,-42) and driven at 15 m/s in -z twice in sequence, reaching
+    (15, 1.76, -90.26) — close to the deck's own z=-95 Ohio-side edge —
+    without falling through anywhere, and staying exactly on-axis
+    (x=15.00 throughout) despite the narrower 4-unit deck width.
+  - Water hazard: player driven at 15 m/s directly into both the west
+    flank (from x=0, driving +x) and the east flank (from x=30, driving
+    -x) — both stopped dead (velocity snapped to zero) short of the
+    wall face on the first attempt, and re-applying velocity produced
+    only a small residual movement before stopping dead again at
+    essentially the same spot on the west side — same genuine-physical-
+    stop behavior as Taylor-Southgate, confirming the narrower gap
+    didn't change the mechanism.
+  - Jurisdiction trigger: player driven south from z=-30 (outside both
+    triggers) through the KY trigger first — confirmed live,
+    EncounterFaction became KentuckyKings at CurrentHeat=30. Continuing
+    south past the midpoint into the OH trigger's zone, an initial check
+    read EncounterFaction=null/CurrentHeat=0 — see NOTE below, this was
+    a test-timing artifact, not a trigger failure. Re-tested with a
+    tighter round-trip (teleport directly into the OH zone, check on
+    the very next call with no intervening steps): EncounterFaction
+    correctly read NeonSaints at CurrentHeat=30, confirming the OH
+    trigger fires exactly as designed.
+  - Console read after every stage of testing: 0 errors, 0 warnings
+    throughout.
+
+[NOTE] Root-caused the misleading null/0 reading during the first OH-
+crossing check, rather than leaving it unexplained: HeatSystem.cs's own
+evasion logic (`loseHeatCountdown = 8f`, read directly from the live
+script) auto-clears heat via ClearHeat() after 8 real seconds with no
+active pursuer holding line-of-sight (AnyPursuerHasLineOfSight() always
+returns false in these tests since no real EnemyAI is chasing). My own
+multi-step "reapply velocity, then check" test cadence let well over 8
+real seconds pass between the actual crossing and the check that read
+null — the crossing likely DID fire and then got auto-cleared before I
+looked, exactly the same underlying mechanism (not simple secondary-
+heat decay as previously guessed during the Taylor-Southgate test —
+this is the PRIMARY encounterFaction's own evasion-timeout clear, a
+different code path, now correctly identified) that produced the
+inconclusive reading noted in that earlier build's NOTE. The corrected,
+tight-cadence retest above removes the ambiguity: the trigger fires
+correctly, full stop. Worth remembering for any future live-heat test
+in this project: check heat state within ~8 seconds of a crossing (i.e.
+in the very next tool call, not after extra intermediate steps) or the
+no-pursuer evasion-clear will race the observation.
+
+[DONE] Scene saved after testing. No other scene objects touched.
+
+Net result: Newport now has 2 of its 3 Ohio bridges built and live-
+verified (Taylor-Southgate + L&N), both using the identical deck +
+WaterHazard-flank + JurisdictionCrossingTrigger pattern with zero new
+code required for this second bridge — confirms the pattern is
+genuinely reusable, not a one-off. Big Mac (I-471) is the one remaining
+bridge before the doc's "always a bridge choice" mechanic (§2 G1) is
+actually complete; TurfNode_NewportRiverfront's Race-as-bridge-run
+captureType reframing (§6) still deliberately deferred until then.
