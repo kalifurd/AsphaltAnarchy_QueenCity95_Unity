@@ -4477,3 +4477,69 @@ now has a real win path via `DefendAssault()`), so the symmetric gap
 on the other side was left alone, exactly as scoped. Worth its own
 future pass if the forward CombatGauntlet path ever needs a real loss
 condition.
+
+[2026-08-09] Real-imagery verification pass (Queensgate + Downtown/OTR docs) — Claude Code
+K.I.S.S. verification pass per notes_rules.md Dev Note #1 — checked real
+1994 aerial imagery observations (relayed secondhand from a chat review,
+not directly seen) against LevelDesign_Queensgate_1995.md and
+LevelDesign_Downtown_OTR_1995.md. No doc edits made this pass, per
+instruction — findings only.
+
+[DONE] Queensgate rail yard placement: real imagery shows a
+fan/switching rail yard near Gest St and W 8th St, consistent across
+angles. Doc's §2/§3a match this directly — Gest Street is described as
+running along the yard's southern edge (and is the Frontage's face
+street), and W 8th Street "continues east off the 8th Street Viaduct
+into the yard." The Yard sub-area sits right at that real junction.
+No contradiction.
+
+[DONE] Mill Creek path: real imagery shows Mill Creek running south and
+emptying into the Ohio near Gest St/W 6th St. Doc doesn't describe the
+creek's mouth in that level of detail, but nothing in it contradicts
+this — the schematic's north-south orientation (I-75/Mill Creek valley
+running north to Northside/Clifton, River Road/riverfront to the south)
+is consistent with that real path. No contradiction.
+
+[NOTE] Tank farm near State Ave: real imagery shows a visible storage
+tank cluster near State Ave, close to where it meets Mill Creek. The
+Queensgate doc references State Ave only once (§6, "the State Ave
+crossing train," a rail-crossing detail carried over from the Price
+Hill doc) and does not mention a tank farm anywhere — not in §4's
+location list, not in the schematic. This isn't a contradiction (the
+doc doesn't claim no tank farm exists), just a real, verified feature
+not currently incorporated. Worth a look if/when this doc gets a build
+pass — no edit made this session per instruction.
+
+[FLAG] Downtown/OTR doc's G4 gateway ("I-71/I-75 north -> Clifton,
+Avondale, Uptown") doesn't match the real observation of a Central
+Parkway/I-74/I-75 cloverleaf-style interchange near Mt. Storm Park/
+Clifton. Two issues, not just one:
+  1. The doc names I-71, not I-74, for this northern exit. In real
+     Cincinnati geography I-75 runs the Mill Creek Valley/Clifton/Camp
+     Washington corridor (where I-74 merges in) while I-71 runs the
+     opposite (east) side of downtown through Walnut Hills toward
+     Avondale/Norwood. The doc's G4 bundles both Clifton (I-75/I-74
+     territory) and Avondale (I-71 territory) into one gateway/exit,
+     which conflates two real corridors on opposite sides of downtown.
+  2. The doc doesn't describe the interchange itself (shape, that it's
+     a cloverleaf, or its Central Parkway connection) at all — Central
+     Parkway's only described role in this doc is the internal
+     Downtown/OTR seam, not its northern terminus at I-74/I-75.
+This needs a human decision, not a silent fix: is G4 meant to be a
+compressed/simplified single "north exit" for gameplay purposes (doc
+already compresses geography ~5:1 project-wide), or should it be split
+/corrected to match the real I-74/I-75 routing before this doc's next
+pass? Not resolved here, no edit made.
+
+[DONE] Camp Washington and the American Sign Museum (real imagery: both
+sit near the same rail corridor, close to Queensgate's edge) are not
+named in either doc. Not a contradiction — the Queensgate doc's I-75/
+G2 gateway already treats everything north as "off-map, future
+districts" and doesn't claim to enumerate what's up there. Noting only
+because it came up during the same imagery review; no action implied.
+
+Net result: no direct contradictions in the Queensgate doc (rail yard
+and Mill Creek both check out against real imagery; the tank farm is a
+real omission, not a contradiction). One real flagged discrepancy in
+the Downtown/OTR doc (G4's I-71 vs. I-74 naming and the unbuilt
+cloverleaf interchange) needs a human call before any future edit.
