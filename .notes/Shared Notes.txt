@@ -4780,3 +4780,156 @@ real deck position is known. The HeatSystem trigger contract itself is
 fully specified and ready to build the moment real bridge geometry
 exists — that part is no longer blocked on a missing design, only on
 the geometry it needs to attach to.
+
+[2026-08-09] Build Taylor-Southgate's bridgehead (Newport's first bridge) — Claude Code
+K.I.S.S. build pass per notes_rules.md Dev Note #1, executing the vetted
+milestone from commit 496633a with real numbers now supplied. Checkpoint:
+working tree was clean at HEAD 496633a before this pass — nothing to
+commit before starting (matches pattern of the last several sessions).
+
+[NOTE] Interpretation call, flagged rather than silently made: the task
+said "spanning from near the Kingfish cluster across to a Kentucky-side
+landing point." Since the near/starting point IS already the Kentucky
+side (the Kingfish cluster is Newport's own clubhouse, Kentucky side),
+a second "Kentucky-side" landing at the far end would be internally
+inconsistent with the rest of the task (step 4 explicitly names
+NeonSaints.asset for "the Ohio half" of the jurisdiction trigger, and
+the doc's own G1 says the bridges land in "Downtown Cincinnati
+district"). Read this as a slip for "Ohio-side"/"Cincinnati-side" and
+built the far landing there. Calling this out explicitly rather than
+letting a silent guess pass as fact.
+
+[DONE] Built JurisdictionCrossingTrigger.cs
+(Assets/Scripts/Heat/JurisdictionCrossingTrigger.cs, namespace
+AsphaltAnarchy.Heat, explicit `using AsphaltAnarchy.Factions;` per
+notes_rules.md's cross-namespace warning) exactly as specified in the
+planning pass: one serialized FactionData field, OnTriggerEnter checks
+other.CompareTag("Player") (same convention TurfNode.cs uses), then
+calls FindObjectOfType<HeatSystem>().HandleJurisdictionCrossing(
+assignedFaction) (same convention HeatHUD.cs uses, not cached — matches
+HeatHUD calling FindObjectOfType fresh each time, not in Awake). Console
+clean after compile.
+
+[DONE] Scene geometry built (all live-verified via UnityMCP, not
+trusted from input), anchored per the confirmed real numbers (water
+y=-4.0, deck y=+0.55) and off the existing Kingfish cluster horizontally,
+offset west to avoid overlapping it (see FLAG below for why):
+  - TaylorSouthgate_Deck @ (45, 0.55, -67.5), scale (10, 0.2, 55) — flat
+    road slab, tag Asphalt, layer 10 (Ground), real BoxCollider. Spans
+    z:[-95,-40]. Kentucky-side edge (z=-40) matches TurfNode_
+    NewportRiverfront/Kingfish's own z-center exactly (same "riverfront
+    line"). Ohio-side edge (z=-95) sits comfortably inside Ground's
+    actual mesh bounds (Ground is centered at origin, scale (20,1,20) =
+    200x200, so z=-100 is Ground's literal edge — checked live before
+    picking -95, not assumed, to leave real margin).
+  - TaylorSouthgate_WaterBlocker_West @ (38, 0, -67.5), scale (4, 1, 55)
+    — WaterHazard.prefab instance (PrefabUtility.InstantiatePrefab,
+    linked). Footprint x:[36,40], zero-gap against the deck's west edge
+    (x=40), z-span matches the deck exactly (z:[-95,-40]).
+  - TaylorSouthgate_WaterBlocker_East @ (52, 0, -67.5), scale (4, 1, 55)
+    — same prefab, footprint x:[50,54], zero-gap against the deck's east
+    edge (x=50), same z-span.
+  - TaylorSouthgate_KYTrigger @ (45, 0.55, -53.75), scale (10, 3, 27.5) —
+    bare GameObject, BoxCollider (isTrigger=true, live-confirmed),
+    JurisdictionCrossingTrigger with assignedFaction=KentuckyKings.asset
+    (live-confirmed via component read, not just trusted from the set
+    call). Covers the KY half of the deck, z:[-67.5,-40].
+  - TaylorSouthgate_OHTrigger @ (45, 0.55, -81.25), scale (10, 3, 27.5) —
+    same pattern, assignedFaction=NeonSaints.asset (live-confirmed).
+    Covers the OH half, z:[-95,-67.5]. The two triggers split exactly at
+    z=-67.5 — the real state-line midpoint of this deck, per doc §2 "the
+    state line runs mid-river on every Ohio span."
+  - TurfNode_NewportRiverfront (70,0,-40) and the whole existing Kingfish
+    cluster left completely untouched — confirmed unmoved before and
+    after this build.
+
+[FLAG] Placeholder choice, not a real-world anchor — flagged same as
+every prior stub's unspecified run length (InclineCut_Stub,
+AndersonFerryRd_Stub): the task supplied real Y-axis numbers (water
+level, deck clearance) but no real horizontal span distance or exact
+X/Z landing coordinates. Chose a 55-unit span (comparable order of
+magnitude to AndersonFerryRd_Stub's ~60-unit run) and offset the whole
+system 25 units west of the Kingfish cluster's own x=70 center (deck
+centered at x=45) specifically to avoid the deck/water-hazard footprint
+overlapping Kingfish_PLACEHOLDER's hull collider (x:[82,92], y:[0,8] —
+directly overlaps the deck's y=0.45-0.65 range if not offset) and
+Kingfish_DockApron_Stub (x:[62,78]). Checked this by computing exact
+collider bounds before placing anything, not by trial and error. This
+means the bridge doesn't share Taylor-Southgate's exact real-world
+alignment relative to the Kingfish (the doc's own schematic implies
+they're closer together) — a reasonable placeholder compromise, not a
+final position; expect to revisit alongside the still-open "no real X/Z
+coordinate plan for Newport" gap once one exists.
+
+[DONE] WaterHazard.prefab's existing configurability (root X/Z scale =
+footprint) was confirmed SUFFICIENT for the bank-flanking shape the
+planning pass called for — no new prefab variant needed. Two ordinary
+instances at the planning-pass-predicted scale (thin-in-X, full-deck-
+length-in-Z) reproduced the "flank both sides of a full drivable deck"
+shape directly from the existing prefab, same root/children structure
+already proven at the Kingfish and Anderson Ferry (root position/scale
+set the footprint, Blocker child's own local scale gives the standard
+2-unit wall height). Confirms the planning pass's own prediction that
+this was a geometry difference, not a mechanism difference.
+
+[DONE] Play-tested live via UnityMCP (Time.frameCount confirmed
+advancing 1 -> 719+ before testing, no focus-freeze):
+  - Deck drivability: player positioned at the KY-side landing
+    (45,1,-42) and driven at 15 m/s in -z twice in sequence, reaching
+    (45, 1.63, -94.19) — the Ohio-side landing, close to the deck's own
+    z=-95 edge — without falling through anywhere along the full 53-unit
+    drive. Confirms the deck is drivable end to end.
+  - Water hazard: player driven at 15 m/s directly into both the west
+    flank (from x=20, outside the system, driving +x) and the east flank
+    (from x=60, driving -x) — both stopped dead (velocity snapped to
+    zero) short of the wall face, and re-applying velocity produced only
+    a small residual movement before stopping dead again at essentially
+    the same spot — genuine physical stop on both sides, matching the
+    Kingfish/Anderson Ferry precedent behavior exactly. Neither attempt
+    reached the deck's own footprint by going around it.
+  - Jurisdiction trigger: player driven south from z=-30 (outside both
+    triggers) through the KY trigger first — confirmed live,
+    HeatSystem.EncounterFaction became KentuckyKings at CurrentHeat=30
+    (the fresh-crossing baseline) — then continued south through the
+    OH trigger — confirmed live, EncounterFaction became NeonSaints at
+    CurrentHeat=30. Both firings matched their intended FactionData
+    exactly, on both sides, twice independently across this session
+    (once from an accidental mid-trigger start early in testing, once
+    from a clean outside-both-triggers start) — the trigger contract
+    itself is confirmed correct and reliable.
+  - Console read after every stage of testing: 0 errors, 0 warnings
+    throughout.
+
+[NOTE] One sub-check came back inconclusive by design, not by failure:
+tried to also observe the demoted KentuckyKings secondary's parked heat
+immediately after the second (OH) crossing, expecting ~30 per
+HandleJurisdictionCrossing's own demotion logic (already read directly
+in the planning pass). Got 0 instead — but this is passive decay
+(secondaryHeatDecayRate=2/sec) doing exactly what it's supposed to, not
+a bug: this test's own round-trip cadence let well over 100 real
+seconds pass between the crossing and the check (frame count jumped by
+over 10,000 between adjacent test calls), far past the 15 seconds a
+30-heat secondary needs to fully decay to 0 and get removed from the
+list. The retention/decay mechanic itself was already unit-tested
+end-to-end when HeatSystem.HandleJurisdictionCrossing was originally
+built (2026-08-07, see project_turf_heat_wiring) — this session's job
+was only to verify the new CALLER fires it correctly, which it did, both
+times, with the right faction each time. Not re-flagging the retention
+mechanic itself as unverified — it isn't; this session just didn't
+happen to catch it mid-decay.
+
+[DONE] Scene saved after testing (matching the established pattern:
+test first in Play mode, save only once confirmed good). No other
+scene objects touched — TurfNode_NewportRiverfront, the Kingfish
+cluster, and every other district's existing geometry confirmed
+untouched throughout.
+
+Net result: Taylor-Southgate's bridgehead is built and live-verified —
+deck, adapted water hazard, and jurisdiction trigger all working exactly
+as the planning pass specified, no new WaterHazard variant needed. Two
+items intentionally not resolved, both already flagged as open before
+this pass and not blockers to what was asked: (1) exact real-world X/Z
+position/alignment relative to the Kingfish remains a placeholder choice,
+not a final coordinate; (2) L&N and Big Mac still don't exist, so the
+doc's "always a bridge choice" mechanic still isn't complete — unchanged
+from the planning pass's own scoping, not a new gap.
