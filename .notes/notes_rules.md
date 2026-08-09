@@ -95,3 +95,12 @@ Numbered, append new ones at the bottom, don't renumber old ones.
   Packages/manifest.json for the current plugin path and reapply this
   fix before assuming it's a Tripo.ai service outage — full details in
   project_tripo_dcc_bridge_websocket_fix.md.
+- **FactionData display names carry a "The " prefix that doesn't match
+  their asset/lookup names.** PlayerCrew's actual in-game display name
+  is "The Renegades"; Rust Barons reads as "The Rust Barons," Neon
+  Saints as "The Neon Saints," etc. This has already caused at least
+  two sessions to avoid `FactionManager.GetFactionByName()` in favor of
+  pulling the reference straight off `GetAllFactions()`, since a plain
+  unprefixed name won't match. Worth fixing at the root (either strip
+  the prefix in the lookup or standardize on it) rather than continuing
+  to route around it session after session.
