@@ -5494,3 +5494,116 @@ needed since its original implementation. Remaining Newport work is
 real terrain/building art and the floodwall/gates/Point/Monmouth-strip/
 Wiedemann-brewery items already deferred in the original Kingfish scope
 — not more bridge infrastructure.
+
+[2026-08-09] Queensgate first-milestone scoping pass — Claude Code
+K.I.S.S. pass per notes_rules.md Dev Note #1 — planning only, same
+starting-from-zero situation Price Hill and Newport were both in before
+their own first milestones. Checkpoint: working tree already clean at
+HEAD 35a2710 before this pass, no empty commit needed. Read
+Docs/LevelDesign_Queensgate_1995.md in full, live-verified scene state
+before proposing anything rather than trusting the doc's own claims
+about it (see the FLAG below — two of them were stale).
+
+[DONE] Confirmed live scene state for Queensgate: exactly one object
+exists, `TurfNode_QueensgateYard` (-60,0,60), matching the doc's own
+"this doc maps onto that node, doesn't propose new turf" framing.
+Nothing else Queensgate-specific exists — no Roundhouse, no rail yard
+geometry, no Frontage, no Union Terminal, no West End rowhouses, no G1
+viaduct landing. Full scene root hierarchy pulled (53 objects) to be
+sure nothing was missed by name-guessing rather than a real sweep.
+
+[FLAG] Two of the doc's own written claims about live scene state are
+stale as of this session's live check — noted here rather than silently
+corrected, since the doc itself isn't being edited this pass:
+  1. Doc says `startingFaction` is "currently unassigned/neutral despite
+     the canon fit." Live SerializedObject read shows it is **already
+     RustBarons**, not neutral. Something between the doc's 2026-08-07
+     write date and now assigned it (no session's memory log currently
+     credits a specific pass for this — worth a follow-up look if it
+     matters which session did it, not resolved here).
+  2. Doc's §6 "manpower mismatch" flag says `TurfNode.StartCombatGauntlet()`
+     spawns `enemyCount` directly "without checking
+     FactionManager.HasFiniteManpower/ConsumeManpower the way
+     HeatSystem.SpawnReinforcementWave() does." Read the live
+     TurfNode.cs: this is no longer true — `StartCombatGauntlet()` (and
+     its assault-wave sibling `SpawnAssaultWave()`) both already gate on
+     `HasFiniteManpower`/`GetManpower`/`ConsumeManpower`, capping spawn
+     count to whatever's left of the faction's roster. This looks like
+     it was fixed as a side effect of the enemy-capture-of-player-nodes
+     work (fb0c341) per `SpawnAssaultWave()`'s own doc comment ("same
+     manpower-gating shape... per the planning pass's confirmed reuse"),
+     not something this pass touched. Net effect: the doc's concern is
+     already mitigated at the code level, just with stale doc text.
+     TurfNode_QueensgateYard's own `enemyCount=8` (not the doc-assumed
+     class default 5) will correctly cap to RustBarons' real
+     `startingManpower=3` the first time this node's gauntlet fires —
+     confirmed via live SerializedObject read + RustBarons.asset read,
+     not assumed from the doc's numbers.
+
+[FLAG] G1 (8th St Viaduct) has **no built geometry on either side**,
+confirmed live — not just unbuilt on the Queensgate side. Price Hill's
+own InclineHouse cluster (InclineCut_Stub, StateAve_Stub) represents a
+different Price Hill feature (the bike-only incline cut), not the
+viaduct itself. This is consistent with the doc's own framing (G1 is
+"received, not redefined" — a documented connection, not a promise
+anything exists yet) and with its P2 (not P1) priority tier — flagging
+so nobody assumes a landing exists to build against, not proposing to
+build it this pass. Real scope decision for a later milestone, not
+blocking the first one.
+
+[NOTE] Proposed first milestone (illustrative scope, for review before
+any build pass — same "one hero anchor first" pattern Price Hill
+(InclineHouse) and Newport (Kingfish) both used for their own openers):
+  - **The Roundhouse** (P1 clubhouse) as a single placeholder box at/
+    near TurfNode_QueensgateYard (-60,0,60), same one-box convention as
+    InclineHouse_Clubhouse_PLACEHOLDER and Kingfish_PLACEHOLDER — no
+    kit-based art exists for this district yet (checked Assets/Prefabs:
+    only the 6 enemy prefabs + WaterHazard.prefab exist; none of the
+    doc's suggested industrial-brick/corrugated-shed, chain-link/
+    scrapyard-fence, or rowhouse kits are in the project).
+  - A small immediate-surroundings gesture only — illustrative, not
+    committed to a specific object count — matching Kingfish's own
+    first-pass scale (a dock apron + gangway + one placeholder boat, not
+    the whole riverfront). Exact shape (fence stub? single scrap-pile
+    placeholder?) deliberately left open for review rather than
+    pre-decided here.
+  - Explicitly OUT of this milestone, deferred same as every companion
+    doc's own opener: the working rail yard as a hero terrain system
+    (P1, but explicitly a shared system with the Price Hill doc's
+    freight/State-Ave-crossing content per §6 — needs its own
+    coordinated pass, not a solo Queensgate build), Union Terminal (no
+    model exists — confirmed via asset search, matches the doc's own
+    §4 flag, vista-only even once built), the Frontage (doc's own §6
+    story-thread flag explicitly blocks building its interior/content
+    until a narrative decision is made — exterior silhouette only would
+    be permissible per §8.4 but isn't proposed as part of a "genuinely
+    small" opener), the G1 viaduct landing (see FLAG above), and the
+    West End rowhouse block (doc itself calls this "kept light,"
+    lower priority than the clubhouse).
+  - No new TurfNode, no code changes — same as every prior district's
+    first milestone.
+
+[FLAG] No real-world elevation/scale anchor exists anywhere in the
+Queensgate doc — unlike Price Hill's Western Hills Viaduct number or
+Newport's bridge-clearance data, there's no topo figure to apply here.
+Same gap the original Kingfish flag hit; that milestone was built flat
+at Ground's y=0 baseline rather than invent a number, and the same
+approach would apply here unless the user wants to supply one first
+(Queensgate's real setting, Mill Creek valley bottomland, is plausibly
+near-flat in reality too, but that's an inference, not a confirmed
+figure).
+
+[NOTE] Art-source gap, not new to this pass but worth restating
+precisely now that it's been checked directly: no 3D model exists for
+Cincinnati Union Terminal (doc's own §4 flag, re-confirmed via
+AssetDatabase search this session), and none of the three kit types the
+doc suggests (industrial-brick/corrugated-shed, chain-link/scrapyard-
+fence, rowhouse) exist in Assets/Prefabs yet. The Roundhouse itself, if
+built as scoped above, would be the same single-box placeholder
+convention as every other unbuilt hero so far — not blocked by this,
+just flagged so the eventual real-art pass has an accurate starting
+list.
+
+No scene or code changes made this pass — planning only, per
+instruction. Awaiting review of the proposed milestone scope before any
+build work starts.
