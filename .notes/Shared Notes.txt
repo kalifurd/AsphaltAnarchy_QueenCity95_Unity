@@ -5382,3 +5382,115 @@ fully intact. The only remaining blocker before Big Mac can be built is
 the real vertical clearance number — everything else (position,
 WaterHazard approach, trigger contract, and now the ground itself) is
 ready.
+
+[2026-08-09] Build Big Mac / I-471 Bridge (Newport's 3rd and final crossing) — Claude Code
+K.I.S.S. pass per notes_rules.md Dev Note #1, per instruction: real
+clearance data supplied this session (deck Y=+0.75, derived from the
+same ~78ft-clearance/5:1-compression process as the first two bridges,
+used directly, not recalculated). Checkpoint: working tree was already
+clean at HEAD a6a7dc3 before this pass — no empty commit needed, that
+commit itself is the checkpoint.
+
+[DONE] Pulled exact live transforms for both existing bridges + Ground_
+EastExtension via UnityMCP (execute_code, not memory-recalled) before
+building anything, to reuse their proven footprint math exactly rather
+than re-deriving it:
+  - Taylor-Southgate: deck (45,0.55,-67.5) scale(10,0.2,55); WaterHazard
+    flanks at x=38/52 scale(4,1,55), zero-gap against deck edges
+    x=40/50; KY/OH triggers at z=-53.75/-81.25 scale(_,3,27.5), split at
+    deck's own z=-67.5 midpoint.
+  - L&N: deck (15,0.56,-67.5) scale(4,0.2,55); same flank/trigger
+    pattern, narrower footprint.
+  - Ground_EastExtension: (123.5,0,0) scale(4.7,1,20) → world bounds
+    x:[100,147], z:[-100,100], confirming the prior planning pass's
+    footprint arithmetic (Kingfish edge 92 + 30 gap + 20 footprint + 5
+    margin = 147) was already baked correctly into the geometry.
+
+[DONE] Built Big Mac reusing the prior pass's own already-computed
+footprint (20 units: 4+12+4), not re-deriving new numbers — deck width
+12 units, wider than Taylor-Southgate's 10 per the task's explicit
+instruction ("should NOT default to matching either prior bridge"),
+narrower than a padded guess since 12 was the number already load-
+bearing in Ground_EastExtension's own sizing math from the last pass.
+  - `BigMac_Deck` (132,0.75,-67.5) scale(12,0.2,55) — same z-span
+    z:[-95,-40] as both prior bridges (same KY riverfront line
+    convention), deck Y taken directly from the task's supplied real
+    clearance number, not recalculated.
+  - `BigMac_WaterBlocker_West`/`_East` — WaterHazard.prefab pattern,
+    zero-gap flanking at x:[122,126] and x:[138,142] (bounds-checked
+    live, touches deck edges x=126/138 exactly). No new prefab variant
+    needed — third confirmation this technique is footprint-agnostic.
+  - `BigMac_KYTrigger`/`_OHTrigger` — existing JurisdictionCrossingTrigger.cs
+    reused with zero code changes, split at the same z=-67.5 midpoint
+    convention, assignedFaction KentuckyKings/NeonSaints (same as both
+    prior bridges — Newport/KY side vs. Downtown/Neon Saints on the
+    Ohio side). Built by duplicating the existing Taylor-Southgate
+    instances and repositioning, which preserved tag/layer/component
+    config exactly rather than hand-rebuilding from scratch.
+  - Bounds-verified live (post Physics.SyncTransforms() — collider
+    .bounds reads stale until forced synced after a transform move,
+    worth remembering for any future rapid create-then-query pass):
+    30-unit gap from Kingfish cluster's real edge (x=92) to Big Mac's
+    west flank (x=122), 5-unit margin to Ground_EastExtension's own
+    edge (x=147) — both match the prior planning pass's arithmetic
+    exactly.
+  - No new TurfNode — same as both prior bridges, reuses
+    TurfNode_NewportRiverfront.
+
+[DONE] Live play-tested via UnityMCP (Time.frameCount confirmed
+advancing before testing, no focus-freeze):
+  - Deck settle-checked at 3 points (south landing z=-42, mid-span
+    z=-67.5, near north landing z=-92) — identical rest height
+    (y=1.949) at all three, confirming one continuous flat surface,
+    not just trusting the static geometry.
+  - KYTrigger fired correctly mid-drive: EncounterFaction=KentuckyKings,
+    Heat=30, read immediately after entering its zone.
+  - OHTrigger fired correctly: EncounterFaction=NeonSaints, Heat=30,
+    read immediately after entering its zone during the same drive.
+  - Both WaterHazard flanks stop a direct 15 m/s approach dead short of
+    the blocker face; re-applying velocity snaps back to essentially
+    the same spot on both sides — same genuine-physical-stop signature
+    as every prior WaterHazard application.
+  - Console clean throughout (0 errors/warnings, checked twice).
+
+[NOTE] One test artifact, not a Big Mac defect: driving the full 15 m/s
+send end-to-end in one uninterrupted run twice carried the bike off the
+deck's north end and off Ground_EastExtension's own edge entirely
+(landed at z=-112, y=-56, falling) before a follow-up check could catch
+it — real wall-clock latency between tool calls let the bike cover more
+ground than expected between position checks. This is the same
+edge-of-world behavior any bridge would have if driven all the way past
+the map boundary, not something specific to this build; switched to
+settle-checks and shorter zone-targeted teleports for the rest of the
+test battery, which is how the deck-continuity and both trigger results
+above were actually confirmed. Also re-confirms Dev Note #2: heat read
+0/null immediately after one of these long unmonitored drives, which
+tracks with HeatSystem's 8-second no-pursuer auto-clear racing the
+elapsed real time, not a trigger failure — the tight-cadence re-reads
+right after each teleport-into-zone are the results that count.
+
+[DONE] Regression-checked both existing bridges live, same as the prior
+Ground-extension pass (nothing here was expected to move, since this
+pass only added new objects, but checked rather than assumed):
+  - Taylor-Southgate: deck settle-check clean (y=1.749), KY trigger
+    (KentuckyKings, heat mid-decay from a fresh 30 — confirms passive
+    decay is still running correctly, not just a hardcoded on/off),
+    OH trigger (NeonSaints, 30), west WaterHazard flank still stops a
+    direct approach dead.
+  - L&N: same battery — deck settle-check clean (y=1.759), KY trigger
+    (KentuckyKings, decaying), OH trigger (NeonSaints, decaying), west
+    WaterHazard flank still stops a direct approach dead.
+  - Console read clean after this battery too.
+
+[DONE] Scene saved. Committing this pass before session ends.
+
+Net result: **all three of Newport's Ohio bridges now exist and are
+live-tested** — Kingfish clubhouse, Taylor-Southgate, L&N, and now Big
+Mac/I-471. The doc's §2 G1 "always a bridge choice" mechanic is
+mechanically complete for the first time. Newport's jurisdiction-heat
+seam (HeatSystem.HandleJurisdictionCrossing + JurisdictionCrossingTrigger)
+is now wired at all three crossings with zero further code changes
+needed since its original implementation. Remaining Newport work is
+real terrain/building art and the floodwall/gates/Point/Monmouth-strip/
+Wiedemann-brewery items already deferred in the original Kingfish scope
+— not more bridge infrastructure.
