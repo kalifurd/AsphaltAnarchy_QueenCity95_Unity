@@ -4625,3 +4625,158 @@ quote corrected to match (unrequested follow-on, called out above),
 Clifton confirmed already-claimed by Queensgate's G2 (no new gateway
 needed), and Docs/RealGeography_Reference.md created as the shared
 backbone-geography reference for future district docs.
+
+[2026-08-09] Newport first-bridge milestone + jurisdiction-trigger scoping — Claude Code
+K.I.S.S. planning pass per notes_rules.md Dev Note #1. Checkpoint: working
+tree already clean at HEAD 519a12f (prior session's commit) — nothing to
+commit before this pass. No scene or code changes made this session,
+per instruction — proposal only.
+
+[DONE] Re-read LevelDesign_Newport_1995.md's full bridge description
+(§2 "The bridges" table, §5 chokepoints/sightlines, §8.1) plus live-
+verified current scene state via UnityMCP before proposing anything:
+TurfNode_NewportRiverfront confirmed unmoved at (70,0,-40); the full
+Kingfish cluster (DockApron_Stub, Gangway, PLACEHOLDER hull, both
+WaterBlocker instances) confirmed still live and intact (rootCount 37,
+matches memory exactly) — nothing drifted since the last Newport
+session.
+
+[DONE] Bridge pick: Taylor-Southgate, confirmed rather than assumed
+off the "brand-new" line alone. Three reasons, checked against the doc
+text directly:
+  1. Brand-new in-period (opened 1995 on the demolished Central Bridge
+     site) — matches the district's whole "last call" thesis (§1) more
+     directly than the other two, which are just old/fast infrastructure
+     with no period-specific story beat attached.
+  2. Geographically closest to what's already built: the doc's own
+     schematic (line ~40-44) lines Taylor-Southgate up directly over
+     Riverboat Row/the Kingfish, with L&N to the west and Big Mac (I-471)
+     to the east — building this one keeps the milestone anchored to the
+     existing Kingfish cluster's real position, not a cold start
+     elsewhere on the riverfront.
+  3. Direct faction-identity tie: §2 calls it "the Kings' drag strip"
+     and §5 calls its bridgehead out by name ("brand-new, wide, and
+     watched — the respectable crossing, with respectable cameras") —
+     stronger, more specific doc support than L&N ("the tight span") or
+     Big Mac ("full-throttle crossings"), which read as more generic.
+
+[FLAG] Tension worth surfacing, not silently resolved: §4's own hero-
+building budget explicitly treats "the three-bridge set" as ONE hero
+terrain system, and the prior Kingfish-scoping pass (see Shared Notes
+[2026-08-08]) flagged that building a single bridge in isolation is a
+scope trap — "either build a real one-off span to nowhere, or half-
+build the three-bridge system, both against K.I.S.S." This task
+explicitly instructs picking one anyway, which overrides that prior
+caution — noting the override rather than re-litigating it. Resolving
+the tension the same way Kingfish resolved "clubhouse before the whole
+district": scope this milestone as Taylor-Southgate's own bridgehead/
+landing structure, not as a claim that the doc's "the player always has
+a bridge choice" mechanic (§2 G1) is now complete — that only becomes
+real once L&N and Big Mac exist too, same as TurfNode_NewportRiverfront's
+race-as-bridge-run captureType reframing stays deferred until then.
+
+[FLAG] Elevation/coordinate data — the real blocker, carried forward
+from the Kingfish pass, not resolved here. No real-world elevation
+anchor exists anywhere for Newport (checked again — §6/§8.8 still call
+every Newport position "abstract placeholder"; the Downtown/OTR doc's
+own riverfront/G2 hub positions are equally unanchored). Split into two
+different needs, not one:
+  - Horizontal (X/Z) position: does NOT need new lookup work — can
+    anchor directly off TurfNode_NewportRiverfront/the built Kingfish
+    cluster (70,0,-40), same convention already used for the Kingfish
+    itself and for EighthAndState off InclineHouse.
+  - Vertical (Y) / deck height: DOES need new real-world data, and
+    this is where a bridge differs from everything built at Newport so
+    far. The Kingfish stayed flat at Ground's y=0 baseline and got away
+    with it (a moored boat and dock apron plausibly sit near water
+    level) — a real vehicle bridge cannot: its whole doc identity is
+    "arcing over the river" (§8.1: districts "must read as genuinely
+    different widths, speeds, and sightlines"), and both banks (Newport
+    riverfront, downtown Cincinnati riverfront) need real elevation
+    figures plus deck clearance above normal pool before a real span can
+    be placed correctly. Same process as Price Hill (Western Hills
+    Viaduct/crest) and Anderson Ferry (Delhi bluff/Ohio waterline): real
+    user-supplied topo/map data, not an estimated or invented number —
+    not resolving this myself. A flat placeholder deck at y=0 could
+    still be built without this (matching the Kingfish's own
+    stopgap), but it would misrepresent the doc's "brand-new, respected
+    span" identity and should be called out as a known placeholder-only
+    compromise if that's the path chosen, not presented as done.
+
+[DONE/NOTE] WaterHazard applicability — checked, does NOT transfer
+unchanged, confirmed rather than assumed:
+  - The existing prefab (built 2026-08-08, project_water_crossing_
+    hazard) was proven at two small, static-gap scales: the Kingfish's
+    ~4-unit flanking pair around one plank, and Anderson Ferry's single
+    dead-end cap on a ramp with no far side. Both patterns fence off a
+    SHORT footprint around ONE narrow, already-built crossing feature.
+  - A real vehicle bridge is a different shape of problem: the "water"
+    footprint is the actual river width between two banks (much larger
+    even at the doc's 5:1 compression), and the thing left open isn't a
+    short token plank but a full drivable, two-way bridge-deck collider
+    that needs to support real gameplay traffic including the doc's own
+    "draft duel" enemy encounters (§5 route 6 — "scripted Kings
+    encounters on the spans... bridge-to-bridge"). That deck is new
+    content on the scale of a road stub (StateAve_Stub/WarsawAve_Stub
+    pattern), not a WaterHazard instance itself.
+  - The underlying WaterHazard principle still applies and was
+    designed for exactly this (project_water_crossing_hazard's own
+    proposal text already lists "bridge deck" as one of the crossing
+    types it should leave open) — Blocker-mode walls would run along
+    both riverbanks flanking the bridge deck's real footprint (stopping
+    a vehicle from driving off either bank into the river anywhere
+    except across the actual bridge), not a short 2-sided flanking pair
+    the way the Kingfish got one. Geometry, not mechanism, is what
+    doesn't transfer unchanged.
+  - Also blocked on the same elevation gap above: a real deck sits above
+    water level, unlike the flush gangway/ramp cases, so hazard wall
+    height/placement can't be finalized without the same real elevation
+    numbers.
+
+[DONE/NOTE] HeatSystem.HandleJurisdictionCrossing() trigger contract —
+minimal hookup proposed, not built. Re-read HeatSystem.cs directly
+(lines ~212-255): HandleJurisdictionCrossing(FactionData
+enteringFaction) already has everything it needs on the heat-tracking
+side (handoff not reset, already-tested) — it's purely the CALLER that's
+missing. Proposal:
+  - No existing generic "trigger volume that calls into a system"
+    component exists in the codebase to reuse — TurfNode.cs's own
+    OnTriggerEnter (line 309) is capture-specific, tied to its own
+    fields, not reusable as-is. This needs one small new script, e.g.
+    JurisdictionCrossingTrigger.cs.
+  - Two non-overlapping trigger BoxColliders spanning the two halves
+    of the bridge deck, split exactly at the real state-line midpoint
+    (doc §2: "the state line runs mid-river on every Ohio span") — a
+    Kentucky-side half and an Ohio-side half, each a serialized
+    FactionData field set in the Inspector (KentuckyKings.asset on the
+    KY half, NeonSaints.asset on the Ohio half — Taylor-Southgate lands
+    in Downtown Cincinnati per the doc's own G1, and NeonSaints.asset is
+    Downtown's primary per LevelDesign_Downtown_OTR_1995.md).
+  - OnTriggerEnter(Collider other) checks other.CompareTag("Player")
+    (same convention TurfNode.cs already uses) then calls
+    heatSystem.HandleJurisdictionCrossing(assignedFaction), with
+    heatSystem resolved via FindObjectOfType<HeatSystem>() — matching
+    the exact existing convention HeatHUD.cs already uses (line 51),
+    not inventing a new lookup style.
+  - No extra debounce/direction-detection logic needed: driving back and
+    forth near mid-span just re-enters the same trigger repeatedly, and
+    HandleJurisdictionCrossing's own early-return guard
+    (enteringFaction == encounterFaction) already no-ops that case —
+    confirmed by reading the method, not assumed.
+  - Scoped to gang heat only, same as the method itself (police have no
+    pursuit AI yet, unchanged blocker noted in project_turf_heat_wiring).
+  - This is a proposal only — no script written, no trigger placed, no
+    scene change. It would still need the real bridge-deck geometry
+    (blocked on the elevation flag above) to know where to put it.
+
+Net result: recommend Taylor-Southgate as the first-built bridge (above,
+doc-supported not just assumed), scoped as its own bridgehead milestone
+rather than a claim the three-bridge choice mechanic is done. Two real
+blockers before building: (1) no real elevation/deck-height data exists
+for either bank — needs the same human-supplied topo pass Price Hill
+and Anderson Ferry got; (2) WaterHazard's existing prefab needs
+different-scale geometry (bank-flanking, not short-pair flanking) once
+real deck position is known. The HeatSystem trigger contract itself is
+fully specified and ready to build the moment real bridge geometry
+exists — that part is no longer blocked on a missing design, only on
+the geometry it needs to attach to.
