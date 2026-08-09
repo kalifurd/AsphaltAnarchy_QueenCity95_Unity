@@ -39,7 +39,7 @@
 ### Schematic (topology only, not to scale)
 
 ```
-                         (N: I-71/I-75 -> Clifton/Avondale/Uptown, off-map, future districts)
+                         (N: I-75 north -> Norwood Lateral (SR-562) -> I-71 north -> Avondale/Uptown, off-map, future districts)
                                                 |
                     FINDLAY MARKET [R] ---- VINE ST SPINE ---- MUSIC HALL / WASHINGTON PARK [R]
                                                 |
@@ -88,7 +88,7 @@
 | G1 | **West via Central Parkway / 8th St corridor** | [R] | **Queensgate** (Rust Barons) | **Received, not redefined** — combines the Price Hill doc's own G1 (which already names "downtown/OTR" as 8th St Viaduct's destination) and the Queensgate doc's own G3 (Central Parkway east). This doc is where both of those arrows land. |
 | G2 | **The riverfront hub** | [R] | Waldvogel Viaduct (west, Price Hill's G2), the three Newport bridges (south, Newport's G1), and Queensgate's River Road (Queensgate's G4) | **Received, not redefined**, all three at once — the Cincinnati riverfront is the one physical place every companion doc already points at. This doc doesn't re-describe any of those spans; it's just where they all touch down. |
 | G3 | **Roebling Suspension Bridge** | [R] | Covington, KY — Kentucky Kings' canon secondary territory (off-map) | **New gateway**, not claimed by any companion doc — the real 1866 span, distinct from Newport's three bridges further east. Light touch only, same restraint Newport gave Covington from its own side. |
-| G4 | **I-71 / I-75 north** | [R] | Clifton, Avondale, Uptown — off-map, future districts | The fast, anonymous northern exit out of the core. |
+| G4 | **I-75 north, via the Norwood Lateral (SR-562), to I-71 north** | [R] | Avondale, Uptown — off-map, future districts | The fast, anonymous northern exit out of the core. Hands off from I-75 to I-71 via the Norwood Lateral rather than a direct interchange — the real Clifton/Mt. Storm Park I-74/I-75 interchange heads west and is unrelated to this route (see Queensgate's own G2, which already claims the I-75-north-to-Clifton arrow). |
 | G5 | **Columbia Parkway east, through Mount Adams** | [R] | East End — the Phantoms' canon **primary** territory (off-map, future doc) | New connector this doc establishes; deliberately not built past Mount Adams' light touch (§3). |
 
 ---

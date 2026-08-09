@@ -4543,3 +4543,85 @@ and Mill Creek both check out against real imagery; the tank farm is a
 real omission, not a contradiction). One real flagged discrepancy in
 the Downtown/OTR doc (G4's I-71 vs. I-74 naming and the unbuilt
 cloverleaf interchange) needs a human call before any future edit.
+
+[2026-08-09] G4 real-route fix + RealGeography_Reference.md — Claude Code
+K.I.S.S. pass per notes_rules.md Dev Note #1, consolidating the G4
+discussion. Checkpoint: working tree was already clean at HEAD 21615ca
+(prior session's log commit) before this pass started; no dirty state
+needed stashing. Two earlier fix attempts (straight I-71->I-75 swap,
+then an I-74/I-75 swap) were explicitly superseded by this pass per
+instruction — not re-derived, not re-litigated.
+
+[DONE] PART 1 — Downtown/OTR doc's G4 gateway rewritten. Old (wrong):
+"I-71 / I-75 north -> Clifton, Avondale, Uptown." New (confirmed real
+route): "I-75 north, via the Norwood Lateral (SR-562), to I-71 north"
+-> Avondale, Uptown. Clifton removed from the destination list per
+instruction; the real Clifton/Mt. Storm Park I-74/I-75 interchange
+heads west and has no relationship to this route. Both the ASCII
+schematic (line ~42) and the G4 gateway table row (§2) updated. Mt.
+Healthy was named in this task's prompt as something to remove from
+G4, but it was never actually present in the doc's G4 text (checked —
+only Clifton/Avondale/Uptown were listed) — nothing to remove there,
+noting only so it doesn't look skipped.
+
+[DONE] PART 1, Clifton check — resolved, not flagged. Checked the
+doc's existing structure before assuming: Queensgate's own G2 already
+claims "I-75 corridor -> Northside/Clifton and the citywide highway
+network (off-map, future districts)" (LevelDesign_Queensgate_1995.md
+§2). Clifton was already spoken for by another doc's existing gateway
+before this task started — it was never actually meant to be a
+Downtown/OTR destination via G4, and doesn't need a new gateway of its
+own here. Vine Street's existing arterial entry ("continuing north
+toward Clifton") already gives the district a real, accurate surface-
+street link independent of any highway gateway, so nothing else needed
+changing. New G4 note text cross-references Queensgate's G2 directly
+so a future reader doesn't have to re-derive this.
+
+[DONE] Unrequested but necessary follow-on fix, flagging it as such:
+LevelDesign_Norwood_1995.md's own G1 gateway directly quotes the OLD,
+now-wrong G4 text verbatim ("this is the same arrow the Downtown/OTR
+doc's own G4 already points north along ('I-71/I-75 north — Clifton,
+Avondale, Uptown...')") as part of this project's "received, not
+redefined" cross-doc convention. Left unfixed, it would have
+immediately reintroduced the same wrong routing as a stale quote one
+doc over. Updated Norwood's G1 note to quote the corrected G4 text and
+marked the correction with today's date inline, rather than silently
+rewriting it with no trace. This wasn't explicitly in this task's
+scope (only Downtown/OTR's G4 was asked for) — flagging that I made
+this call rather than asking first, since it was a direct textual
+consistency requirement of an already-decided fix, not a new design
+decision.
+
+[DONE] PART 2 — Docs/RealGeography_Reference.md created (new file,
+short reference note, not a level-design doc — no locations/factions/
+P1-P3 lists). Covers: §1 I-75 as the continuous real north-south spine
+(Queensgate/Downtown south end -> Norwood Lateral handoff -> Hamilton/
+Fairfield north end), explicitly distinguishing it from the unrelated
+westbound Clifton/I-74 interchange; §2 the Norwood Lateral (SR-562) as
+the real I-75<->I-71 branch, stated as the same confirmed route used
+for the G4 fix above and the exact arrow Norwood's own G1 already
+receives; §3 SR-127 (west edge, Fairfield/Lindenwald/Mt. Healthy) and
+SR-129 (north edge, Hamilton/Princeton/Bethany) as the confirmed
+northwest map boundary, with Beckett Ridge/Union Centre confirmed to
+already sit south of that line (nothing built needs to move); §4
+explicitly leaves the northeast (Milford/Batavia) and southeast
+(Newport) map edges open/undefined, per instruction not to invent a
+boundary for either side.
+
+[NOTE] Two minor cross-doc naming/framing variances surfaced while
+writing §3 of the new reference doc, noted there inline rather than
+silently reconciled: (1) Hamilton/Fairfield's doc calls the same real
+west-edge corridor "US 127 / Pleasant Avenue," not "SR-127" — likely
+the same road under its US-route vs. state-route name, not a real
+contradiction. (2) Hamilton/Fairfield's doc frames its own SR 129
+reference as an "eastern rural fade" toward Liberty Township, a
+different emphasis than this task's "north edge through Hamilton/
+Princeton/Bethany" framing — plausibly the same real route serving two
+different sides of Hamilton, not reconciled here, just flagged for
+awareness if someone touches that corridor again.
+
+Net result: G4 corrected in Downtown/OTR doc, Norwood's mirroring G1
+quote corrected to match (unrequested follow-on, called out above),
+Clifton confirmed already-claimed by Queensgate's G2 (no new gateway
+needed), and Docs/RealGeography_Reference.md created as the shared
+backbone-geography reference for future district docs.

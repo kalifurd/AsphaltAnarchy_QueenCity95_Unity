@@ -80,7 +80,7 @@ The counterweight to all that absence: **US Playing Card Company on Beech Avenue
 
 | # | Gateway | Tag | Leads to | Notes |
 |---|---------|-----|----------|-------|
-| G1 | **Norwood Lateral east → I-71** | [R] | South to Downtown/OTR and Uptown | **Received, not redefined** — this is the same arrow the Downtown/OTR doc's own G4 already points north along ("I-71/I-75 north — Clifton, Avondale, Uptown, off-map, future districts"). Norwood is that future district; this doc is where that arrow lands. |
+| G1 | **Norwood Lateral east → I-71** | [R] | South to Downtown/OTR and Uptown | **Received, not redefined** — this is the same arrow the Downtown/OTR doc's own G4 already points north along ("I-75 north, via the Norwood Lateral (SR-562), to I-71 north — Avondale, Uptown, off-map, future districts"; corrected 2026-08-09, previously misrouted through I-71/I-75/Clifton). Norwood is that future district; this doc is where that arrow lands. |
 | G2 | **Norwood Lateral west → I-75** | [R] | West toward the Mill Creek corridor, Queensgate direction | New connector, not a re-claim of Queensgate's own G2 (which lands further south on the same highway) — a second, independent link between the two industrial-decline districts. |
 | G3 | **Montgomery Road north** | [R] | Kennedy Heights, Silverton — off-map, soft suburban fade | Quiet northern exit; presence implied, not built, same restraint every companion doc gives its softest edge. |
 | G4 | **Edwards Road east** | [R] | Oakley, Hyde Park, the Rookwood corridor — off-map, future doc territory | New connector this doc establishes. Deliberately light touch — Rookwood Commons and Rookwood Exchange don't exist yet in 1995 (§7), so there's little to build past the edge even in fiction. |
