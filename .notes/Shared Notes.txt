@@ -5607,3 +5607,62 @@ list.
 No scene or code changes made this pass — planning only, per
 instruction. Awaiting review of the proposed milestone scope before any
 build work starts.
+
+[2026-08-09] Build Queensgate's Roundhouse clubhouse — Claude Code
+K.I.S.S. pass per notes_rules.md Dev Note #1. Roundhouse-only scope
+confirmed by the user, matching InclineHouse and Kingfish's precedent
+exactly — same "one hero anchor first" milestone, everything else
+(rail yard, Frontage, G1 landing) deliberately deferred per the prior
+planning pass. Checkpoint: working tree was already clean at HEAD
+010c1bb before this pass, no empty commit needed.
+
+[DONE] Live-checked TurfNode_QueensgateYard before building (position,
+SphereCollider radius=10, TerritoryBorder/SafehouseSpawnPoint children
+at (-55,0,65)) so the new geometry could be placed without overlapping
+either — not eyeballed from the doc's abstract description.
+
+[DONE] Built at y=0 flat, per instruction — Queensgate is genuine
+low-lying rail-yard bottomland, not a placeholder fallback like
+Kingfish's flat-y=0 build was (that one lacked real elevation data
+entirely; this is the confirmed real answer for this terrain type):
+  - `RoundhouseClubhouse_PLACEHOLDER` (-75,4,60) scale(20,8,15) — same
+    one-box convention and same dimensions as
+    InclineHouse_Clubhouse_PLACEHOLDER, offset 15 units from the node
+    center matching that same precedent's own offset distance.
+  - `QueensgateYard_Turntable_PLACEHOLDER` (-58,0.05,60) scale(12,0.1,12)
+    — the one light immediate-surroundings gesture, matching the doc's
+    own specific imagery ("bikes parked on the old turntable pit")
+    rather than generic filler. Built as a Cylinder primitive; caught
+    and fixed a Unity quirk before it caused a problem — Unity's
+    built-in Cylinder primitive defaults to a CapsuleCollider, which
+    would have given a flat disc a rounded/domed top instead of a flat
+    drivable surface. Swapped it for a BoxCollider (auto-fit to the
+    mesh's actual bounds by the MCP tool's add action, not left at a
+    generic 1x1x1 default) to match the flat-slab convention every
+    other stub/apron in this project already uses.
+  - Caught and fixed a real overlap before it shipped, not just
+    eyeballed: the turntable's first placement (-68,0.05,60) put ~9
+    units of its footprint physically inside the solid clubhouse box's
+    collider — live bounds check (`Bounds.Intersects`) confirmed the
+    overlap, repositioned to (-58,0.05,60), re-checked, confirmed
+    `Intersects=False` with a clean 1-unit gap.
+  - No rail yard, no Frontage, no G1 landing, no West End edge — none
+    of that touched, per instruction.
+
+[DONE] Live play-tested via UnityMCP (Time.frameCount confirmed
+advancing before testing, no focus-freeze): `TurfNode_QueensgateYard`'s
+`ControllingFaction` property read directly at runtime after entering
+Play mode — resolves to **RustBarons**, correctly, confirming the
+stale-doc-claim correction from the prior planning pass holds under an
+actual live read, not just a static SerializedObject check. Console
+clean before and after Play mode (0 errors/warnings both checks). Scene
+saved after exiting Play mode.
+
+Net result: Queensgate now has its first built geometry — the Roundhouse
+clubhouse anchor plus one thematically-specific surrounding detail,
+same minimal scope as every other district's own opener. Remaining
+Queensgate work (rail yard as a shared system with the Price Hill doc,
+Union Terminal, the Frontage pending its story decision, the G1 viaduct
+landing, the West End edge) stays exactly as scoped and deferred in the
+prior planning pass — nothing about this build implies any of it is
+next by default.
