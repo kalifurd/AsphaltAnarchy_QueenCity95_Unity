@@ -2,7 +2,11 @@
 (nothing yet — this fills in after the first compaction pass)
 
 === OPEN FLAGS (do not remove until resolved) ===
-(none)
+[2026-08-10] Highway Kin NPC still needs the texture-then-segment
+Tripo3D pass the other 5 gangs got (currently on the older
+round-2 rugged_biker_character_3d_model). Blocked on either the user
+running it through the DCC Bridge, or supplying a Tripo API key for
+the in-session generate_model path. See dated entry below for detail.
 
 === APPEND NEW NOTES BELOW THIS LINE ===
 
@@ -6394,3 +6398,43 @@ as a known, physically-correct limitation tied to placeholder road
 geometry rather than something to keep tuning blind — a real fix, if
 wanted, most likely lives in giving these districts real approach-road
 length rather than further force/grip adjustments.
+
+[2026-08-10] Ducati cleanup + Highway Kin NPC upgrade — Claude Code
+
+[DONE] Part 1 — Deleted the Ducati spare model
+(ducati_sport_motorcycle_3d_model). Verified orphan first: grepped its
+two guids (fbx 214bf70ddf42e994abfe134fecdbdcde, mat
+076832d166ed9534ea15b0e34abbc67e) and the name across all
+FactionData/prefab/scene assets — only hit was one loose root-level
+PrefabInstance in QueenCity_Main.unity (fileID 563930003, the same
+class of leftover auto-add-to-scene Tripo preview object as the
+2026-08-08 18-object cleanup pass, see loose_tripo_scene_objects
+memory). No FactionData/NPC/vehicle assignment referenced it anywhere.
+Removed that scene entry + its SceneRoots list slot, then deleted
+Assets/TripoModels/ducati_sport_motorcycle_3d_model/ (fbx, .fbm
+texture folder, Materials/) and its .meta. Re-grepped afterward, zero
+remaining hits. Committed: 1c68795 "Remove Ducati spare model (orphan
+Tripo preview leftover)".
+
+[FLAG] Part 2 — Highway Kin NPC texture-then-segment upgrade NOT done,
+held at user's request this session. Enemy_HighwayKin.prefab currently
+still has its round-2 BikeModel/RiderModel wired from
+rugged_biker_character_3d_model (the "unattributed export" era, not
+the texture-then-segment Tripo3D pass the other 5 gangs got). Checked
+whether this could be done in-session: mcp__UnityMCP__generate_model
+can call Tripo3D directly (bypassing the fragile DCC Bridge websocket
+entirely per project_tripo_dcc_bridge_websocket_fix memory), but
+list_providers shows Tripo has no API key configured, so that path is
+unavailable right now. The DCC Bridge path the other 5 gangs actually
+used is inherently user-driven — texture-then-segment happens on
+tripo3d.ai/the DCC app, then the plugin pushes the finished model into
+Unity over the websocket — nothing pending in the console right now
+(filtered read_console for "Tripo", 0 entries), so nothing is
+mid-flight to pick up. Next session: either the user runs the
+texture-then-segment pass and pushes it through the DCC Bridge (watch
+console for "Found model" entries, wire into Enemy_HighwayKin.prefab
+using the same BikeModel/RiderModel recipe as the other 5 gangs), or
+supplies a Tripo API key for the in-session generate_model path (would
+still need clarifying what "texture-then-segment" maps to as
+generate_model's texture/tier params, since it doesn't expose those
+exact stage names).
