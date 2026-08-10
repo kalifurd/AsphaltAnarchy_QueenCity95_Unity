@@ -5735,3 +5735,59 @@ needs a Price Hill-side decision first.
 
 Awaiting review of this proposed milestone scope before any build work
 starts.
+
+[2026-08-10] Build Queensgate rail yard static blockout — Claude Code
+User approved the proposed milestone scope as-is; built exactly what
+was scoped, nothing more.
+
+[DONE] Live-checked `TurfNode_QueensgateYard`'s children (TerritoryBorder
+disc radius ~5 at node center, SafehouseSpawnPoint at (-55,0,65)) plus
+`RoundhouseClubhouse_PLACEHOLDER` and `QueensgateYard_Turntable_
+PLACEHOLDER`'s exact bounds before placing anything, same habit as the
+Roundhouse pass — not eyeballed.
+
+[DONE] Built 6 objects, all at y=0 flat (Ground baseline, same as the
+Roundhouse pass), all root-level/unparented matching the existing
+Roundhouse/turntable precedent, east of the turntable (away from the
+clubhouse) so the yard reads as radiating from the Roundhouse rather
+than crowding it:
+  - `QueensgateYard_TrackBed_Siding_PLACEHOLDER` (-30,0.03,63)
+    scale(40,0.06,3) and `QueensgateYard_TrackBed_DeadSpur_PLACEHOLDER`
+    (-30,0.03,57) scale(40,0.06,3) — two flat rail-bed strips, same
+    flat-slab BoxCollider convention as the turntable, tagged "Dirt"
+    (matching `InclineCut_Stub`'s unpaved-surface tag) rather than
+    "Asphalt".
+  - Three freight cars strung along the siding track, nose-to-tail with
+    a consistent 2-unit gap, scale(12,3.5,3) each: `FreightCar01_
+    PLACEHOLDER` (-44,1.75,63), `FreightCar02_PLACEHOLDER` (-30,1.75,63),
+    `FreightCar03_PLACEHOLDER` (-16,1.75,63).
+  - One isolated car on the dead spur, same scale, deliberately NOT
+    part of the siding string: `FreightCar04_Dead_PLACEHOLDER`
+    (-25,1.75,57) — the doc's own "some live, some dead and rusting"
+    imagery in one small gesture rather than uniform dressing.
+
+[DONE] Live bounds-checked every new object against the Roundhouse and
+turntable via `Bounds.Intersects` before calling it done (same rigor as
+the turntable-vs-clubhouse check last pass): all 12 cross-checks came
+back `Intersects=False` — no overlap with either existing structure.
+Also checked new-vs-new: the three siding cars and the dead-spur car
+don't intersect each other; each car legitimately intersects the track
+bed directly beneath it (cars resting on the rail bed, both starting at
+y=0) — expected and correct, not a collision bug. Confirmed visually
+too via a top-down positioned screenshot: Roundhouse, turntable, the
+three-car siding string, and the offset dead-spur car all read cleanly
+separated. Console clean (0 errors/warnings) after the build; scene
+saved.
+
+[NOTE] Still explicitly out of scope, per the approved milestone and
+unchanged from the planning pass: no train movement/scripting, no
+State Ave crossing tie-in, no G1 viaduct landing, no Frontage, no
+Union Terminal, no West End edge. The flagged Price Hill rail-system
+coordination dependency from the planning pass is untouched by this
+build — it only added static geometry, nothing live.
+
+Net result: Queensgate's rail yard now has its first visible identity
+beyond the clubhouse — a small strung-together siding plus one dead
+spur car, matching the doc's "gaps in someone else's machine" thesis at
+a genuinely small scale. Remaining rail-yard work (the live rail
+system, the rest of the yard's sprawl) stays deferred exactly as scoped.
