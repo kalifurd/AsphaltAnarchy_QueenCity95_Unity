@@ -2,16 +2,12 @@
 (nothing yet — this fills in after the first compaction pass)
 
 === OPEN FLAGS (do not remove until resolved) ===
-[2026-08-10] Old Highway Kin NPC asset (rugged_biker_character_3d_model,
-round-2 vintage) is now an orphan — no scene/prefab/FactionData
-references left after the texture-then-segment swap below. Not deleted
-yet, same as the Ducati precedent (confirm before delete, don't
-assume). Needs a go/no-go from the user.
-
 [2026-08-10] Hero bike (vintage_motorcycle_3d_model_2) and hero NPC
 (male_character_3d_model) landed via the DCC Bridge but are NOT wired
-into anything yet — no hero/player prefab identified in the project to
-wire them into. Needs direction on where these go before proceeding.
+into anything yet. User confirmed 2026-08-10: these are for the
+project's main character (not a 7th gang) — no player/hero prefab
+exists in this project yet to wire them into. Keep in mind for a
+future session; not actioned further this session.
 
 === APPEND NEW NOTES BELOW THIS LINE ===
 
@@ -6476,6 +6472,11 @@ screenshot (side angle, positioned camera at (300,5,300) far from
 other scene content) — visible denim jacket/boots/beard detail, clear
 quality jump over the old flat-textured placeholder. Committed:
 e867020 "Upgrade Highway Kin NPC to texture-then-segment-then-auto-rig
-pass". Part 2 of the original task is now done. Old
-rugged_biker_character_3d_model is an orphan now — flagged above, not
-deleted without confirmation.
+pass". Part 2 of the original task is now done.
+
+[DONE] User confirmed go-ahead to delete the old, now-orphaned
+rugged_biker_character_3d_model. Re-grepped first (only its own
+Materials/*.mat self-referenced it, no scene/prefab/FactionData hits),
+then deleted the folder + .meta. Committed separately (delete-orphan
+commit, same session). Both parts of the original K.I.S.S. task
+(Ducati deletion + Highway Kin NPC upgrade) are now fully closed.
