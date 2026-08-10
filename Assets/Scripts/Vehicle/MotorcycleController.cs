@@ -24,7 +24,8 @@ namespace AsphaltAnarchy.Vehicle
         [SerializeField] private float steerSpeed = 5f;
         [SerializeField] private float maxLeanAngle = 45f;
         [SerializeField] private float leanSpeed = 3f;
-        [SerializeField] private float centerOfMassOffset = -0.5f;
+        [Tooltip("Local offset for Rigidbody.centerOfMass. Y: -0.4 puts CoM ~0.1m above the wheel axles (world y~0.6 given wheel radius 0.5 and root resting height 1.0) -- low, near where an engine block would sit, but with enough lever arm above the axle line for acceleration to actually load the rear wheel. Z: -0.1 biases CoM toward the rear wheel (rearWheel is at local z=-0.9), approximating a real ~45/55 front/rear static weight split on this vehicle's 1.8-unit wheelbase. X stays 0 (no left-right bias).")]
+        [SerializeField] private Vector3 centerOfMassOffset = new Vector3(0f, -0.4f, -0.1f);
         [SerializeField] private float antiFlipTorque = 500f;
         [Tooltip("Converts PlayerStats.EnginePower (labeled Horsepower, but used as a raw torque number) into an actual WheelCollider.motorTorque scale. Tune this single number for climb/flat/downhill feel rather than touching EnginePower, mass, or drag.")]
         [SerializeField] private float wheelTorqueMultiplier = 10f;
@@ -60,7 +61,7 @@ namespace AsphaltAnarchy.Vehicle
         private void Awake()
         {
             rb = GetComponent<Rigidbody>();
-            rb.centerOfMass = new Vector3(0f, centerOfMassOffset, 0f);
+            rb.centerOfMass = centerOfMassOffset;
         }
 
         private void Start()

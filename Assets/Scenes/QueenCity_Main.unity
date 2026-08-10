@@ -2000,7 +2000,7 @@ MonoBehaviour:
   steerSpeed: 5
   maxLeanAngle: 45
   leanSpeed: 3
-  centerOfMassOffset: -0.5
+  centerOfMassOffset: {x: 0, y: -0.4, z: -0.1}
   antiFlipTorque: 500
   wheelTorqueMultiplier: 10
   surfaceLayer:

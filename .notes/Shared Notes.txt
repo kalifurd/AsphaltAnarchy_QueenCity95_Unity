@@ -6156,3 +6156,121 @@ Needs a decision: accept the partial improvement and flag uphill
 stalling as a known limitation, or open scope to something outside
 this pass's constraints (front-wheel drive, forward-friction
 stiffness, weight distribution/CoM) — not decided here.
+
+[2026-08-10] Fix attempt: centerOfMass + friction stiffness — Claude
+Code
+K.I.S.S. FIRST per notes_rules.md Dev Note #1. Four-part follow-on:
+diagnose centerOfMass before touching anything, fix it if needed,
+re-sweep the multiplier, and only escalate to friction stiffness if
+that alone isn't enough — isolating which lever does the work.
+
+[DONE] Part 1 — diagnosis, no changes yet. `Rigidbody.centerOfMass`
+IS explicitly set in `MotorcycleController.Awake()` (not left at
+Unity's default geometric-center) — but only along Y:
+`rb.centerOfMass = new Vector3(0f, centerOfMassOffset, 0f)`,
+`centerOfMassOffset = -0.5f`. X and Z were hardcoded to 0, meaning
+**zero longitudinal bias** — CoM sat exactly on the vehicle's
+centerline between the wheels. Given wheel radius 0.5 and the Player
+root's resting world height (y=1), -0.5 put CoM at world y≈0.5 —
+exactly level with the wheel axles, which is lower than real
+motorcycle CoM height (typically somewhat above axle height) and
+leaves little lever arm for acceleration to actually load the rear
+wheel.
+
+[DONE] Part 2 — implemented. Changed `centerOfMassOffset` from a
+single float (Y-only) to a `Vector3`, applied directly:
+`rb.centerOfMass = centerOfMassOffset`. New value: **(0, -0.4, -0.1)**.
+Y: -0.4 (was -0.5) puts CoM at world y≈0.6 — about 0.1m above the
+wheel axles, low (still well below the vehicle's 2m capsule height,
+"near the engine block") but with enough height to give acceleration
+a real lever arm for rearward weight transfer, unlike the old
+axle-level value. Z: -0.1 biases CoM toward the rear wheel (rearWheel
+sits at local z=-0.9 on this vehicle's 1.8-unit wheelbase), derived
+from a real ~45/55 front/rear static weight-distribution split (a
+commonly cited plausible range for standard/naked motorcycles) rather
+than picked arbitrarily: `frontWeightFraction × wheelbase` = 0.45×1.8
+= 0.81m from the rear axle → Z ≈ -0.09, rounded to -0.1. X stays 0
+(no left-right bias, correct for a symmetric vehicle).
+
+[DONE] Part 3 — re-ran the same diagnostic harness (temporary,
+deleted after use again), same methodology as the wheelTorqueMultiplier
+pass (Lerp-smoothed ramp matching the real controller), swept from
+1x with the new CoM in place:
+
+| Case (multiplier) | Distance @ end | Behavior vs. pre-CoM-fix |
+|---|---|---|
+| InclineCut uphill, ×1 (150) | **3.65 m** (plateaus/oscillates, doesn't progress further even given 10s) | Real improvement — was 0.36-0.38m before |
+| InclineCut uphill, ×1.5 (225) | 2.99 m | Worse than ×1, still far better than pre-fix ×10 (0.36m) |
+| InclineCut uphill, ×2 (300) | 0.33 m | Back to near-total wheelspin — same pattern as before the CoM fix |
+| AndersonFerry uphill, ×1 (150) | **1.49 m** | **No change at all** from pre-fix (was 1.50m) |
+| AndersonFerry uphill, ×1.5 (225) | 1.49 m | No change |
+
+**Verdict: helps InclineCut meaningfully (10x more distance covered),
+does nothing measurable for AndersonFerry, and neither hill clears —
+both still fall enormously short of the ~40m run needed to summit.**
+The InclineCut ×1 case was run out to a 10s window specifically to
+check whether it was slowly still climbing or genuinely stuck: it
+oscillates in a stable band around 2.6-3.8m indefinitely, including
+one brief instability spike (velY=2.42 at t=5.5s, likely a small
+bounce/wheelie), never progressing further — this is a real
+equilibrium stall, not a "just needs more time" situation.
+
+[DONE] Part 4 — triggered (Part 3 didn't clear either hill). Tested
+rear-wheel `forwardFriction.stiffness` as an isolated second lever,
+explicitly reverting `centerOfMass` back to the OLD pre-Part-2 value
+for this specific test (`rb.centerOfMass` set directly at runtime,
+never touching the saved asset) so the two fixes wouldn't be
+conflated:
+
+| Case (OLD CoM + stiffness) | Torque | Distance @ end | Note |
+|---|---|---|---|
+| InclineCut uphill, stiffness=1.5, ×1 | 150 | 3.79 m (6s), oscillates | Nearly identical to the CoM-only result |
+| InclineCut uphill, stiffness=2.5, ×1 | 150 | 3.79 m (8s), oscillates | **Almost no change from stiffness=1.5** — confirmed stiffness IS being applied (read back live), so this isn't a no-op |
+| InclineCut uphill, stiffness=2.5, ×3 | 450 | 0.34 m (10s) | Worse — same "more torque induces slip" pattern as the original diagnosis, now confirmed to hold even with extra grip available |
+
+**Why more stiffness alone plateaus fast:** at a fixed torque of 150
+(×1), max deliverable force is capped at torque/radius = 300N
+regardless of how much grip is available — once stiffness is "enough"
+to deliver that 300N without slipping, additional stiffness has
+nothing left to do, because the ceiling has shifted from
+grip-limited back to torque-limited. This is why stiffness alone
+plateaus at almost exactly the same distance as the CoM-alone result
+(both land around 3.6-3.8m) and why stacking a higher multiplier back
+on top (×3) reproduces the original wheelspin failure mode rather
+than compounding the improvement — the two problems (insufficient
+grip, and torque-vs-grip stability once slip starts) are coupled, not
+independently additive.
+
+[NOTE] Also checked combining both fixes together (new CoM AND
+stiffness=1.5, ×1) as a bonus, non-isolated check: 3.09-3.63m,
+oscillating — statistically indistinguishable from either fix alone.
+Confirms neither lever, nor a modest combination of both, breaks the
+underlying equilibrium.
+
+[FLAG] **Neither Part 3 nor Part 4 — nor a combination of both —
+clears the acceptance bar.** Best result across every configuration
+tested this pass and last pass remains ~3.6-3.8m of partial climb on
+InclineCut (out of ~40m needed) and a hard ~1.5m stall on
+AndersonFerry that hasn't moved at all across any tested change. This
+now spans centerOfMass (both axes), wheelTorqueMultiplier (1x-10x),
+and forwardFriction.stiffness (1.0-2.5x), isolated and combined — a
+fairly thorough sweep of the available single/double-lever tuning
+space. Per Rule #3, stopping here rather than continuing to search
+indefinitely or widen scope without asking. `centerOfMassOffset` is
+being KEPT as committed (it's a real, independently-justified
+improvement grounded in real motorcycle proportions, and doubled
+InclineCut's partial-climb distance even though it didn't clear the
+bar) — `forwardFriction.stiffness` was NOT changed in the saved asset
+(only tested live at runtime, automatically reverted on exiting Play
+mode, confirmed via live read-back after stop).
+
+Net result: `centerOfMassOffset` fix committed (real improvement, not
+sufficient alone). Friction-stiffness exploration logged but not
+shipped (inconclusive/no better than CoM alone). AndersonFerry in
+particular appears to have some property Neither lever touches at all
+(completely flat 1.49-1.50m result regardless of every change tried) —
+worth its own look if this gets revisited. Genuinely blocked on
+whether a single/double-lever tuning approach can ever clear this
+specific acceptance bar for these two specific slope angles with a
+rear-wheel-only-drive vehicle — needs a decision on next steps rather
+than more unattended tuning.
