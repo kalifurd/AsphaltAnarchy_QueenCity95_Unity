@@ -5943,3 +5943,114 @@ the rule fixes how tall a deck's *rise* should read relative to the
 ground plane, not where real sea level sits relative to Ground's
 y=0. That narrower gap weren't blocking anything built so far and
 isn't re-flagged here, just noted as still technically open.
+
+[2026-08-10] Slope behavior investigation (InclineCut_Stub /
+AndersonFerryRd_Stub) — Claude Code
+K.I.S.S. FIRST per notes_rules.md Dev Note #1. Investigated before
+building, per instruction — did not assume the reported "no
+perceptible slope effect" meant something was broken.
+
+[DONE] Read `MotorcycleController.cs` in full before testing anything
+live. No flat/constant force application found, no speed cap tied to
+pitch, no traction logic that reads slope angle at all — motor force
+is applied purely via `rearWheel.motorTorque = currentMotorTorque *
+gripMultiplier` (front wheel is never driven, only steered/braked).
+Nothing in the code path explicitly overrides or cancels gravity's
+slope component; WheelCollider + Rigidbody physics apply it
+automatically by default, so any masking would have to be a tuning
+effect (motor too weak to show a difference) rather than a code bug,
+pending live confirmation.
+
+[DONE] Live-tested via a temporary diagnostic harness
+(`SlopeTestHarness.cs`, attached to Player only for this pass, DELETED
+afterward — not part of the shipped build), Play-mode, per-wheel
+`motorTorque` driven directly at a fixed 150 (bypassing
+`Input.GetAxis` — legacy Input can't be scripted through the MCP
+bridge — and bypassing the controller's grip-multiplier/Lerp-smoothing
+so the raw physics answer wouldn't be muddied by that layer). Four
+cases: `InclineCut_Stub` (28.37°, confirmed live) up and down,
+`AndersonFerryRd_Stub` (24.65°, confirmed live) up and down. Each
+case: teleport to the slope's real surface (world position/rotation
+computed live from the stub's own transform via `TransformPoint`/
+`TransformDirection`, not eyeballed), 0.5s settle, then 3s of constant
+torque with velocity/distance sampled every 0.5s.
+
+**First pass had a test-artifact bug, caught before trusting the
+data:** the two Anderson Ferry runs showed ~0m/s in both directions,
+which didn't match the InclineCut results and looked wrong. Live
+`WheelHit`/raycast diagnostics traced it to the test harness, not the
+game: spawning the vehicle's pivot exactly at the stub's mathematical
+edge left the 1.8-unit wheelbase overhanging the ramp's real end (rear
+wheel raycast confirmed "NOTHING" beneath it — genuinely off the
+mesh), so one wheel never found ground contact. Fixed by insetting the
+spawn point and re-ran clean. Logging this since it's a reusable
+gotcha for any future live vehicle-placement test on a rotated ramp
+stub: inset by at least half the wheelbase from a computed mesh edge,
+don't spawn exactly at the corner.
+
+**Clean results (v2, both wheels confirmed grounded):**
+| Case | Peak speed (3s) | Distance (3s) | Behavior |
+|---|---|---|---|
+| InclineCut uphill | 1.05 m/s (t=0.5s), decays after | 0.38 m | Stalls out — can't sustain climb |
+| InclineCut downhill | 8.48 m/s | 15.66 m | Strong, steady acceleration |
+| AndersonFerry uphill | 1.51 m/s (t=1.0s), then 0 | 1.50 m | Stalls out completely by t=1.5s |
+| AndersonFerry downhill | 7.80 m/s | 15.20 m | Strong, steady acceleration |
+
+**Conclusion: gravity's slope component is already being applied
+correctly by the physics engine — nothing is masking or overriding
+it.** It isn't "imperceptible," it's actually the *dominant* force on
+both real slopes at max available motor output: with
+Rigidbody.mass=300kg (live-checked, a plausible bike+rider weight, not
+itself wrong) and max `motorTorque`=150 N·m at wheel radius=0.5m (both
+live-checked), max drive force = 150/0.5 = **300N**. Gravity's
+along-slope component at these confirmed angles: InclineCut
+(28.37°) = 300×9.81×sin(28.37°) ≈ **1398N**; AndersonFerry (24.65°) =
+300×9.81×sin(24.65°) ≈ **1228N**. Both exceed the vehicle's max climb
+force by roughly **4–4.7x** — the vehicle is currently physically
+incapable of climbing either real slope under its own power, which is
+exactly what the live data shows (uphill creeps ~1.5m then fully
+stalls, in under 2 seconds, on both slopes). Note this test used the
+FULL 150 torque with no grip-multiplier reduction; live gameplay on
+`InclineCut_Stub` (tagged "Dirt", 0.5x grip in the real controller)
+would stall even faster/harder than measured here — the real in-game
+imbalance is at least this severe, not milder.
+
+[FLAG] Root cause, for review before any code gets written — this is
+a tuning/unit problem, not a masking bug, so the fix is a numbers
+pass, not new logic:
+  - `PlayerStats.enginePower` is commented "// Horsepower" but is
+    plugged directly into `WheelCollider.motorTorque` (Newton-meters)
+    in `MotorcycleController.HandlePhysics()` with **no unit
+    conversion at all** — 150 "hp" and 150 N·m are wildly different
+    real-world quantities (a real motorcycle engine's torque output at
+    the wheel, after gearing, is typically far higher than 150 N·m).
+    This looks like the actual root cause: the stat is flavor-labeled
+    as horsepower but physically behaves as a small fixed torque
+    number that happens to land far below what a 300kg vehicle needs
+    to climb a ~25-28° slope.
+  - Proposed direction (NOT implemented, needs a decision first):
+    increase the effective torque-to-weight ratio enough that climbing
+    is possible with a reasonable margin (not just barely balanced) —
+    either (a) raise `motorTorque`'s scale/conversion so "150 hp"
+    produces a physically bigger number, (b) introduce a low-speed
+    torque-multiplier/gearing curve (real vehicles trade speed for
+    torque via gearing, which this controller has no concept of at
+    all currently), or (c) reduce `Rigidbody.mass` or the two slope
+    angles — the angles are real, confirmed, and load-bearing for both
+    docs, so (c)'s slope-angle option should be considered off the
+    table unless the user says otherwise, leaving (a)/(b) as the real
+    candidates. Also flagging, same category as the FactionData "The "
+    prefix issue: the enginePower-as-raw-torque unit mismatch is worth
+    fixing at the root rather than tuning around it with a bigger
+    magic number, since any future engine-upgrade balancing will keep
+    fighting the same mislabeled unit otherwise.
+  - Did not write any code for this — needs review/decision on which
+    of (a)/(b) (or a combination) before implementation.
+
+Net result: no scene or code changes shipped this pass (temporary test
+harness added and fully removed within the same session). The
+"invisible slope" the task described isn't invisible or masked in the
+underlying physics — it's a real, currently oversized effect that the
+engine can't out-climb, which reads as "the bike just doesn't seem to
+care about the hill" specifically because it can't move forward on it
+at all rather than moving forward differently at different rates.
