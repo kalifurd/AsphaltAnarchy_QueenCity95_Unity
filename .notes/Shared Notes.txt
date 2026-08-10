@@ -2,12 +2,21 @@
 (nothing yet — this fills in after the first compaction pass)
 
 === OPEN FLAGS (do not remove until resolved) ===
-[2026-08-10] Hero bike (vintage_motorcycle_3d_model_2) and hero NPC
-(male_character_3d_model) landed via the DCC Bridge but are NOT wired
-into anything yet. User confirmed 2026-08-10: these are for the
-project's main character (not a 7th gang) — no player/hero prefab
-exists in this project yet to wire them into. Keep in mind for a
-future session; not actioned further this session.
+[2026-08-10] Player.prefab standing on flat ground with ZERO input
+drifts ~5.3m (frame-0 pos (-38,0.7,-50) -> ~7s later (-43.31,1.10,-50.03),
+yaw stable at 90 throughout) before velocity settles near zero.
+Observed during the post-steering-fix frame-0 rotation check, not
+chased further this session — could be an initial WheelCollider/
+CapsuleCollider ground-penetration "pop" settling into a slide, could
+be something else. Worth a dedicated look if idle drift shows up again
+during real driving.
+
+[2026-08-10] Real keyboard-input drive test (InclineCut_Stub with a
+running start) still needs the user at the controls — real input isn't
+simulatable through the MCP bridge (same constraint as the 2026-08-04
+Grab/Hijack playtest). Prefab + spawn + steering fix are all verified
+clean and ready; the actual "how does it feel" drive is the one part
+that has to be a human.
 
 === APPEND NEW NOTES BELOW THIS LINE ===
 
@@ -6480,3 +6489,106 @@ Materials/*.mat self-referenced it, no scene/prefab/FactionData hits),
 then deleted the folder + .meta. Committed separately (delete-orphan
 commit, same session). Both parts of the original K.I.S.S. task
 (Ducati deletion + Highway Kin NPC upgrade) are now fully closed.
+
+[2026-08-10] Stand up the hero prefab — Claude Code
+
+[FLAG-then-FIXED] Live-testing caught a real, pre-existing bug in
+shared code before any real driving happened. MotorcycleController.
+UpdateVisuals() does `bikeBody.localRotation = Quaternion.Euler(0, 0,
+currentLeanAngle)` every Update() — and `bikeBody` was wired to each
+vehicle's own ROOT transform (self-reference) on all 6 gang
+Enemy_*.prefabs, a convention I copied faithfully when first building
+the player rig per the task's "reuse, don't reinvent" instruction.
+Caught it via a zero-input frame-0 check: spawned facing 90 deg yaw,
+and by Time.time==0 (the very first Update()) the yaw had already been
+silently reset to 0 — before physics had any chance to settle. Root
+cause: since bikeBody==root, this line zeroes yaw+pitch on the WHOLE
+vehicle every frame, discarding whatever heading WheelCollider steering
+physics produced in FixedUpdate. Meant literal steering could never
+actually turn the vehicle's facing — exactly the class of bug a
+synthetic torque-sweep harness (no steering involved) would never
+catch. User's call: fix it project-wide rather than patch around it
+for just the player.
+
+[DONE] Fix: added a "VisualRoot" child transform under each of the 7
+vehicle roots (6 gangs + Player), reparented BikeModel+RiderModel
+under it (local transforms preserved exactly, zero visual shift),
+repointed MotorcycleController.bikeBody at VisualRoot instead of self.
+UpdateVisuals()'s own code needed no change — it was already correct,
+it just needed a real cosmetic-only child to point at instead of the
+physics root. Verified: (1) re-screenshotted all 6 gang prefabs
+side-angle, all pixel-consistent with their pre-fix appearance — no
+shift; (2) re-ran the player frame-0 check, yaw now holds at the
+spawned 90 deg through Time.time=0 and stays there. Confirmed via
+console (types error+warning) clean throughout both the mass edit and
+both play-mode round-trips.
+
+[DONE] Part 1 — Player prefab. Started by building a brand-new rig
+from scratch (bike=vintage_motorcycle_3d_model_2, NPC=
+male_character_3d_model, same measured-bounds-driven scale/rotation
+recipe as every gang NPC/bike swap: bike root rot=(270,0,0) natural,
+composed to (0,90,0)*natural, scale tuned to 2.0 uniform after
+discovering the naive reused 1.11 scale [copied from Highway Kin's
+raw-bounds coincidence] left the bike only 1.11m long against an 1.8m
+wheelbase — recalibrated against Enemy_HighwayKin's own final BikeModel
+world-bounds Z=2.00m as the real target and confirmed via screenshot;
+rider root rot=identity natural, pos (0,0.45,0.05), scale 1.93,
+matching the same convention verified for Highway Kin's own NPC
+upgrade earlier this session). Partway through, discovered via a
+"Player" name search that **a pre-existing, already-wired player stub
+already existed in the scene** (instanceID 33122 — proper
+MotorcycleController with wheel colliders set, GrabSystem wired to its
+own Seat/GrabOrigin/Rigidbody, WeaponManager wired to AttackOrigin,
+tag=Player, layer=PlayerVehicle, today's centerOfMass/wheelTorque
+fixes already present) that I hadn't found because earlier searches
+used substring-guesses ("PriceHill", "InclineCut") against a search
+tool that turned out to be exact-match-only. Corrected course:
+destroyed my from-scratch duplicate, applied the same disable-capsule/
+add-BikeModel+RiderModel swap recipe to the REAL pre-existing stub
+instead, re-wired CameraFollow/GameManager references to it, saved
+IT as Assets/Prefabs/Player.prefab (overwriting the from-scratch
+file). Lesson: an exact-name search returning zero hits is not proof
+an object doesn't exist — try the tool's actual match semantics (or a
+broader term) before concluding "doesn't exist," same caution as the
+DCC Bridge "it landed" reports earlier this session.
+
+Confirmed live (input system): MotorcycleController already reads
+Input.GetAxis("Vertical"/"Horizontal")/GetButton("Jump") directly —
+it's already a complete, working player-input component, nothing else
+needed. AsphaltAnarchy.Core.InputManager (singleton, already present
+in-scene) separately serves Grab/Hijack/Interact/Pause/Map key reads
+for GrabSystem/NPCInteraction — also already live, no new wiring
+needed. Confirmed live (camera system): grepped every script in
+Assets/Scripts for "Camera" — zero hits. Main Camera in-scene was a
+bare default Camera+AudioListener, no follow logic, no Cinemachine
+package installed (checked Packages/manifest.json). Built one new
+minimal script, Assets/Scripts/Core/CameraFollow.cs (SmoothDamp
+position + LookAt, ~30 lines) — this is the one piece that genuinely
+had nothing to reuse.
+
+[DONE] Part 2 — Spawn point. Placed at (-38, 0.7, -50) on
+StateAve_Stub (Price Hill's InclineCut approach road), facing east
+(yaw 90) toward InclineCut_Stub. Verified clear before placing:
+Physics.OverlapCapsule at the candidate point hit only Ground,
+StateAve_Stub itself (expected resting contact, not interpenetration),
+and TurfNode_InclineHouse's trigger (harmless) — no solid-geometry
+clash. Raycast confirmed StateAve's surface at y=0.2, matching root
+y=0.7 exactly once the 0.5 wheel-radius clearance is accounted for.
+Screenshot-confirmed: InclineCut ramp and InclineHouse clubhouse both
+visible and unobstructed from the spawn point.
+
+[FLAG] Part 3 — Real drive test NOT done by me, can't be. Real
+keyboard input isn't simulatable through the MCP bridge (documented
+constraint, same as the 2026-08-04 Grab/Hijack playtest). What I could
+and did verify stands in for the parts a human doesn't need to
+re-check: prefab structure clean (console clear through every build/
+fix/verify step), spawn point clear and correctly grounded, steering
+no longer structurally broken (frame-0 yaw-preservation check, see
+above), all 6 gang prefabs regression-verified unchanged. One loose
+end noted above in OPEN FLAGS: ~5.3m of unexplained drift with zero
+input over the first ~7s of Play — not chased further, flagged for
+whoever does the real drive to watch for.
+
+Commits this session (hero standup): e38fd6c "Fix vehicle
+steering-defeating rotation bug across all 6 gang prefabs", 8fb5a44
+"Stand up the player prefab with real hero bike/NPC models".
