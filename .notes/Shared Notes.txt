@@ -2,11 +2,16 @@
 (nothing yet — this fills in after the first compaction pass)
 
 === OPEN FLAGS (do not remove until resolved) ===
-[2026-08-10] Highway Kin NPC still needs the texture-then-segment
-Tripo3D pass the other 5 gangs got (currently on the older
-round-2 rugged_biker_character_3d_model). Blocked on either the user
-running it through the DCC Bridge, or supplying a Tripo API key for
-the in-session generate_model path. See dated entry below for detail.
+[2026-08-10] Old Highway Kin NPC asset (rugged_biker_character_3d_model,
+round-2 vintage) is now an orphan — no scene/prefab/FactionData
+references left after the texture-then-segment swap below. Not deleted
+yet, same as the Ducati precedent (confirm before delete, don't
+assume). Needs a go/no-go from the user.
+
+[2026-08-10] Hero bike (vintage_motorcycle_3d_model_2) and hero NPC
+(male_character_3d_model) landed via the DCC Bridge but are NOT wired
+into anything yet — no hero/player prefab identified in the project to
+wire them into. Needs direction on where these go before proceeding.
 
 === APPEND NEW NOTES BELOW THIS LINE ===
 
@@ -6438,3 +6443,39 @@ supplies a Tripo API key for the in-session generate_model path (would
 still need clarifying what "texture-then-segment" maps to as
 generate_model's texture/tier params, since it doesn't expose those
 exact stage names).
+
+[2026-08-10] (same-day follow-up) Highway Kin + hero pulls arrived
+via the DCC Bridge across several drops this session. Verified each
+against disk/console before acting rather than trusting the "it
+landed" report at face value (same lesson as the round-5 duplicate
+note above):
+- First drop (called "hero npc/bike" + "Highway Kin npc/bike", 4
+  models expected): only 1 arrived, generically named
+  vintage_motorcycle_3d_model_2/_3 (byte-identical duplicate of each
+  other, real content though) — turned out to be the hero's bike.
+  Deleted the _3 duplicate, kept _2.
+- Second drop ("hero npc"): male_character_3d_model landed clean, full
+  PBR texture set (basecolor/metallic/roughness/normal), Armature
+  rig — confirmed genuinely new, not a duplicate. Left unwired (see
+  OPEN FLAGS — no hero/player prefab identified yet).
+- Third drop ("Highway Kin ... generate model w/ texture-detailed
+  segmenting-auto-rigging"): first attempt just re-sent the exact same
+  old round-2 files byte-for-byte (rusty_motorcycle_3d_model /
+  rugged_biker_character_3d_model) — not new, deleted the duplicates.
+  Second attempt actually delivered rugged_biker_3d_model_1: 33 parts,
+  full PBR set per part, Armature+ParentNode rig — this IS the real
+  texture-then-segment-then-auto-rig pass.
+
+[DONE] Wired rugged_biker_3d_model_1 into Enemy_HighwayKin.prefab as
+the new RiderModel (via PrefabUtility.LoadPrefabContents, swapped
+children, same recipe as every prior NPC round: root rotation
+identity, children baked at (270,0,0), localPosition (0,0.45,0.05),
+uniform scale 1.93 — measured bounds height 1.04 matched the
+established convention almost exactly). Verified via temp-instance
+screenshot (side angle, positioned camera at (300,5,300) far from
+other scene content) — visible denim jacket/boots/beard detail, clear
+quality jump over the old flat-textured placeholder. Committed:
+e867020 "Upgrade Highway Kin NPC to texture-then-segment-then-auto-rig
+pass". Part 2 of the original task is now done. Old
+rugged_biker_character_3d_model is an orphan now — flagged above, not
+deleted without confirmation.
