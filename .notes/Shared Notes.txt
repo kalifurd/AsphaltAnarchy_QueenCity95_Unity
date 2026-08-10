@@ -5914,3 +5914,32 @@ entries (Little Miami, Great Miami) — every currently-known water
 crossing in the project now has the hazard applied. Hamilton's levee
 terrain and any real vertical-datum system remain open, unscoped work,
 not implied next by default.
+
+[2026-08-10] Vertical elevation convention — [FLAG] RESOLVED by human
+edit to notes_rules.md (not agent-resolved, per Rule #3 — logging the
+resolution, not claiming it).
+
+The user added a new Key Invariant directly addressing the flag raised
+above: hero terrain relief (hills/bluffs the player visibly climbs —
+`InclineCut_Stub`, `AndersonFerryRd_Stub`) uses real-world meters
+directly as Unity units, uncompressed; structural clearance (bridge
+decks, overpasses — anything sized to read as proportionate to the
+already-compressed world around it) applies the same 5:1 compression
+used for horizontal distances. Framed as a split that already existed
+implicitly (Price Hill's terrain uncompressed, Newport's 3 bridges
+compressed) without ever being decided as a rule until now.
+
+[NOTE] Checked this pass's own work against the new rule rather than
+assuming compliance: `LittleMiami_Deck` and `GreatMiami_Deck` were
+both built at y=0.55 — the exact same value already used by
+`TaylorSouthgate_Deck`/`LNBridge_Deck`/`BigMac_Deck`, i.e. the same
+"structural clearance" class of object the new rule describes. No
+rebuild needed; today's build already conforms to the now-formalized
+convention because it copied Newport's precedent number directly
+rather than inventing a new one. What the new rule does NOT resolve
+(and doesn't claim to): the absolute USGS gauge altitudes (493.63 ft /
+499.19 ft NAVD88) still have no defined mapping to a Unity Y origin —
+the rule fixes how tall a deck's *rise* should read relative to the
+ground plane, not where real sea level sits relative to Ground's
+y=0. That narrower gap weren't blocking anything built so far and
+isn't re-flagged here, just noted as still technically open.

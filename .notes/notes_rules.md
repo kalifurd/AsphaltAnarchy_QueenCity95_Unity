@@ -115,3 +115,12 @@ Numbered, append new ones at the bottom, don't renumber old ones.
   explains an inconclusive reading during the earlier Taylor-Southgate
   test too. If a heat/jurisdiction test result looks wrong, re-check
   with a faster read cadence before assuming the trigger itself failed.
+User Addition- - **Vertical elevation convention:** hero terrain relief (hills, bluffs,
+  anything the player visibly climbs or descends as a route — InclineCut_Stub,
+  AndersonFerryRd_Stub) uses real-world meters directly as Unity units,
+  uncompressed. Structural clearance (bridge decks, overpasses — anything
+  sized to read as proportionate to the compressed world around it) applies
+  the same 5:1 compression used for horizontal distances. This split existed
+  implicitly before 2026-08-10 (Price Hill went uncompressed, Newport's 3
+  bridges went compressed) without ever being decided as a rule — now a
+  standing invariant, not a coincidence.
