@@ -93,7 +93,50 @@ locations already sit inside.
 
 ---
 
-## 4. Open — northeast and southeast map edges
+## 4. SR-28, SR-32, US-50, and SR-22 — the east–west arterial set
+
+**[R]** Four real east-west roads recur across the eastern/northeastern
+districts as the game's arterial set:
+
+- **US 50** — the old road (Milford → Day Heights → Perintown →
+  Owensville), the Highway Kin's spine corridor.
+- **SR 32 (Appalachian Highway)** — the four-lane bypass running
+  parallel to US 50 (Eastgate → Batavia bypass → east), the fast/
+  patrolled counterpart to the old road.
+- **SR 28** — the Miami Township strip (Milford → Mulberry → Goshen),
+  the suburbanizing second axis north of the US 50/SR 32 pair.
+- **SR-22** — northeast direction. New to this doc; not yet load-bearing
+  in a companion doc the way SR-28/32/50 already are in
+  `LevelDesign_Milford_Batavia_1995.md`.
+
+SR-28, SR-32, and US-50 are already confirmed and load-bearing in the
+Milford/Batavia doc (its own §2/§3 corridor tables and G1-G4 gateways).
+SR-22 is added here as the northeast-heading member of the set.
+
+**Reed Hartman Highway was considered and dropped** — it runs north,
+not east-west, so it doesn't belong in this arterial set. Noted here so
+the same dead end isn't re-walked later.
+
+---
+
+## 5. Map-structure principle — Fallout-4-style anchoring
+
+The overall map is anchored the way Fallout 4 anchors Boston: the
+player's home base sits in a corner, and the world radiates outward
+from it. **PlayerCrew's home base (Price Hill) sits in the bottom-left
+corner of the map**, with everything else built outward from there.
+
+This isn't just a layout convenience — it's meant to **match real
+population/traffic density**, not fight it. Density and traffic
+naturally increase moving away from Price Hill toward downtown and the
+inner-ring districts, then thin out again toward the rural map edges
+(Milford/Batavia's US 50 corridor, Hamilton/Fairfield's SR-127/SR-129
+boundary). Any future district placement should check itself against
+this radiating structure before assuming a location.
+
+---
+
+## 6. Open — northeast and southeast map edges
 
 **Not yet defined by real roads the way §3 defines the northwest edge.**
 The districts nearest those edges —
@@ -108,10 +151,16 @@ kind of confirmation §1–§3 got here.
 
 ---
 
-## 5. Change log
+## 7. Change log
 
 - **2026-08-09:** File created. Documents the I-75 spine, the Norwood
   Lateral handoff to I-71 (used to fix Downtown/OTR's G4 — see
   `LevelDesign_Downtown_OTR_1995.md` and `LevelDesign_Norwood_1995.md`
   G1's matching text), and the SR-127/SR-129 northwest boundary. NE/SE
   edges explicitly left open.
+- **2026-08-10:** Added the SR-28/SR-32/US-50/SR-22 east-west arterial
+  set (SR-22 new; the other three already load-bearing in
+  `LevelDesign_Milford_Batavia_1995.md`) and the Fallout-4-style
+  map-structure principle (Price Hill anchored bottom-left, world
+  radiating outward to match real density). Reed Hartman Highway
+  considered and dropped — runs north, not east-west.
