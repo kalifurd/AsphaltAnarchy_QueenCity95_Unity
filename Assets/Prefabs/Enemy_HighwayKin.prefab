@@ -136,8 +136,7 @@ Transform:
   - {fileID: 8221911985466932356}
   - {fileID: 4762845343122276517}
   - {fileID: 6593401511911985128}
-  - {fileID: 2821610841527124497}
-  - {fileID: 8168573926702073683}
+  - {fileID: 8420920525161263021}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &6639604425183913649
@@ -371,7 +370,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1024
   surfaceCheckDistance: 0.5
-  bikeBody: {fileID: 406573937007972173}
+  bikeBody: {fileID: 8420920525161263021}
   handlebars: {fileID: 8221911985466932356}
   skidParticles: {fileID: 0}
 --- !u!114 &8755076424687317606
@@ -572,6 +571,39 @@ Transform:
   m_LocalScale: {x: 1.6666666, y: 1.1111112, z: 0.5555556}
   m_ConstrainProportionsScale: 0
   m_Children: []
+  m_Father: {fileID: 406573937007972173}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &5254729019755683561
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8420920525161263021}
+  m_Layer: 0
+  m_Name: VisualRoot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8420920525161263021
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5254729019755683561}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 2821610841527124497}
+  - {fileID: 8168573926702073683}
   m_Father: {fileID: 406573937007972173}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5745592239302197192
@@ -10529,7 +10561,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 406573937007972173}
+    m_TransformParent: {fileID: 8420920525161263021}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: a96824488e8a48648adc69da9dfd8cb4, type: 3}
       propertyPath: m_LocalScale.x
@@ -10603,7 +10635,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 406573937007972173}
+    m_TransformParent: {fileID: 8420920525161263021}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: c04c3310ca6e23447a3757463083bddb, type: 3}
       propertyPath: m_LocalScale.x
