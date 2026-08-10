@@ -5791,3 +5791,126 @@ beyond the clubhouse — a small strung-together siding plus one dead
 spur car, matching the doc's "gaps in someone else's machine" thesis at
 a genuinely small scale. Remaining rail-yard work (the live rail
 system, the rest of the yard's sprawl) stays deferred exactly as scoped.
+
+[2026-08-10] Little Miami (Milford/Batavia) + Great Miami (Hamilton/
+Fairfield) water crossings — Claude Code
+K.I.S.S. FIRST per notes_rules.md Dev Note #1. Two-part task, same
+"verify live state before building" discipline as every prior water
+crossing (Kingfish, Anderson Ferry, Newport's 3 Ohio bridges — see
+[[project_water_crossing_hazard]]).
+
+[DONE] Live-checked both nodes before touching anything, per habit:
+`TurfNode_Milford` (80,0,80) and `TurfNode_Hamilton` (-80,0,-80) are
+both genuine **cold starts** — zero children, zero nearby stub/road
+geometry of any kind, SphereCollider radius 10 on both, `startingFaction`
+already correctly `HighwayKin` on both. This matches what both docs
+already say about themselves ("abstract placeholder spacing," §6 on
+each) — not a surprise, but confirmed live rather than assumed, and
+worth flagging as a structural difference from every prior water
+crossing: Kingfish/Anderson Ferry/Newport all had *some* existing
+stub/ramp/deck-adjacent geometry to anchor against before a hazard got
+applied. Here there was nothing, so this pass had to build the deck
+geometry itself, not just drop the hazard prefab onto something that
+already existed.
+
+[DONE] Doc cross-check, Part 1 (Milford/Batavia): the Stonelick Covered
+Bridge entry in `LevelDesign_Milford_Batavia_1995.md` §4 already reads
+"real 1878 single-lane wooden covered bridge **over Stonelick Creek**"
+— it does NOT claim the Little Miami. No fix needed; the doc was
+already correct, matching the real, verified crossing point
+(39°7′52″N 84°11′14″W is Stonelick Creek, not the Little Miami). The
+doc's real Little Miami crossing point is the separately-listed P1
+"Milford Main St + US 50 river bridge" (§4, "the only river crossing
+into Old Milford — hold it and the town is closed") plus the I-275
+high bridge further downstream (§2 G-adjacent chokepoint) — this
+matches USGS-03245500's own name, "Little Miami at Milford," directly.
+Built against the Main St/US 50 crossing, not the covered bridge —
+the covered bridge stays exactly what the doc already scoped it as: a
+Stonelick Creek set-piece, secondary and unrelated to the district's
+main river gateway.
+
+[DONE] Doc cross-check, Part 2 (Hamilton/Fairfield): `LevelDesign_
+Hamilton_Fairfield_1995.md` §2/§4 already names a specific real
+crossing — the **High–Main Bridge** ("the city's front door and main
+river crossing"), with the Black Street Bridge explicitly flagged as
+"the swap option," a secondary alternative, not a competing primary.
+Matches USGS-03274000's own name, "Great Miami at Hamilton," directly
+— no ambiguity to flag here either. The MCD levee crest paths (§2/§8)
+are a separate bike-only system running atop the levees, not a
+vehicle crossing point — noted, not conflated with the bridge.
+
+[FLAG] No vertical/elevation-datum conversion exists anywhere in this
+project — only the horizontal ~5:1 topology compression is an
+established convention (every doc says so explicitly). The supplied
+USGS gauge altitudes (Little Miami at Milford: 493.63 ft; Great Miami
+at Hamilton: 499.19 ft NAVD88) are absolute real-world elevations with
+no defined path to a Unity Y coordinate — there is no existing
+"1 real foot = X Unity units" vertical scale to run them through, and
+inventing one now would be a cross-cutting decision bigger than this
+pass (it would need to apply retroactively to every other built
+crossing to stay consistent, including Newport's three already-built
+bridges). Did NOT guess a numeric conversion. Instead, applied the
+same relative judgment call as every previous crossing: both new decks
+sit at the same small y=0.55 rise above Ground's flat y=0 baseline
+that Newport's three Ohio River bridge decks already use (see
+`TaylorSouthgate_Deck`, live-checked before building here to confirm
+the exact convention: position y=0.55, scale y=0.2, tag "Asphalt",
+layer "Ground") — "just above baseline, small delta, not a tall
+bridge," matching the instruction's own qualitative guidance without
+pretending a false precision exists. The real gauge numbers are
+recorded here for whenever a genuine vertical datum/terrain pass gets
+scoped project-wide. Also not attempted: Hamilton's doc-described
+raised MCD levee terrain (§8: "the levees are the terrain... build
+them as continuous raised spines") — that's new kit-bash terrain work,
+out of scope for "apply the existing hazard prefab," and deferred the
+same way every other doc's bigger terrain ambitions have been deferred
+so far (Queensgate's Union Terminal, Norwood's plant site, etc.).
+
+[DONE] Built both crossings using the exact live-checked Taylor-
+Southgate template (deck + 2 flanking `WaterHazard.prefab` instances,
+genuinely linked via `PrefabUtility`/`manage_gameobject(prefab_path=...)`,
+not disconnected copies) — narrower footprints than any of the three
+Ohio River bridges, matching each river's real relative size:
+  - `LittleMiami_Deck` (80,0.55,50) scale(8,0.2,24), tag Asphalt/layer
+    Ground — rural two-lane river-town bridge, narrower than any
+    Newport deck.
+  - `LittleMiami_WaterBlocker_West` (74,0,50) and `_East` (86,0,50),
+    both scale(4,1,24) — flank the deck's long sides, zero-gap
+    zero-overlap against the deck (live-verified, see below).
+  - `GreatMiami_Deck` (-80,0.55,-50) scale(10,0.2,36), tag Asphalt/
+    layer Ground — a proper downtown city-river bridge, wider/longer
+    than Milford's rural crossing but still narrower than the Ohio
+    River spans.
+  - `GreatMiami_WaterBlocker_West` (-87,0,-50) and `_East` (-73,0,-50),
+    both scale(4,1,36) — same zero-gap flanking pattern.
+  Both crossings deliberately placed well clear of their TurfNode's
+  own SphereCollider (radius 10): closest approach 18.0/18.4 units for
+  Milford, 12.0/13.0 units for Hamilton — same "don't crowd the node's
+  trigger" discipline as the Roundhouse's offset from
+  TurfNode_QueensgateYard.
+
+[DONE] Live bounds-verified before calling it done (manual world-AABB
+math via `BoxCollider.size * lossyScale`, not `Collider.bounds`
+directly — caught that `Collider.bounds` returns stale/default values
+in Edit mode immediately after object creation before PhysX syncs,
+a new gotcha worth remembering for future same-session bounds checks):
+both decks show exactly zero gap and zero overlap against their own
+flanking blockers on both sides, and all 6 new objects sit outside
+their respective TurfNode's 10-unit capture radius. Console clean (0
+errors/warnings) both before and after. Scene saved.
+
+[NOTE] Did not live-test physics this pass (no Play-mode velocity
+injection like the Kingfish/Anderson Ferry tests) — the prefab's
+collision behavior is already proven generic and geometry-agnostic
+across 5 prior applications (flat ground, sloped ramp, 3 different
+bridge-deck widths), so re-proving the same mechanism on two more
+static flat decks wasn't judged to add information. Flagging the
+omission rather than silently skipping it.
+
+Net result: both of Highway Kin's district docs now have their
+doc-identified real river crossing built and hazard-flanked, closing
+out [[project_water_crossing_hazard]]'s last two "not yet applied"
+entries (Little Miami, Great Miami) — every currently-known water
+crossing in the project now has the hazard applied. Hamilton's levee
+terrain and any real vertical-datum system remain open, unscoped work,
+not implied next by default.
