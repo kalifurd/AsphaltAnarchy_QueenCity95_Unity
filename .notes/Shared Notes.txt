@@ -5666,3 +5666,72 @@ Union Terminal, the Frontage pending its story decision, the G1 viaduct
 landing, the West End edge) stays exactly as scoped and deferred in the
 prior planning pass — nothing about this build implies any of it is
 next by default.
+
+[2026-08-10] Queensgate rail yard — scoping pass (planning only) —
+Claude Code
+K.I.S.S. FIRST per notes_rules.md Dev Note #1. Part 3 of a 3-part
+morning task; Parts 1 (push-status check) and 2 (RealGeography_
+Reference.md east-west arterial update) are separate, already-committed
+work — see commits cd8bcad and the clean push-status check before it.
+No scene changes made in this pass.
+
+[DONE] Live-checked current Queensgate state via UnityMCP before
+proposing anything, per this project's own established habit (same as
+the Roundhouse pass): confirmed exactly `TurfNode_QueensgateYard`
+(-60,0,60), `RoundhouseClubhouse_PLACEHOLDER` (-75,4,60), and
+`QueensgateYard_Turntable_PLACEHOLDER` (-58,0.05,60) exist — nothing
+else. No rail geometry (tracks, freight cars, sidings) exists yet. This
+matches the doc's own expectation exactly (§0, §8.7) — not a surprise,
+just confirmed rather than assumed.
+
+[FLAG] Checked the doc's claimed Price Hill coordination point
+directly, and it is real — but it is NOT the G1 viaduct (that gateway
+is a separate, already-fully-described connection with no open
+question attached; both docs agree on it and it doesn't gate rail-yard
+scope). The actual coordination dependency is the **shared rail
+scenery system**: the Queensgate doc's §6/§8.6 flags "freight movement
+in the yards, visible from the Incline House roof" and "the State Ave
+crossing train" as one system that would otherwise get built twice
+with different rules if the two docs' passes aren't coordinated. Live-
+checked the Price Hill side too: `StateAve_Stub` exists as a plain road
+stub (BoxCollider/MeshRenderer only) near `TurfNode_InclineHouse`
+(-40,0,-50) / `TurfNode_EighthAndState` (-22,0,-50) — no rail-crossing
+trigger, no train object, no scripted freight system built on either
+side yet. This is a real open dependency, not a hypothetical one:
+building a live/moving train system for Queensgate's yard right now,
+without a matching pass on the Price Hill side, would risk exactly the
+"built twice with different rules" outcome the doc already warned
+about. Flagging rather than deciding — this blocks the *live rail
+system* specifically, not the static yard geometry (see proposal
+below).
+
+[NOTE] Proposed first rail-yard milestone (same discipline as every
+prior one — Roundhouse, InclineHouse, Kingfish, the three Newport
+bridges — one small, self-contained slice, not the whole yard):
+
+**Milestone: static yard blockout only, immediately around the existing
+turntable.** A handful (3-5) of parked/dead freight-car placeholder
+boxes plus one or two straight track-segment stubs, placed as static
+dressing within the existing `TurfNode_QueensgateYard` footprint
+(collision-checked against the Roundhouse and turntable the same way
+the turntable itself was checked against the Roundhouse last pass).
+Explicitly OUT of scope for this milestone:
+  - No train movement, no scripting, no `JurisdictionCrossingTrigger`-
+    style system — this is where the flagged Price Hill dependency
+    above would get triggered, so it stays out until that's resolved.
+  - No State Ave crossing tie-in.
+  - No G1 viaduct landing (separately scoped, not blocked by this).
+  - No Frontage, no Union Terminal, no West End edge — all previously
+    deferred and still deferred.
+
+Rationale: this gives Queensgate's rail yard its first visible
+identity (the doc's own §1 thesis — "gaps in someone else's machine" —
+reads as empty right now without any yard geometry at all) while
+staying entirely on the static/placeholder side of the line the doc
+itself draws around the shared live-rail system. Matches §8.1's own
+instruction ("the yard is the level... rail geometry should block out
+before any street-level dressing") without touching the part that
+needs a Price Hill-side decision first.
+
+Awaiting review of this proposed milestone scope before any build work
+starts.
