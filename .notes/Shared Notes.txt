@@ -6274,3 +6274,123 @@ whether a single/double-lever tuning approach can ever clear this
 specific acceptance bar for these two specific slope angles with a
 rear-wheel-only-drive vehicle — needs a decision on next steps rather
 than more unattended tuning.
+
+[2026-08-10] Running-start test (no new tuning changes) — Claude Code
+K.I.S.S. FIRST per notes_rules.md Dev Note #1. Tested the actual
+player approach before touching anything else, per instruction —
+current committed settings only (centerOfMassOffset=(0,-0.4,-0.1),
+wheelTorqueMultiplier=10). No code changes this pass; temporary
+harness added and fully removed again, `git status` clean afterward.
+
+[NOTE] Grounded the "upper approach" question in the live scene
+before guessing at it: `StateAve_Stub` (-30,0.1,-50, scale 20x0.2x8,
+spans X:[-40,-20]) sits directly adjacent to `InclineCut_Stub`'s
+bottom edge — a real, driveable flat connector, confirmed. No
+equivalent exists for `AndersonFerryRd_Stub` at either end — it's
+isolated outside the shared Ground plane's ±100 bounds on both sides
+(confirmed via live position/bounds checks), same finding as when it
+was first built. `TurfNode_AndersonFerry` (-185,-4,-50) sits right at
+the ramp's water/bottom end, confirming that end is the real
+POI/destination, and climbing bottom-to-top is the correct direction
+to test. Since no real "upper approach" road exists to derive a speed
+from, used the speed the InclineCut test organically reached by the
+time it hit the ramp (5.5 m/s) as a comparable stand-in for
+AndersonFerry, flagged as an approximation rather than a literal
+reading of "its own upper approach."
+
+[DONE] Part 1a — realistic continuous approach, InclineCut. Spawned
+the player well back on `StateAve_Stub`, ran the SAME Lerp-smoothed
+throttle the real controller uses continuously from a dead stop on
+the flat approach, through the transition, into the climb (no
+teleporting or velocity injection — the most realistic test possible
+short of real input). Reached 5.5 m/s by the time it hit the ramp.
+Result: climbed further than any standing-start test (Y rose from
+~1.3 to ~3.2, oscillating there) before settling into the same kind
+of equilibrium stall seen throughout this investigation — real,
+modest improvement, not a clear.
+
+[DONE] Part 1b — injected running start, AndersonFerry (5.5 m/s
+stand-in speed, same torque). Result: **dramatically different from
+every prior AndersonFerry test.** First run sustained a real, steady
+climb — speed stabilized around 3.3-4.5 m/s (not decaying), covered
+29.31m in 8s and was still climbing steadily when the window ended
+(vs. every standing-start test's hard, immediate 1.49m wall). Ran a
+second, longer window (18s) with IDENTICAL parameters to confirm it
+would summit (~53m total climb) — this run instead climbed steadily
+to 24.79m by t=9s then stalled completely and stayed flat for the
+remaining 9s. Same starting conditions, meaningfully different
+outcomes between runs — the system is right at a stability knife-edge
+at this speed, not comfortably past it. Both results are still an
+enormous improvement over the standing-start's flat 1.49-1.50m,
+whatever the run-to-run variance.
+
+[DONE] Part 1c — injected running start, InclineCut (8 m/s, higher
+than State Ave's real deliverable speed, to map out how much more
+speed helps). Climbed from the bottom (X=-19.11) to roughly the
+ramp's horizontal midpoint (X=+1.16, out of a -19 to +19 span) —
+23.00m covered, cruising at a stable ~2.1-2.2 m/s for about 7 seconds
+before eventually decaying and stalling around t=10-11s. Far beyond
+anything a standing start or the realistic 5.5 m/s State Ave approach
+achieved, but still didn't reach the top in this test window.
+
+**Why this happens (mechanism, not a new bug):** WheelCollider slip
+ratio is referenced against ground speed — at true zero starting
+speed, ANY wheel rotation reads as maximum slip (the classic
+"standing burnout" case), which is exactly the wheelspin trap
+root-caused in the prior two passes. Once the vehicle is already
+rolling at a real forward speed, the SAME torque produces a much
+LOWER slip ratio (because the reference speed is no longer near-zero),
+letting the tire operate in the curve's efficient, high-force region
+instead of the saturated/low-force one. This is why a running start
+helps so much more than any amount of standing-start torque or grip
+tuning could — it's not adding force, it's avoiding the low-speed
+regime where force delivery collapses in the first place.
+
+[FLAG] **Results don't cleanly match either Part 2's or Part 3's
+described branch — reporting the actual mixed picture rather than
+forcing it into one bucket.** Part 2 anticipated "InclineCut clears,
+AndersonFerry doesn't" and would have called for a
+contact/geometry-specific bug check on AndersonFerry; instead the
+pattern ran the OPPOSITE direction — AndersonFerry (the shallower
+24.65° slope) responded far better to momentum than InclineCut (the
+steeper 28.37° slope) did, which is physically expected (less gravity
+to fight once the low-speed trap is avoided) rather than evidence of
+a separate AndersonFerry-specific bug. Because of that, Part 2's
+diagnostic branch (WheelHit/suspension contact check) wasn't run —
+the asymmetry has a clean physical explanation already, not a
+geometry mismatch like the wheelbase-overhang gotcha caught earlier.
+Part 3 ("running-start clears both cleanly") also doesn't quite fit:
+AndersonFerry got very close (once fully sustained, once stalled at
+~47% of the climb) at a speed that's not even realistically
+achievable from any currently-built approach road, and InclineCut's
+own REALISTIC approach (actual State Ave, 5.5 m/s) only produced a
+modest improvement over standing-start, not a clear.
+
+[NOTE] Not proposing any further tuning changes this pass, per
+instruction ("don't chase a stationary-climb guarantee nobody
+asked for"). The honest summary: **momentum matters, a lot, and in
+the direction the physics predicts** — this is "gravity mattering,"
+not a bug. But under the speeds a player could realistically carry in
+on the roads that actually exist today (a short State Ave stub;
+literally no built approach for AndersonFerry), neither hill gets a
+comfortable, reliable running-start clear — InclineCut because its
+real approach road is short and the grade steep, AndersonFerry
+because it has no approach road at all yet and sits right at a
+stability knife-edge even with a stand-in speed. This reads less like
+a physics-tuning gap now and more like a **level-geometry gap**: both
+of these are currently abstract-placeholder stubs with no real
+runway, and a longer/real State Ave (and some real connecting road
+for Anderson Ferry, which doesn't exist yet at all) would likely
+close most of the remaining distance on its own once those districts
+get real coordinate plans — matching the caveat every district doc
+already carries about placeholder-TurfNode positions not being final.
+
+Net result: no code or scene changes this pass. Confirmed momentum
+meaningfully helps both hills (more so for AndersonFerry than
+InclineCut, opposite of the anticipated failure mode), but neither
+gets a clean, reliable clear at realistically-achievable approach
+speeds given the roads currently built. Recommending this be treated
+as a known, physically-correct limitation tied to placeholder road
+geometry rather than something to keep tuning blind — a real fix, if
+wanted, most likely lives in giving these districts real approach-road
+length rather than further force/grip adjustments.
