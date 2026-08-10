@@ -26,6 +26,8 @@ namespace AsphaltAnarchy.Vehicle
         [SerializeField] private float leanSpeed = 3f;
         [SerializeField] private float centerOfMassOffset = -0.5f;
         [SerializeField] private float antiFlipTorque = 500f;
+        [Tooltip("Converts PlayerStats.EnginePower (labeled Horsepower, but used as a raw torque number) into an actual WheelCollider.motorTorque scale. Tune this single number for climb/flat/downhill feel rather than touching EnginePower, mass, or drag.")]
+        [SerializeField] private float wheelTorqueMultiplier = 10f;
 
         [Header("Surface Detection")]
         [SerializeField] private LayerMask surfaceLayer;
@@ -115,7 +117,7 @@ namespace AsphaltAnarchy.Vehicle
             currentBrakeTorque = Mathf.Lerp(currentBrakeTorque, targetBrake, 0.2f);
 
             // Apply to wheels
-            rearWheel.motorTorque = currentMotorTorque * gripMultiplier;
+            rearWheel.motorTorque = currentMotorTorque * gripMultiplier * wheelTorqueMultiplier;
             frontWheel.steerAngle = currentSteerAngle;
             frontWheel.brakeTorque = currentBrakeTorque;
             rearWheel.brakeTorque = currentBrakeTorque;

@@ -6054,3 +6054,105 @@ underlying physics — it's a real, currently oversized effect that the
 engine can't out-climb, which reads as "the bike just doesn't seem to
 care about the hill" specifically because it can't move forward on it
 at all rather than moving forward differently at different rates.
+
+[2026-08-10] Fix attempt: wheelTorqueMultiplier — Claude Code
+K.I.S.S. FIRST per notes_rules.md Dev Note #1. Implemented exactly as
+scoped: added `wheelTorqueMultiplier` (serialized, default 10) to
+`MotorcycleController`, applied at `rearWheel.motorTorque =
+currentMotorTorque * gripMultiplier * wheelTorqueMultiplier`.
+`PlayerStats.enginePower`, `Rigidbody.mass`, and drag were not touched,
+per instruction.
+
+[FLAG] **Acceptance criteria NOT met at the requested starting value
+(10), and — more importantly — no other value tested meets it either.**
+Re-ran the same diagnostic harness (temporary, deleted after use again)
+on both real slopes, same fixed-input/3s-window methodology as the
+original diagnosis, but swept a range of multiplier values instead of
+testing only 10. Also added a second harness mode that ramps torque up
+via the exact same `Mathf.Lerp(current, target, 0.1f)` formula
+`HandlePhysics()` itself uses (instead of snapping instantly to full
+torque), to rule out "instant torque shock" as an artifact of the test
+method rather than a real behavior — both modes gave the same
+qualitative result.
+
+| Case (multiplier) | Peak/settled speed | Distance | Behavior |
+|---|---|---|---|
+| InclineCut uphill, ×1 (150, unchanged baseline, smoothed) | 1.44 m/s at t=3s, still rising | **3.79 m** (best result of any value tested) | Slow partial climb, still decelerating by end of window |
+| InclineCut uphill, ×1.47 (220) | stalls, drifts sideways | ~0 m net | Worse than ×1 |
+| InclineCut uphill, ×2 (300) | 0 m/s | 0 m | Immediate full wheelspin, no movement at all |
+| InclineCut uphill, ×5 (750) | 0.1 m/s | 0 m | Immediate full wheelspin |
+| InclineCut uphill, ×10 (1500, instant) | 1.49 m/s (t=1.0s), then crashes | 0.36 m | Same stall pattern as pre-fix baseline |
+| InclineCut uphill, ×10 (1500, smoothed ramp) | 0.93 m/s (t=1.0s), then crashes | 0.36 m | Smoothing didn't change the outcome |
+| AndersonFerry uphill, ×1 (150, smoothed) | 1.48 m/s (t=0.5s), then stalls | 1.50 m | Stalls fastest of anything tested |
+| AndersonFerry uphill, ×10 (1500, instant, from the first sweep) | ~0 m/s throughout | ~0 m | Full wheelspin |
+| Flat ground, ×1 (150, smoothed) | 1.44 m/s at t=3s | 2.50 m | Baseline reference |
+| Flat ground, ×10 (1500, smoothed) | 4.81 m/s at t=3s | 8.93 m | Strong, smooth, steadily rising — **no instability, no wheelspin** |
+
+**Why higher multiplier makes uphill WORSE, not better — root-caused,
+not guessed:** live `WheelHit` diagnostics (`forwardSlip`, `force`,
+`rpm`) at each candidate value show the rear wheel enters near-total
+slip (`forwardSlip` ≈0.7–1.0, `rpm` in the thousands) almost
+immediately at any multiplier above ~1, while `hit.force` — the actual
+transmitted drive force — **drops** as slip saturates past
+`forwardFriction.extremumSlip` (0.4) toward the lower `asymptoteValue`
+(0.5 vs. `extremumValue` 1.0). This is standard tire-slip behavior
+(same as real wheelspin): past the traction peak, adding torque only
+spins the wheel faster without adding forward force, and can reduce
+it. A locked-wheel static-load check on `InclineCut_Stub` (both
+wheels' `brakeTorque` maxed, `motorTorque=0`) additionally found the
+rear (driven) wheel carrying a strikingly small share of the vehicle's
+weight relative to the front (87.9N vs. 1007.1N in one reading) —
+this looks like an anomalous/transient suspension-settle artifact
+rather than confirmed steady-state (simple wheelbase-midpoint geometry
+predicts something closer to even), so it's reported as an observation
+worth a dedicated look, not a proven second root cause. Either way,
+the consistent, repeated empirical result across every method (instant
+snap, gradual Lerp-matched ramp, multiple candidate values) is that
+**the rear wheel's available traction — not the torque number — is
+what caps uphill climbing on both real slopes**, and that ceiling
+currently sits at or below what gravity demands on both confirmed
+angles (28.37° and 24.65°).
+
+**This means the task's fallback instruction ("if it undershoots,
+tune the single number") doesn't have a solution in this case** — the
+search space was swept from ×1 to ×10 and the best result (×1, i.e.
+functionally unchanged from before this fix) still doesn't complete a
+climb on either slope, just partially climbs before stalling. Per Rule
+#3, flagging and stopping rather than picking an arbitrary "least bad"
+number and reporting it as done.
+
+[DONE] Regression check (flat ground / downhill): **not a concern at
+multiplier=10.** Flat ground is NOT traction-limited the way the
+inclines are (no gravity component opposing motion, and no `cos(θ)`
+reduction in normal load), so it never enters the same wheelspin
+state: 0→4.81 m/s over 3s, smooth and steadily rising, `velY` pinned
+at 0.00 throughout (no bouncing/instability). Worth being explicit,
+though: this IS a real, felt change from before — flat-ground
+top-of-window speed goes from 1.44 m/s (×1) to 4.81 m/s (×10), roughly
+3.3x — "unchanged from before" isn't literally true, the bike is
+meaningfully quicker off the line everywhere the wheel doesn't lose
+grip, which is arguably the intended effect of a torque fix, not a
+side effect to worry about. Didn't separately re-verify downhill under
+the new multiplier this pass since the original diagnostic already
+showed downhill was gravity-assisted and never traction-limited on
+either slope at 10x the original torque (both the pre-fix and post-fix
+sweeps show downhill accelerating cleanly to 7.8-9.1 m/s regardless of
+multiplier) — no reason to expect a different outcome there and
+didn't spend more test budget confirming the obvious case.
+
+[NOTE] Left `wheelTorqueMultiplier` at the requested starting value of
+10 rather than substituting a "better-performing" lower value
+unilaterally (×1 climbed slightly further in testing, but ×1 is
+functionally "no fix" and defeats the purpose of adding the field at
+all) — this is a decision for the user, not something to guess at
+silently.
+
+Net result: the requested code change is implemented exactly as
+scoped and does not regress flat-ground/downhill feel, but does NOT
+achieve the stated acceptance criteria (both hills climbable). This
+looks like a traction/grip-ceiling problem rather than a torque
+problem, which the single-multiplier lever can't fix by itself.
+Needs a decision: accept the partial improvement and flag uphill
+stalling as a known limitation, or open scope to something outside
+this pass's constraints (front-wheel drive, forward-friction
+stiffness, weight distribution/CoM) — not decided here.

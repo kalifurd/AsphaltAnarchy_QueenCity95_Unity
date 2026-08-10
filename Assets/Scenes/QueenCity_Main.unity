@@ -2002,6 +2002,7 @@ MonoBehaviour:
   leanSpeed: 3
   centerOfMassOffset: -0.5
   antiFlipTorque: 500
+  wheelTorqueMultiplier: 10
   surfaceLayer:
     serializedVersion: 2
     m_Bits: 1024
