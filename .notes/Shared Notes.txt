@@ -24,12 +24,52 @@ two bugs. WheelCollider suspension spring/damper/targetPosition were
 also confirmed still at Unity stock defaults, never tuned for this
 vehicle. Proposed fix NOT yet written — flagged for review.
 
+[2026-08-10, SUPERSEDED — see same-date "Suspension fix + anti-wheelie
+safeguard" entry below] Both fixes are now implemented and re-tested.
+Suspension retuned to real per-wheel static-load numbers (targetPosition
+0.14, not the 0.5 default). Anti-wheelie safeguard added to
+MotorcycleController (scales rear motorTorque down smoothly as the
+front wheel unloads, wheelTorqueMultiplier/centerOfMassOffset
+untouched). Flat-ground airborne time dropped from ~1.4s to ~0.1s.
+Both real hill climbs re-tested clean — safeguard barely engages
+uphill (antiWheelieScale stays ~1.000 nearly the whole climb), climb
+distances match or beat the already-documented traction-ceiling
+numbers, no regression. Full-lock steering (+/-1.0) still eventually
+lifts the front wheel under sustained hard cornering — a real,
+disclosed remaining limit, not silently claimed fixed. One unrelated,
+NOT-fixed finding surfaced during verification: the bike model's
+visual mounting sits noticeably above the true wheel-ground contact
+point (a floating look) — confirmed pre-existing (present even with
+the old default suspension), not something today's changes caused;
+flagged separately, out of scope for this pass.
+
 [2026-08-10] Real keyboard-input drive test (InclineCut_Stub with a
 running start) still needs the user at the controls — real input isn't
 simulatable through the MCP bridge (same constraint as the 2026-08-04
-Grab/Hijack playtest). Prefab + spawn + steering fix are all verified
-clean and ready; the actual "how does it feel" drive is the one part
-that has to be a human.
+Grab/Hijack playtest). Prefab + spawn + steering fix + suspension fix +
+anti-wheelie safeguard are all verified clean and ready; the actual
+"how does it feel" drive is the one part that has to be a human.
+
+[2026-08-10] Player.prefab's bike/rider visual mounting sits noticeably
+above the true wheel-ground contact point (confirmed via screenshot +
+live WheelHit contact-point readout — physics contact is correct at
+y=0, the visible mesh floats above it). Confirmed pre-existing, not
+caused by today's suspension retune (same gap reproduced with the OLD
+default suspension values too, resting height ~1.10 either way).
+Not fixed this pass — out of scope for "fix suspension + anti-wheelie."
+Needs a dedicated visual-calibration pass on VisualRoot/BikeModel's
+mount offset against the live wheel-collider contact height.
+
+[2026-08-10] Full-lock steering (Horizontal = +/-1.0) still eventually
+lifts the front wheel under sustained hard cornering at speed, even
+with the anti-wheelie safeguard active — confirmed via the Part 3
+steering-sweep retest (compression drops to 0.000 by t~1.0s in both
+full-lock trials). Moderate steering (+/-0.5) stays grounded much
+longer and shows solid, consistently-signed yaw-rate. This is a real,
+disclosed remaining limit, not claimed fixed — worth deciding whether
+it's acceptable "real bike" behavior (a motorcycle at full steering
+lock and speed genuinely can wheelie/lose the front) or needs further
+tuning.
 
 === APPEND NEW NOTES BELOW THIS LINE ===
 
@@ -6893,3 +6933,147 @@ No code or Inspector changes this pass. Both temporary harnesses
 removed after use, `MotorcycleController` re-enabled, Player restored
 to its authored spawn point (Play-mode-only, not saved to scene).
 Console clean throughout every compile and live test.
+
+[2026-08-10] Suspension fix + anti-wheelie safeguard — Claude Code
+
+K.I.S.S. FIRST per instruction: fix suspension with real numbers
+(independent of any code change), then add a targeted anti-wheelie
+safeguard without touching `wheelTorqueMultiplier` or
+`centerOfMassOffset`. Re-tested everything touched today before
+calling it done.
+
+[DONE] Part 1 — suspension retuned to real per-wheel static-load
+numbers, not guessed. Math (checked via a standalone calc, not
+hand-waved): with `centerOfMassOffset` z=-0.1 and wheels at
+z=+/-0.9 (1.8m wheelbase), the real front/rear static split works out
+to front=1308N / rear=1635N (44.4%/55.6%, matches the ~45/55 split the
+code's own comment already claims). Target static compression fraction
+= 0.14 (the already-computed real value from the suspension
+diagnostic, vs. Unity's stock 0.5 default). Solved spring stiffness
+per wheel so ITS OWN real static load produces exactly that
+compression (k = load / (0.14 x suspensionDistance)), then set damper
+for a 0.8 damping ratio (slightly underdamped — reactive without
+oscillating) against each wheel's own effective sprung mass
+(load/g).
+
+| | Old (Unity default) | New (calculated) |
+|---|---|---|
+| Front spring | 35000 | **31143** N/m |
+| Front damper | 4500 | **3260** Ns/m |
+| Rear spring | 35000 | **38929** N/m |
+| Rear damper | 4500 | **4075** Ns/m |
+| targetPosition (both) | 0.5 | **0.14** |
+
+Applied to `Assets/Prefabs/Player.prefab` (front/rear WheelCollider
+`suspensionSpring`) and mirrored on the live Play-mode instance
+(discovered live Play-mode instances are separate runtime copies, NOT
+auto-synced when the prefab asset is edited mid-Play — had to apply
+both). Empirically verified the math: reset to flat ground, let it
+settle, measured live compression = **0.1399 front / 0.1463 rear** —
+matches the calculated 0.14 target almost exactly.
+
+**Side effect caught before shipping it blind:** the new resting ride
+height (~1.21) is ~0.11m higher than the old default's resting height
+(~1.10 — itself already higher than the ~0.9 originally assumed
+during spawn calibration, so the "0.9" baseline was never quite
+accurate even before today). Tried compensating with a -0.11 VisualRoot
+offset; screenshot comparison showed it made no visible difference —
+the floating-mesh look was already present at BOTH old and new
+resting heights, confirming it's a pre-existing visual-mounting issue,
+not something this fix introduced. Reverted the speculative offset
+(not validated, would've just been an unexplained fudge number) and
+logged it as a separate open flag instead of chasing it blind under
+this task's scope.
+
+[DONE] Part 2 — anti-wheelie safeguard added to
+`MotorcycleController.cs`. New public `FrontSuspensionCompression`
+property (0=airborne/fully extended, 1=fully compressed, derived from
+`WheelCollider.GetGroundHit`, same formula as the diagnostic). New
+private `GetAntiWheelieTorqueScale()`: `Mathf.SmoothStep(0, 1,
+Mathf.InverseLerp(antiWheelieZeroTorqueCompression,
+antiWheelieFullTorqueCompression, compression))` — a smooth S-curve,
+not a hard cutoff, between two new serialized thresholds:
+`antiWheelieZeroTorqueCompression`=0.02 (rear torque fully cut) and
+`antiWheelieFullTorqueCompression`=0.10 (rear torque unaffected) —
+0.10 chosen deliberately BELOW the real 0.14 resting compression from
+Part 1, so normal static-load fluctuation at rest never engages the
+safeguard, only a genuine unloading event does. `HandlePhysics()`'s
+rear-torque line now reads `rearWheel.motorTorque = currentMotorTorque
+* gripMultiplier * wheelTorqueMultiplier * antiWheelieScale` — one
+new multiplicative factor, `wheelTorqueMultiplier` and
+`centerOfMassOffset` both untouched, exactly as instructed.
+
+[DONE] Part 3 — re-tested everything touched today, three checks, via
+a temporary harness (`_TEMP_RetestAll.cs` for tests A/C, then
+`_TEMP_ClimbRetest.cs` after test B's first pass turned out
+contaminated — see below — both fully removed after use, same
+disposal discipline as every prior harness this session).
+
+**Test A (flat-ground straight-line, zero steering):** front wheel now
+goes airborne for only ~0.1s (t=0.12-0.22, 2 of 30 samples) before the
+safeguard visibly engages (`antiWheelieScale` reads exactly 0.000
+during that window, torque cut to 0) and it recovers — vs. the
+original ~1.4s of 1.9s airborne with no recovery mechanism at all.
+From t=0.42 onward it stays grounded and stable for the remaining
+~2.5s, compression settling in the 0.10-0.13 band (matching the new
+resting target). **Confirmed fixed.**
+
+**Test B (both real hill climbs, running start) — first pass was
+contaminated, caught before trusting it:** spawning directly onto the
+ramp surface caused an interpenetration launch (speed spiked to
+~13 m/s in a single physics step, both wheels airborne the entire
+"climb," useless data — same class of gotcha as the original
+`SlopeTestHarness`'s AndersonFerry wheelbase-overhang catch). Fixed by
+spawning 1m above the surface along the ramp's own normal with zero
+velocity, letting gravity settle it for 0.5s (matching the original
+harness's own "0.5s settle" discipline), THEN applying the documented
+5.5 m/s running-start stand-in velocity. Re-ran clean:
+
+| | InclineCut (28.37deg) | AndersonFerry (24.65deg) |
+|---|---|---|
+| Peak climb distance | 3.82m (t=2.00s) | 5.93m (t=3.00s) |
+| Both wheels grounded | yes, entire run except t=0.00 | yes, entire run, no exceptions |
+| antiWheelieScale | 1.000 essentially throughout (one brief dip to 0.479 at t=0.26, recovered by t=0.50) | 1.000 for every single sample |
+| Behavior after peak | rolls back down (stalls) | rolls back down (stalls) |
+
+**The safeguard does not choke uphill torque** — confirmed, not
+assumed: `antiWheelieScale` sat at essentially full value the entire
+climb on both slopes. InclineCut's peak (3.82m) lands almost exactly
+on the already-documented traction-ceiling number from the original
+investigation ([[project_slope_climbing_traction_ceiling]]: "best
+result... ~3.6-3.8m of partial climb") — same known, separate,
+already-understood limitation (gravity's slope component exceeding
+available rear-wheel torque at real grip), unchanged and not
+regressed by today's work. AndersonFerry's 5.93m is a genuine
+improvement over the previous "knife-edge" 1.5-3m range documented
+for that slope — plausibly a welcome side effect of the properly-tuned
+suspension keeping both wheels reliably grounded instead of the old
+unstable default suspension's contribution to that slope's
+run-to-run inconsistency, though that wasn't the point of today's
+task and isn't being claimed as a deliberate fix.
+
+**Test C (steering sweep, anti-wheelie active):** compared directly
+against the pre-fix sweep data:
+
+| Input | OLD net lateral (1.5s) | NEW net lateral (1.5s) | OLD yaw-rate pattern | NEW yaw-rate pattern |
+|---|---|---|---|---|
+| -1.0 | 0.02m | **-0.39m (20x)** | tiny, ~0 | reaches -1.01 rad/s, front wheel eventually lifts (~t=1.0s) |
+| -0.5 | -0.28m | -0.26m (similar) | sign-unstable (flips +/-) | consistently negative-signed (-0.27 to -0.44), front wheel stays grounded through t=1.0s |
+| +0.5 | 0.74m | +0.26m | sign-unstable | consistently positive-signed, grounded through t=1.0s |
+| +1.0 | -0.04m | **+0.47m (12x)** | tiny, ~0 | reaches +0.72 rad/s, front wheel eventually lifts (~t=1.0s) |
+
+Moderate steering (+/-0.5) now shows the front wheel staying grounded
+with full torque for the first full second of the turn (compression
+0.10-0.115 the whole time) and clean, single-direction yaw-rate — the
+sign-flipping instability from the original sweep is gone. Full-lock
+steering (+/-1.0) is dramatically better than before but still
+eventually lifts the front wheel under sustained hard cornering at
+speed (compression hits 0.000 by ~t=1.0s in both directions) — **not
+claiming this fully solved, disclosed as a real remaining limit** (see
+OPEN FLAGS), most likely genuine physics (a real bike at full lock and
+speed can lose the front too), not re-tuned further this pass.
+
+Commit: 8979054 "Retune suspension to real static-load numbers + add
+anti-wheelie safeguard". No wheelTorqueMultiplier or
+centerOfMassOffset values touched anywhere this pass — verified by
+diff before committing.
