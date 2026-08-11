@@ -2,14 +2,22 @@
 (nothing yet — this fills in after the first compaction pass)
 
 === OPEN FLAGS (do not remove until resolved) ===
-[2026-08-10] Player.prefab standing on flat ground with ZERO input
-drifts ~5.3m (frame-0 pos (-38,0.7,-50) -> ~7s later (-43.31,1.10,-50.03),
-yaw stable at 90 throughout) before velocity settles near zero.
-Observed during the post-steering-fix frame-0 rotation check, not
-chased further this session — could be an initial WheelCollider/
-CapsuleCollider ground-penetration "pop" settling into a slide, could
-be something else. Worth a dedicated look if idle drift shows up again
-during real driving.
+[2026-08-10, SUPERSEDED — see same-date "Steering diagnostic" entry
+below] The ~5.3m zero-input drift originally flagged here was NOT
+reproduced on a proper flat-ground, reset-baseline test (see Part 1 of
+the diagnostic below — max drift was 0.0015 m/s of noise over 15s).
+The original test was run at the sloped spawn point (StateAve_Stub,
+adjacent to InclineCut_Stub) without a clean reset — most likely a
+one-time ground-penetration "pop" specific to that spawn location, not
+a persistent code-level drift. Leaving this line for the paper trail;
+don't re-flag it without a fresh repro.
+
+[2026-08-10] REAL bug found by the steering diagnostic below, NOT the
+one hypothesized: the front WheelCollider barely turns the vehicle at
+all even at near-full commanded steer lock, and the vehicle bounces
+~1m vertically while doing so. Root cause not yet confirmed — flagged
+for review, no fix written yet. See same-date "Steering diagnostic"
+entry for full data and the proposed next diagnostic step.
 
 [2026-08-10] Real keyboard-input drive test (InclineCut_Stub with a
 running start) still needs the user at the controls — real input isn't
@@ -6592,3 +6600,148 @@ whoever does the real drive to watch for.
 Commits this session (hero standup): e38fd6c "Fix vehicle
 steering-defeating rotation bug across all 6 gang prefabs", 8fb5a44
 "Stand up the player prefab with real hero bike/NPC models".
+
+[2026-08-10] Steering diagnostic — Claude Code
+
+K.I.S.S. FIRST per instruction: diagnose before touching any code,
+check for one root cause not two, no fix written this pass.
+
+Found the live session already ~266s into Play mode with the vehicle
+tipped over (roll ~-37 deg) from unknown prior activity (likely the
+user's own test drive — matches the attached screenshot showing real
+gameplay with new geometry entering frame at t=2s). Reset cleanly to
+flat open ground (world origin, well clear of any slope/InclineCut)
+before either test, since Part 1 explicitly needed slope/gravity ruled
+out.
+
+[DONE] Part 1 — zero-input drift, isolated. Temporary
+`TEMP_SteerDiagnostic.cs` (attached to Player only, deleted after —
+same throwaway-harness discipline as `SlopeTestHarness.cs`). Reset
+position/rotation/velocity/angularVelocity to a clean baseline on flat
+Ground (y=0, rot=0), then sampled every 1s for 15s with literally
+nothing touched (no keys, no code driving input).
+
+Result: **no bug found.** Local velocity stayed within noise the
+entire 15s (max |localVelZ| = 0.0015 m/s, effectively zero), world
+position moved a total of 2cm on Z and 0 on X, front `WheelCollider.
+steerAngle` read exactly `0.000` on every single sample, yaw held
+exactly at the spawned 0 deg throughout. The originally-flagged ~5.3m
+drift (see superseded OPEN FLAGS entry above) did NOT reproduce under
+a clean, slope-free, properly-reset baseline — it was very likely a
+one-time settle artifact specific to spawning right at the sloped
+StateAve_Stub location, not a persistent code-level bias. No residual
+steering angle at rest, no smoking gun here.
+
+[DONE] Part 2 — deliberate steering, measured. `TEMP_SteerSweep.cs`
+(same file, second component, same disposal). Since real keyboard
+input isn't scriptable through the MCP bridge, bypassed
+`Input.GetAxis` the same way the torque diagnostic did — but unlike
+that pass (which bypassed the Lerp-smoothing/grip-multiplier to get a
+"clean" answer), this one **kept the real smoothing math in the loop
+on purpose**, since checking whether smoothing/clamping eats the input
+was the whole point. Read `MotorcycleController`'s actual
+`maxSteerAngle`(30)/`steerSpeed`(5) fields live via reflection rather
+than assuming the documented defaults still held. Disabled the real
+`MotorcycleController` component for the test duration so it wouldn't
+fight the harness (re-enabled after). Swept Horizontal = {-1, -0.5,
+-0.2, 0.2, 0.5, 1}, each value getting a full 2s spin-up (rear
+`motorTorque`=1500, wheels straight) from an identically-reset
+baseline, then 2s of that steer value held constant while replicating
+`HandlePhysics()`'s exact formula (`targetSteer = steerInput *
+maxSteerAngle * speedFactor`, `currentSteerAngle =
+Lerp(currentSteerAngle, targetSteer, steerSpeed*dt)`,
+`frontWheel.steerAngle = currentSteerAngle`).
+
+**First run had a methodology bug, caught before trusting the data**
+(same discipline as the AndersonFerry wheelbase-overhang catch in the
+torque pass): the first sweep script only reset `currentSteerAngle` to
+0 between segments, not `rb.linearVelocity`/`angularVelocity`/
+`transform.rotation` — so later segments inherited whatever chaotic
+state (tipping, near-total speed loss) the previous segment left
+behind, and every steerInput value after the first ran from an
+already-contaminated starting condition. Rewrote with a full reset
+(position/rotation/velocity/angularVelocity all zeroed, fresh 2s
+spin-up) before each swept value so all six are independent trials.
+Re-ran clean.
+
+**Clean per-value results (v2):**
+| Horizontal | targetSteer (final) | steerAngle achieved | Match? | Net yaw-rate | Net lateral (X) over 1.5s | Vertical bounce (Y) |
+|---|---|---|---|---|---|---|
+| -1.0 | ~-28.4° | -28.36° | YES, converges fully | ~0 to 0.02 rad/s | ~0.02m | 1.90->0.90->1.40 (~1m swing) |
+| -0.5 | ~-13.7° | -13.73° | YES | -0.24 to 0.86 rad/s (sign-unstable) | -0.28m | 1.46->0.99->1.62 |
+| -0.2 | ~-5.4° | -5.40° | YES | -2.34 to 0.26 rad/s (sign-unstable) | -0.45m | 1.10->1.18->1.07 |
+| 0.2 | ~5.7° | 5.66° | YES | ~0 to 0.08 rad/s | 0.01m | 1.87->0.90->1.43 |
+| 0.5 | ~14.2° | 13.89° | YES | 0.25 to -1.27 rad/s (sign-unstable) | 0.74m | 1.10->1.51->0.90 |
+| 1.0 | ~28.2° | 28.29° | YES | -0.10 to 0.43 rad/s (sign-unstable) | -0.04m | 0.90->1.38->1.09 |
+
+**The input-mapping pipeline itself is completely clean.**
+`currentSteerAngle_computed` (the harness's own replicated Lerp) and
+`frontWheel.steerAngle_actual` (read back from the live WheelCollider)
+matched to 3 decimal places on every single one of 28 logged rows,
+across the full sweep. The Lerp converges smoothly toward
+`maxSteerAngle * speedFactor` within ~1-1.5s, exactly as coded — no
+clamp, no deadzone, no gain reduction anywhere in `steerInput ->
+targetSteer -> Lerp -> WheelCollider.steerAngle`. **This rules out the
+hypothesis in the task brief** (low sensitivity/gain, a clamp, or a
+smoothing/deadzone function eating the input) — none of those are
+happening. The wheel is physically pointed at very nearly the full
+commanded angle in every trial.
+
+**But the vehicle barely turns anyway, and bounces vertically a lot
+while trying.** Despite the front wheel sitting at ~28-29° (94% of
+max lock) for a full 1.5s sustained hold in the +/-1.0 trials, net
+lateral (X) displacement over that time was under 5cm in every single
+trial — a real motorcycle at ~3-5 m/s with the front wheel locked
+that far over would carve a visibly tight turn, not go essentially
+straight. Yaw-rate (`rb.angularVelocity.y`) is not just small, it's
+**sign-unstable within a single trial under a constant-direction steer
+command** (e.g. the 0.5 trial: 0.00 -> +0.25 -> -0.78 -> -1.27 rad/s —
+flips from turning right to turning left while still being told to
+turn right the whole time). Separately, world-space Y position swings
+by roughly a full meter within each 1.5-2s trial (e.g. -1.0 trial:
+1.90 -> 0.90 -> 1.40) even though the vehicle should be resting/
+driving on perfectly flat ground the entire time. That's not a
+subtle detail — the vehicle is visibly hopping/bouncing while this
+happens.
+
+[FLAG] Part 3 — Do Parts 1 and 2 share a root cause? **No — they're
+genuinely separate,** and neither is the one hypothesized:
+  - Part 1 found literally nothing wrong. Zero-input rest behavior on
+    flat ground is clean — no residual steer bias, no drift beyond
+    numerical noise. The originally-reported drift doesn't reproduce
+    under a controlled baseline.
+  - Part 2 rules out the input-mapping/smoothing/clamp hypothesis
+    entirely (confirmed clean, byte-for-byte match between commanded
+    and achieved steer angle) but surfaces a DIFFERENT, real bug: the
+    vehicle doesn't actually corner in proportion to steer angle, and
+    exhibits unexplained ~1m vertical bounce and sign-unstable yaw
+    rate under a constant steer input. This points downstream of the
+    steering CODE entirely — into WheelCollider physical response
+    (suspension spring/damper behavior, and/or front-wheel sideways-
+    friction/slip characteristics not generating real cornering force
+    at the achieved steer angle). This is a strong candidate for being
+    the SAME general family of issue as the already-documented
+    rear-wheel forwardFriction slip ceiling from the slope-climbing
+    investigation ([[project_slope_climbing_traction_ceiling]]) —
+    both would be WheelCollider friction-curve/suspension tuning
+    problems, not steering-logic bugs — but that's a hypothesis, not
+    confirmed. Did not test the front wheel's sideways slip/force
+    directly this pass (would need the same live `WheelHit` diagnostic
+    technique already proven for the rear-wheel investigation, applied
+    to the front wheel during an actual turn).
+
+**Proposed next step (NOT implemented, needs review before any code or
+Inspector value changes):** run a live `WheelHit`-based diagnostic on
+the FRONT wheel specifically (sidewaysSlip, sideways force delivered,
+suspension compression/spring/damper values) during a sustained turn
+at speed, same rigor as the rear-wheel torque investigation, before
+touching any friction curve or suspension numbers. Do not guess a
+stiffness/damper number and re-test blind — get the real numbers
+first, same discipline as the CoM/torque pass.
+
+No code changes, no Inspector value changes, no committed scene
+changes this pass — diagnostic harness fully removed
+(`_TEMP_SteerDiagnostic.cs` deleted), `MotorcycleController`
+re-enabled on Player, Player repositioned back to its authored spawn
+point (Play-mode-only change, not saved to the scene). Console clean
+throughout both compiles and both live tests.
