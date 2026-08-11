@@ -12,12 +12,17 @@ one-time ground-penetration "pop" specific to that spawn location, not
 a persistent code-level drift. Leaving this line for the paper trail;
 don't re-flag it without a fresh repro.
 
-[2026-08-10] REAL bug found by the steering diagnostic below, NOT the
-one hypothesized: the front WheelCollider barely turns the vehicle at
-all even at near-full commanded steer lock, and the vehicle bounces
-~1m vertically while doing so. Root cause not yet confirmed — flagged
-for review, no fix written yet. See same-date "Steering diagnostic"
-entry for full data and the proposed next diagnostic step.
+[2026-08-10, SUPERSEDED — see same-date "Suspension diagnostic" entry
+below] The vertical-bounce/weak-turning bug above now has a confirmed
+root cause: uncommanded wheelies/launches from rear-wheel drive
+thrust ~equaling the vehicle's own weight, not classic spring
+oscillation. The front wheel (the only steered wheel) goes fully
+airborne for extended stretches, which mechanically explains the weak
+turning (an airborne wheel generates zero cornering force regardless
+of its commanded angle) as the SAME event as the vertical bounce, not
+two bugs. WheelCollider suspension spring/damper/targetPosition were
+also confirmed still at Unity stock defaults, never tuned for this
+vehicle. Proposed fix NOT yet written — flagged for review.
 
 [2026-08-10] Real keyboard-input drive test (InclineCut_Stub with a
 running start) still needs the user at the controls — real input isn't
@@ -6745,3 +6750,146 @@ changes this pass — diagnostic harness fully removed
 re-enabled on Player, Player repositioned back to its authored spawn
 point (Play-mode-only change, not saved to the scene). Console clean
 throughout both compiles and both live tests.
+
+[2026-08-10] Suspension diagnostic — Claude Code
+
+K.I.S.S. FIRST per instruction: check suspension config directly
+before falling back to the slip diagnostic. No code/Inspector changes
+this pass.
+
+[DONE] Part 1 — front WheelCollider suspension config, read live from
+the Player instance.
+
+| Property | Front (& Rear, identical) | Unity's stock default |
+|---|---|---|
+| radius | 0.5 | 0.5 |
+| suspensionDistance | 0.3 | 0.3 |
+| suspensionSpring.spring | 35000 | 35000 |
+| suspensionSpring.damper | 4500 | 4500 |
+| suspensionSpring.targetPosition | 0.5 | 0.5 |
+| forceAppPointDistance | 0 | 0 |
+| forwardFriction/sidewaysFriction curves | stock | stock |
+
+**Every suspension value on both wheels is the untouched Unity
+default — never configured for this specific 300kg vehicle, same
+class of oversight as the pre-fix `centerOfMass`.** Sanity-checked the
+numbers against the vehicle's real mass rather than eyeballing:
+critical damping for this spring against the full 300kg body is
+~6480 Ns/m (actual damper=4500 -> ratio 0.69, underdamped) or ~4583
+Ns/m against a naive 150kg-per-wheel split (actual damper=4500 ->
+ratio 0.98, near-critical) — the two per-wheel-mass assumptions give
+meaningfully different answers, which is itself a sign this was never
+actually tuned against the real per-wheel static load. More
+concretely: static equilibrium compression for a 150kg static wheel
+load against a 35000 N/m spring is only **0.042m, i.e. ~14% of the
+0.3m suspensionDistance** — but `targetPosition` is configured for
+**50%**. The spring is configured to aim for roughly 3.5x more
+compression than the vehicle's actual static weight would ever
+produce at rest. Flagging this mismatch, not concluding from it alone
+— Part 2 is the live confirmation.
+
+[DONE] Part 2 — suspension compression logged live during the same
+steer-sweep methodology as the prior pass (`_TEMP_SuspensionDiagnostic.cs`,
+same disposal discipline), at finer 0.1s resolution (vs 0.5s
+previously) specifically to catch fast cycling. Compression derived
+per-sample from `WheelCollider.GetGroundHit()` (`1 - clamp01((distance
+anchor-to-contact - radius) / suspensionDistance)`, -1 logged when the
+wheel isn't grounded at all). Reduced sweep to {0, 0.5, 1.0} (added a
+steerInput=0 straight-line baseline this time, since Part 1's math
+flag isn't steering-specific).
+
+**Result: this is NOT the "cycling between near-0 and near-1
+repeatedly" pattern hypothesized — it's something more specific and
+more severe: the front wheel goes fully airborne (`frontGrounded=
+False`, compression pegged at -1.000) for extended stretches,
+including during the PURE STRAIGHT-LINE (steerInput=0) baseline with
+no steering at all.**
+
+Straight-line (0) trial: `posY` opens at 1.794 (vs. resting ~0.90) —
+already airborne from the 2s spin-up phase before logging even
+started — plunges to 0.899, then rockets back up to 1.486 before
+slowly settling to ~1.10 by t=1.92s. `frontGrounded=False` for 13 of
+the first 14 logged samples (front wheel touches nothing at all for
+essentially the entire ~1.4s window) — this is an **uncommanded
+wheelie from straight-line acceleration alone**, not a steering
+artifact.
+
+0.5 steer trial: front wheel stays mostly grounded but compression
+swings wildly (0.30 <-> 0.75, never settling) while the REAR wheel
+goes fully airborne (`rearGrounded=False`) for a sustained ~0.9s
+stretch (t=0.82 through t=1.72).
+
+1.0 (full lock) trial: front compression actually converges cleanly
+to ~0.45 by the end (best-behaved of the three) — but rear compression
+steadily bleeds down from 0.63 to exactly 0.000 (fully extended,
+essentially unloaded), briefly going fully airborne at t=1.20-1.30,
+then resting at 0.000 (barely touching, near-zero load) for the rest
+of the trial.
+
+**This single mechanism explains BOTH previously-separate symptoms as
+one event, not two:** the front wheel — the ONLY steered wheel — being
+airborne or barely-loaded for large stretches means it generates
+essentially zero cornering force regardless of what angle it's turned
+to, which is exactly why the prior steering-sweep pass found the wheel
+faithfully reaching ~94% of commanded lock while the vehicle barely
+turned. The "~1m vertical bounce" is the vehicle's body pitching up
+during the airborne phase and crashing back down, not classic spring
+oscillation.
+
+**Root cause, checked against real numbers (not guessed):** rear-wheel
+drive thrust at the game's actual configured torque
+(`rearWheel.motorTorque` up to ~1500 = `EnginePower`(150, Lerp-capped)
+x `wheelTorqueMultiplier`(10), both live-confirmed values, same 1500
+used in this test) at wheel radius 0.5m = **3000N** of thrust. Vehicle
+weight (300kg x 9.81) = **2943N**. Thrust-to-weight ratio ~**1.02** —
+the rear wheel's max drive force is roughly EQUAL TO the entire
+vehicle's own weight, on a short 1.8m wheelbase with a CoM already
+biased toward the rear wheel (`centerOfMassOffset` z=-0.1, set in the
+earlier torque-fix pass). That combination is physically exactly what
+produces a wheelie — this is consistent with real-world physics, not
+just a code bug, though it's very likely far more aggressive than the
+intended feel. **Likely connects directly to this same session's
+earlier `wheelTorqueMultiplier=10` fix** (added to solve the uphill-
+climb stall documented in
+[[project_slope_climbing_traction_ceiling]]) — that fix may have
+traded an uphill-climb problem for a flat-ground-wheelie/traction-loss
+problem by pushing thrust-to-weight up to roughly 1:1.
+
+[FLAG] Part 3 (front-wheel slip diagnostic) NOT run — Parts 1-2
+already produced a clear, well-evidenced, single explanation
+(airborne-wheel wheelies from high thrust-to-weight + rear-biased CoM,
+not classic suspension cycling, not an input-mapping bug), so falling
+back to the slip diagnostic per the task's own "only if Parts 1-2
+don't explain it" instruction wasn't triggered. Available if the
+proposed fix direction below turns out to be wrong and slip needs
+independent measurement.
+
+**Proposed fix direction (NOT implemented, needs review/decision,
+same discipline as the CoM/torque pass — no numbers changed blind):**
+this is a torque-vs-weight-vs-suspension tuning problem, not steering
+code and not classic spring damping. Two independent levers, likely
+both worth touching rather than either alone:
+  1. **Suspension**: `targetPosition` and/or `spring` are mismatched
+     against this vehicle's real per-wheel static load (Part 1) — a
+     properly tuned suspension (lower targetPosition matching the
+     real ~14% static compression fraction, and/or a softer spring
+     with damping tuned against the ACTUAL per-wheel mass split, not
+     a naive 50/50 assumption) would let the suspension absorb
+     acceleration-load transfer smoothly instead of the wheel simply
+     leaving the ground.
+  2. **Thrust-to-weight**: `wheelTorqueMultiplier=10` combined with
+     `centerOfMassOffset` puts thrust almost exactly at 1:1 with
+     weight — worth a decision on whether the uphill-climb fix should
+     be re-approached (e.g. gearing/low-speed torque curve instead of
+     a flat 10x multiplier, per option (b) considered but not chosen
+     in the original torque investigation) rather than accepting a
+     flat-ground wheelie as the trade-off.
+Did not touch either lever this pass — reporting the mechanism and
+the two candidate levers for a decision, not guessing a number and
+re-testing blind.
+
+No code or Inspector changes this pass. Both temporary harnesses
+(`_TEMP_SteerDiagnostic.cs`, `_TEMP_SuspensionDiagnostic.cs`) fully
+removed after use, `MotorcycleController` re-enabled, Player restored
+to its authored spawn point (Play-mode-only, not saved to scene).
+Console clean throughout every compile and live test.
