@@ -30,6 +30,12 @@ namespace AsphaltAnarchy.Vehicle
         [Tooltip("Converts PlayerStats.EnginePower (labeled Horsepower, but used as a raw torque number) into an actual WheelCollider.motorTorque scale. Tune this single number for climb/flat/downhill feel rather than touching EnginePower, mass, or drag.")]
         [SerializeField] private float wheelTorqueMultiplier = 10f;
 
+        [Header("Anti-Wheelie Safeguard")]
+        [Tooltip("Front-wheel suspension compression (0=fully extended/airborne, 1=fully compressed) at or above which rear motorTorque is unaffected. Set below the real static resting compression (see centerOfMassOffset's tooltip for the load-split math) so normal driving never engages this.")]
+        [SerializeField] private float antiWheelieFullTorqueCompression = 0.10f;
+        [Tooltip("Front-wheel suspension compression at or below which rear motorTorque is fully cut. Between this and antiWheelieFullTorqueCompression, torque scales down smoothly (SmoothStep), not a hard cutoff.")]
+        [SerializeField] private float antiWheelieZeroTorqueCompression = 0.02f;
+
         [Header("Surface Detection")]
         [SerializeField] private LayerMask surfaceLayer;
         [SerializeField] private float surfaceCheckDistance = 0.5f;
@@ -117,8 +123,13 @@ namespace AsphaltAnarchy.Vehicle
             float targetBrake = brakeInput ? playerStats?.BrakeForce ?? 2000f : 0f;
             currentBrakeTorque = Mathf.Lerp(currentBrakeTorque, targetBrake, 0.2f);
 
-            // Apply to wheels
-            rearWheel.motorTorque = currentMotorTorque * gripMultiplier * wheelTorqueMultiplier;
+            // Apply to wheels. Anti-wheelie: scale rear torque down smoothly as the front wheel
+            // unloads toward airborne, so acceleration can't lift the steered wheel off the ground
+            // and kill cornering. wheelTorqueMultiplier and centerOfMassOffset are untouched by this —
+            // it's a separate multiplier, not a retune of either. See Shared Notes.txt 2026-08-10
+            // "Suspension diagnostic"/"Suspension fix + anti-wheelie safeguard" for the math behind it.
+            float antiWheelieScale = GetAntiWheelieTorqueScale();
+            rearWheel.motorTorque = currentMotorTorque * gripMultiplier * wheelTorqueMultiplier * antiWheelieScale;
             frontWheel.steerAngle = currentSteerAngle;
             frontWheel.brakeTorque = currentBrakeTorque;
             rearWheel.brakeTorque = currentBrakeTorque;
@@ -164,6 +175,27 @@ namespace AsphaltAnarchy.Vehicle
 
             float weatherGrip = weatherSystem != null ? weatherSystem.CurrentGripMultiplier : 1.0f;
             return surfaceGrip * weatherGrip;
+        }
+
+        /// <summary>0 (fully extended/airborne) to 1 (fully compressed). Same formula as the live
+        /// suspension diagnostic: derived from GetGroundHit, not a built-in WheelCollider property.</summary>
+        public float FrontSuspensionCompression
+        {
+            get
+            {
+                WheelHit hit;
+                if (!frontWheel.GetGroundHit(out hit)) return 0f;
+                Vector3 anchorWorld = frontWheel.transform.TransformPoint(frontWheel.center);
+                float distanceToContact = Vector3.Distance(anchorWorld, hit.point) - frontWheel.radius;
+                return Mathf.Clamp01(1f - Mathf.Clamp01(distanceToContact / frontWheel.suspensionDistance));
+            }
+        }
+
+        private float GetAntiWheelieTorqueScale()
+        {
+            float compression = FrontSuspensionCompression;
+            float t = Mathf.InverseLerp(antiWheelieZeroTorqueCompression, antiWheelieFullTorqueCompression, compression);
+            return Mathf.SmoothStep(0f, 1f, t);
         }
 
         private void ApplyAntiFlip()

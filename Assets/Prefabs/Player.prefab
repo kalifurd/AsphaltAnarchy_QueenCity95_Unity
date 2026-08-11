@@ -364,6 +364,8 @@ MonoBehaviour:
   centerOfMassOffset: {x: 0, y: -0.4, z: -0.1}
   antiFlipTorque: 500
   wheelTorqueMultiplier: 10
+  antiWheelieFullTorqueCompression: 0.1
+  antiWheelieZeroTorqueCompression: 0.02
   surfaceLayer:
     serializedVersion: 2
     m_Bits: 1024
@@ -483,9 +485,9 @@ WheelCollider:
   m_Center: {x: 0, y: 0, z: 0}
   m_Radius: 0.5
   m_SuspensionSpring:
-    spring: 35000
-    damper: 4500
-    targetPosition: 0.5
+    spring: 38929
+    damper: 4075
+    targetPosition: 0.14
   m_SuspensionDistance: 0.3
   m_ForceAppPointDistance: 0
   m_Mass: 20
@@ -706,9 +708,9 @@ WheelCollider:
   m_Center: {x: 0, y: 0, z: 0}
   m_Radius: 0.5
   m_SuspensionSpring:
-    spring: 35000
-    damper: 4500
-    targetPosition: 0.5
+    spring: 31143
+    damper: 3260
+    targetPosition: 0.14
   m_SuspensionDistance: 0.3
   m_ForceAppPointDistance: 0
   m_Mass: 20
