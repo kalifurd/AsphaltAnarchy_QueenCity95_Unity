@@ -71,6 +71,29 @@ it's acceptable "real bike" behavior (a motorcycle at full steering
 lock and speed genuinely can wheelie/lose the front) or needs further
 tuning.
 
+[2026-08-10] CONFIRMED LIVE: losing InclineHouse (the player's only
+safehouse) has ZERO consequence today — no teleport, no fallback
+spawn, no "home base lost" state, no crash. `TurfNode.
+safehouseSpawnPoint` is genuinely configured (real assigned Transform,
+`hasSafehouse=true`) but has exactly one reference in the entire
+codebase (its own declaration) — nothing reads it, ever. Player death
+is equally inert: health zeroes out, nothing else happens (no
+teleport, no state lock, vehicle stays fully controllable at 0 HP).
+Full trace + proposed smallest fix (NOT implemented) in the dated
+entry below ("Safehouse-loss trace"). Also surfaced a real, separate,
+test-session-specific issue: `GameManager.Instance` (static singleton)
+went null partway through today's long session — traced to Unity's
+domain reload NOT re-running `Awake()` for already-existing
+MonoBehaviours after a mid-Play script recompile, and this session did
+many of those. The `GameManager` component itself was fine throughout
+(found via `GameObject.Find("Systems")`), only the static `Instance`
+reference went stale. Every caller of `GameManager.Instance` uses the
+null-conditional operator (`?.`), so this fails completely silently —
+worth knowing if `GameOver`/other GameManager-mediated state changes
+ever seem to silently not happen after a long dev session with
+multiple script edits; a single continuous real play session (no
+mid-play recompiles) would not hit this.
+
 === APPEND NEW NOTES BELOW THIS LINE ===
 
 [2026-08-04] Grab/Hijack play-test — Claude Code
@@ -7077,3 +7100,139 @@ Commit: 8979054 "Retune suspension to real static-load numbers + add
 anti-wheelie safeguard". No wheelTorqueMultiplier or
 centerOfMassOffset values touched anywhere this pass — verified by
 diff before committing.
+
+[2026-08-10] Safehouse-loss trace — Claude Code
+
+K.I.S.S. FIRST per instruction: trace before triggering, predict the
+failure mode before testing live, don't cause a real loss blind. This
+exact question was flagged twice before and never resolved (see
+[[project_enemy_capture_of_player_nodes]] — "InclineHouse's
+safehouseSpawnPoint consequence is still untraced," flagged
+2026-08-08, carried forward as open flag #2, never picked back up
+until now).
+
+[DONE] Part 1 — static trace. Grepped `safehouseSpawnPoint` across the
+entire project: 4 hits total — its own field declaration in
+`TurfNode.cs`, the scene file (where it's actually assigned), the
+level-design doc, and this notes file. **Zero reads anywhere in
+`Assets/Scripts`.** No public getter/property exposes it either (only
+`HasSafehouse` — a bool — is exposed; the Transform itself is not).
+Traced the two paths that could plausibly consume it:
+  - **Node-loss path**: `TurfNode.ResolveAssault()` (the undefended-
+    timer loss, built 2026-08-08) calls `CompleteEnemyCapture()` ->
+    `TurfWarManager.ClaimNode()` -> fires `OnNodeLost`. Grepped for
+    subscribers to `OnNodeLost`: **zero, anywhere.** `TurfNode.
+    SetController()` (which actually flips `controllingFaction`) never
+    touches `hasSafehouse`/`safehouseSpawnPoint` — they're not cleared
+    or reassigned when a node changes hands, they just sit there
+    unchanged regardless of who owns the node.
+  - **Player-death path**: `PlayerStats.TakeDamage()` at
+    `CurrentHealth <= 0` fires `OnPlayerDied` and calls
+    `GameManager.Instance?.ChangeState(GameState.GameOver)`. Grepped
+    for `OnPlayerDied +=` and `OnGameStateChanged +=` subscribers:
+    **zero, anywhere.** `GameState.GameOver` is a value nothing reacts
+    to. `BeginAssault()`'s own doc-comment already states it's
+    "Deliberately independent of PlayerStats.OnPlayerDied/
+    GameState.GameOver" — confirmed true in both directions, not just
+    asserted.
+
+**Predicted failure mode, stated before testing live (per
+instruction): neither a crash nor a silent fallback — something
+simpler than either. There is no code path that would even ATTEMPT to
+read `safehouseSpawnPoint` on loss or on death, so there's no
+null-reference risk (nothing ever dereferences it) and no "falls back
+to a default spawn" either, because there is no respawn system at all
+yet for either event.** Losing the node should just... flip ownership
+and otherwise do nothing to the player. No obvious guaranteed-crash
+found, so proceeded to Part 2 per the task's own branching instruction.
+
+[DONE] Part 2 — controlled live test, same mechanism already
+live-verified on `TurfNode_EighthAndState`
+([[project_enemy_capture_of_player_nodes]]'s "regression (undefended
+loss)" test): `turfNode.BeginAssault(RustBarons)` called directly on
+`TurfNode_InclineHouse`, then let the REAL `Update()`-driven 30s grace
+timer elapse on its own (not a manual `ResolveAssault()` call) —
+same discipline as the precedent, not a shortcut. Recorded player
+state (position, health, `GameManager.CurrentState`) immediately
+before arming and again after the timer expired.
+
+| | Before | After (node lost to RustBarons) |
+|---|---|---|
+| `TurfNode.IsUnderAssault` | False | False (resolved) |
+| `controllingFaction` | PlayerCrew | **RustBarons** (genuinely flipped) |
+| `HasSafehouse` | True | **True (unchanged, never cleared)** |
+| `safehouseSpawnPoint` | assigned, (-40,0,-58) | **identical, untouched** |
+| Player position | (-43.07, 0.90, -50.82) | (-43.07, 0.90, -50.82) — **unchanged** |
+| Player health | 100 | 100 — **unchanged** |
+| `GameManager.CurrentState` | Exploring | Exploring — **unchanged** |
+
+**Confirmed exactly as predicted: nothing happened to the player.**
+The node's ownership genuinely changed (this isn't a no-op on the turf
+side — `GetPlayerClaimedNodes()` would drop by one, same as the
+EighthAndState precedent), but zero player-facing consequence of any
+kind. Console stayed clean (0 errors/warnings) through the entire
+30s+ window.
+
+**Also directly tested the player-death path** (separately, since the
+task asked about "the player's next death/respawn" specifically):
+`PlayerStats.TakeDamage(200)` (lethal, max health 100) -> health
+correctly clamps to 0, but position is unchanged, `MotorcycleController`
+stays enabled, `Rigidbody` stays non-kinematic, the GameObject stays
+active — **the player remains fully drivable at 0 HP, indefinitely,
+with no death state of any kind.** (`GameManager.CurrentState` also
+stayed `Exploring` here rather than flipping to `GameOver` — traced
+that specifically to a test-session artifact, not a reproducible
+gameplay bug: `GameManager.Instance` had gone stale/null earlier in
+this long session, most likely because Unity's domain reload doesn't
+re-run `Awake()` — where `Instance = this` is assigned — on
+already-existing MonoBehaviours after a mid-Play script recompile, and
+today's session did many of those across the steering/suspension work.
+The `GameManager` component itself was confirmed healthy the whole
+time via `GameObject.Find("Systems")`. Every call site uses
+`GameManager.Instance?.` — null-conditional — so this class of failure
+is always silent, never an exception. Flagged as worth knowing, not
+fixed/touched this pass — a real single continuous play session
+wouldn't trigger it, only iterative dev-time recompiling does.)
+
+State fully reset after testing: player healed back to 100,
+`TurfNode_InclineHouse` reverted to `PlayerCrew` via `SetController()`
+(same test-harness-only reset method used in the EighthAndState
+precedent). No permanent scene/asset changes — confirmed via
+`git status` (clean).
+
+[FLAG] Part 3 — plainly: **it's broken, but silently, not with a
+crash.** Losing the player's home base currently has no in-game
+representation at all — the player keeps driving, keeps their health,
+never learns the safehouse is gone unless they physically go look at
+the node's color. Player death is equally hollow — a health stat hits
+zero and nothing else happens, ever, at any node.
+
+**Proposed smallest fix (NOT implemented, flagged for review, same
+discipline as every other fix this session):**
+  1. A small new subscriber (on `GameManager` itself, subscribing in
+     `Awake()` — not relying on a third party remembering to call
+     `Instance?.ChangeState(...)` correctly, given the staleness issue
+     just found) for `PlayerStats.OnPlayerDied`.
+  2. On death: look up whichever `TurfNode` currently has
+     `HasSafehouse == true && ControllingFaction == PlayerFaction`
+     (today that's only ever `InclineHouse`, but this stays correct if
+     that ever changes). If found, teleport the player to its
+     `safehouseSpawnPoint` (needs a new public getter — the Transform
+     field is currently private with no accessor) and heal to max.
+  3. **Explicit "home base lost" handling** for the case Part 2 proves
+     is real and reachable: if no player-owned safehouse exists at the
+     moment of death (already lost, or never had one), fall back to a
+     designated default respawn point rather than doing nothing —
+     needs a decision on what that fallback point actually is (a new
+     dedicated scene marker is the simplest option, cheap to add).
+  4. Reset `GameState` back to `Exploring` and player health explicitly
+     as part of the same handler, rather than leaving `GameOver` as an
+     inert dead-end state.
+Not written this pass — this is a design surface (what should
+"losing your home base" actually feel like/cost the player?) as much
+as a code gap, and the task asked to flag for review before writing
+code, same as the torque/CoM and steering passes.
+
+No code changes, no committed scene changes this pass — all live-test
+state (assault, damage, faction ownership) was Play-mode-only and/or
+explicitly reset before ending. Confirmed via `git status`: clean.
