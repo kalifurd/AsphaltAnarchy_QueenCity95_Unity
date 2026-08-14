@@ -7236,3 +7236,82 @@ code, same as the torque/CoM and steering passes.
 No code changes, no committed scene changes this pass — all live-test
 state (assault, damage, faction ownership) was Play-mode-only and/or
 explicitly reset before ending. Confirmed via `git status`: clean.
+
+[2026-08-14] Cincinnati procedural terrain generator — wired in, tuned,
+disconnected-patches approach approved — Claude Code
+
+[DONE] User had dropped `CincinnatiTerrainGenerator.cs` (procedural
+Terrain heightmap generator: rolling hills + a carved/meandering river
+valley, glaciated-vs-unglaciated roughness blend, optional bedrock
+terracing) into `.notes/` — unwired, Unity never saw it. Moved it into
+`Assets/Scripts/World/CincinnatiTerrainGenerator.cs`, wrapped in
+`namespace AsphaltAnarchy.World` per the codebase's existing convention
+(matches `NPCInteraction.cs`). Compiles clean, 0 console
+errors/warnings.
+
+[NOTE] Boundary check before touching anything, per explicit
+instruction — confirmed via `find_gameobjects` (component=Terrain):
+**zero heightmap Terrain objects exist anywhere in the scene.**
+Everything built so far (Price Hill, Newport, the 3 bridges) is flat
+primitive geometry hand-placed on top of one flat `Ground` mesh
+(X:[-100,100] Z:[-100,100]) + `Ground_EastExtension`
+(X:[100,147.5] Z:[-100,100]) — not terrain in the Unity sense. Real
+placed-elevation zones: Price Hill corridor (X:[-186,+40] Z:[-65,-50],
+Y from -4 river tier up to 22.04 WarsawAve crest) and the Newport
+bridge corridor (Z:[-95,-36] X:[9,144] for the 3 deck spans + Kingfish
+dock). Everything else — Downtown/OTR/Queensgate nodes, Milford,
+Hamilton, and all space outside X:[-186,147] Z:[-100,100] — is flat
+Y=0 filler with no custom geometry.
+
+[DONE] Test-generated in confirmed filler space (world X:[400,1400]
+Z:[-565,435], 250+ units clear of the nearest anchored geometry —
+`BigMac_Deck` ends at X=144). First pass at a shrunk 300x300 test tile
+still looked jagged even after dialing `unglaciatedRoughness` 0.9->0.55
+and `detailNoiseFrequency` 4->2 — traced to a scale mistake, not a bad
+tune: shrinking `terrainSize` to 300 while leaving `terrainHeight` at
+the full real-world 150m (per the standing hero-terrain-uses-real-
+meters-uncompressed invariant) gave a relief:width ratio ~6x steeper
+than the algorithm's intended proportions. Re-tested at 1000x1000
+(ratio 0.15, still conservative vs. the 2000-default's 0.075) with the
+same lowered-roughness values — genuinely rolling relief, rounded
+ridges, no chaotic spikes.
+
+[NOTE] Tool quirk: Scene-view screenshot capture
+(`manage_camera` action=screenshot, capture_source=scene_view) returned
+a stale/UI-contaminated frame (shop "BUY" UI baked into the image) even
+after confirming `HUD_Canvas` was the only Canvas in the scene and
+disabling it — the stale frame persisted regardless. Worked around by
+spawning a disposable Camera GameObject and capturing via
+`camera=<name>` (direct camera render), which is documented to exclude
+Screen Space Overlay canvases and did in fact come back clean. Worth
+remembering if scene-view screenshots look UI-contaminated again: don't
+trust it, use a temp camera instead.
+
+[DONE] Kept the tuned 1000x1000 tile as the first real patch, renamed
+`CincinnatiTerrain_Test` -> `Terrain_EastFillerPatch01`
+(world pos 900,0,-65), scene saved. Final tuned params: terrainSize
+(1000,1000), terrainHeight 150, riverAxis 0 (east-west, matches the
+existing bridge corridor), riverPosition 0.4975 (lands the valley at
+global Z~-67.5, aligned with the real bridge-corridor center),
+riverMeander 0.05 / riverMeanderFrequency 1 (one gentle bend, not
+repeated wiggles — the Ohio runs fairly straight through the actual
+downtown reach), unglaciatedRoughness 0.55, detailNoiseFrequency 2.
+
+[DONE] User approved the disconnected-patches proposal as the standing
+approach for any future terrain: generate modest, real-proportioned
+tiles only in confirmed-filler space, hand-positioned with a real gap
+from anchored geometry — no bounds-check code, no mask texture, per
+K.I.S.S. Not applied to Downtown/OTR/Queensgate/Milford/Hamilton (those
+nodes sit on the existing flat `Ground` plane itself, not in genuinely
+separate empty space — dropping a heightmap tile under them would need
+the bounds-check work explicitly deferred in the original proposal).
+No further patches generated this pass — none are needed yet; add them
+the same way (temp-camera-verified render, real-proportion sizing, gap
+from anchored geometry) whenever a district actually needs one.
+
+Uncommitted after this pass: `Assets/Scripts/World/
+CincinnatiTerrainGenerator.cs` (new) and `Assets/Scenes/
+QueenCity_Main.unity` (Terrain_EastFillerPatch01 added). Also left
+several scratch verification screenshots under `Assets/Screenshots/`,
+untracked — not committed, user should decide whether to keep or
+delete them.
