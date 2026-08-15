@@ -7315,3 +7315,26 @@ QueenCity_Main.unity` (Terrain_EastFillerPatch01 added). Also left
 several scratch verification screenshots under `Assets/Screenshots/`,
 untracked — not committed, user should decide whether to keep or
 delete them.
+
+[DONE] Folded Branch Hill clarification + missing eastern roads (Benton Rd,
+Mt. Zion Rd, Dry Run Rd, SR-132 extension to Goshen) into
+`LevelDesign_Milford_Batavia_1995.md`, per `RealGeography_Reference.md`
+§7 (the map-boundary pass). Branch Hill note added near its §4 entry:
+skipping the I-275 exit for the map-boundary line does not remove the
+town, still a roamable P3 location. Roads added to §2 (arterials SR-132
+row extended to Goshen, secondary-roads list + note for Benton/Mt.
+Zion/Dry Run). No new decisions made — just brought forward what §7
+already settled.
+
+[FLAG] Cross-check items (1)-(3) from the map-boundary pass still open,
+user asked whether to tackle next or hold:
+  (1) RealGeography_Reference.md's own §1 ("I-75 the west-side spine")
+      vs §3 (SR-127 as the actual west edge) has never been explicitly
+      reconciled with each other, predates this pass.
+  (2) Hamilton/Fairfield doc's own §2 arterial table does not list I-75
+      at all; its documented west edge is SR-128, not I-75 or SR-127.
+  (3) North-boundary phrase "Hamilton/Fairfield's own route meeting I-75"
+      likely means SR-129, but inherits the pre-existing SR-129
+      framing ambiguity (RealGeography §3: "north edge" vs H/F doc's
+      own "eastern rural fade") rather than resolving it.
+Not resolved by an agent per notes_rules.md rule 3 - awaiting human call.

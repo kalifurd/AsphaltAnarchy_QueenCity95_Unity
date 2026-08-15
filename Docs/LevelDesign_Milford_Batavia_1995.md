@@ -64,14 +64,25 @@ Unlike Price Hill's vertical tiers, this district is **two parallel east–west 
 | **US 50 (Wooster Pike / Milford Main St)** | [R] | West through Terrace Park to the city ⇄ Milford ⇄ Perintown ⇄ Owensville ⇄ east | The old road, the Kin's spine. Alternates hamlet 25-mph pinches with open flats — natural speed rhythm. |
 | **SR 32 Appalachian Highway** | [R] | I-275/Eastgate → past Batavia → east off-map | Four-lane divided. Fast, exposed, state-patrolled. The bypass that killed the old road. |
 | **Old State Route 74** | [R] | Eastgate → Batavia Main St, paralleling SR 32 | The other dead road; enters Batavia as its Main Street. |
-| **SR 132** | [R] | North–south: Owensville ⇄ Batavia ⇄ south | Main stitch between the two corridors. Salvage-yard and trailer-court frontage. |
+| **SR 132** | [R] | North–south: Goshen ⇄ Owensville ⇄ Batavia ⇄ south | Main stitch between the two corridors. Salvage-yard and trailer-court frontage. Extends north to Goshen per `RealGeography_Reference.md` §7's east-boundary loop closure — the map-edge route bypasses Owensville's downtown via SR-132 → US-50 → **Benton Rd** → back to SR-132, rather than cutting straight through it. |
 | **SR 28** | [R] | Milford → Mulberry → Goshen (northeast) | The Miami Township strip: first big-box retail arriving mid-'90s at the Milford end, thinning to rural by Mulberry. The suburban front's second axis (§3f). |
 | **SR 222** | [R] | Batavia → south toward Bethel | Southern rural fade. |
 | **Round Bottom Road** | [R] | Along the Little Miami's south bank, Milford toward Newtown | Gritty valley road: gravel pits, asphalt plants, truck dust. Signature chase road. |
 | **I-275** | [R] | Crosses the Little Miami valley on a high bridge just north of Milford | The loop itself — Kin patrol ritual (§6). District touches it at two interchanges. |
 
 ### Secondary roads (real names for signage; alignments free)
-SR 131, Wards Corner Rd, Branch Hill-Guinea Pike, Loveland-Miamiville Rd, Buckwheat Rd, Wolfpen-Pleasant Hill Rd, Stonelick Williams Corner Rd, Bantam Rd — all **[R]**.
+SR 131, Wards Corner Rd, Branch Hill-Guinea Pike, Loveland-Miamiville Rd, Buckwheat Rd, Wolfpen-Pleasant Hill Rd, Stonelick Williams Corner Rd, Bantam Rd, **Benton Rd, Mt. Zion Rd, Dry Run Rd** — all **[R]**.
+
+**Benton Rd, Mt. Zion Rd, Dry Run Rd** — added per `RealGeography_Reference.md`
+§7's east-boundary loop closure. Benton Rd carries the Owensville bypass
+(above) and its far end connects near Stonelick-Williams Corner Rd, the
+same real road that reaches the already-documented Stonelick Covered
+Bridge (§4). A creek runs alongside Benton Rd with a steep hill at its
+end — real terrain, flagged in §7 as a high-Heat evasion route (risk/
+reward, not a free escape). Mt. Zion Rd sits near Benton Rd's bottom,
+connecting to Dry Run Rd, and is period-plausible for 1995 via its
+19th-century cemetery/church origin, even without an exact record for
+that stretch.
 
 ### Gateways — connections outward
 
@@ -164,6 +175,13 @@ Priority tiers: **P1** must-build hero (unique model), **P2** identity (heavily-
 | P2 | **Phase II** (subdivision under construction) | [F] | A cul-de-sac subdivision going in off SR 28/Wards Corner — framed houses, mud lots, unfinished streets that dead-end into field. | Chase-trap geography: streets that look like exits and aren't. Night hideout in the framed shells; stolen-goods drop among the contractor trailers. |
 | P2 | **Live Oaks career campus** | [R] | The vocational school on Buckwheat Rd (real, open since the '70s) — welding, auto tech, diesel. | Where half the Kin learned their trades. Daytime civilian anchor; backstory texture; occasional legit-work missions (the club still fixes things for people). |
 | P3 | **Miamiville & Branch Hill** | [R] | Tiny river hamlets up the Little Miami valley toward Loveland, strung along the rail-trail. | Quiet-run scenery on the valley route; rail-trail access points; northern soft fade toward the Loveland quadrant (G3 surface alternative). |
+
+**Branch Hill stays in-bounds.** `RealGeography_Reference.md` §7's
+map-boundary line skips the Loveland and Branch Hill I-275 exits — that's
+a map-edge routing choice, not a gateway, and it doesn't remove Branch
+Hill from the map. Miamiville & Branch Hill above remains a roamable P3
+location; the boundary just means the map edge isn't reached by either
+interchange.
 
 **Hero-building budget:** 6 P1 uniques (Scales, covered bridge, Milford Main/bridge, courthouse block, fairgrounds, dam). Kits: mobile-home kit, rural farmhouse kit, pole-barn/metal-building kit, small-town brick storefront kit. Ford plant is a signed big-box kit, not a hero.
 

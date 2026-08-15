@@ -136,22 +136,175 @@ this radiating structure before assuming a location.
 
 ---
 
-## 6. Open — northeast and southeast map edges
+## 6. Open — northeast and southeast map edges (superseded by §7)
 
-**Not yet defined by real roads the way §3 defines the northwest edge.**
+**Resolved 2026-08-14 — see §7 for the confirmed perimeter.** This
+section is kept as a historical record of the gap; nothing below is
+still open.
+
+~~Not yet defined by real roads the way §3 defines the northwest edge.
 The districts nearest those edges —
 `LevelDesign_Milford_Batavia_1995.md` (northeast, Highway Kin's eastern
 half) and `LevelDesign_Newport_1995.md` (southeast, across the river in
 Kentucky) — do not currently have a confirmed real-road boundary line
-the way Hamilton/Fairfield's northwest edge now does.
+the way Hamilton/Fairfield's northwest edge now does.~~
 
-**Do not invent a boundary for either side.** This is flagged as open,
+~~Do not invent a boundary for either side. This is flagged as open,
 not guessed at, until real geography for those edges gets the same
-kind of confirmation §1–§3 got here.
+kind of confirmation §1–§3 got here.~~
 
 ---
 
-## 7. Change log
+## 7. Map Boundary — the complete perimeter
+
+**[R]** The full real-road boundary line for the playable map, closing
+the loop this file's §6 previously left open. This is the map's edge,
+not a district's gateway — it doesn't replace or override any
+district doc's own gateway (G1/G2/...) tables, which describe how
+districts connect to *each other*, not where the world stops. Where
+this boundary and a district's gateways use different real roads to
+reach the same general area (noted below), that's expected — a map
+edge and a playable route are different things — and is flagged rather
+than silently reconciled, same discipline as the rest of this file.
+
+### South boundary — the Ohio River and the Kentucky bend
+
+I-275 → **I-471 north** (bypassing Fort Thomas via the mainline) →
+**Exit 4 / KY-1120 Memorial Parkway** (Newport–Bellevue) → **E 10th
+St** → cross the **Licking River at 11th St** into Covington → **MLK
+Jr Blvd** → dead-ends at **I-71**, plus the **Ohio River** itself as
+the boundary's western stretch.
+
+**Cross-check — `LevelDesign_Newport_1995.md`:** this route is
+distinct from that doc's own G3 (US 27/I-471 south **over the Fort
+Thomas hill** to I-275, the district's documented gameplay gateway)
+and G2 (4th St over the Licking to Covington). The boundary line here
+bypasses Fort Thomas and crosses the Licking at 11th St instead of 4th
+St. **Not a contradiction** — Newport's doc already treats Covington
+as off-map ("its own pass if ever needed," doc header), and this
+boundary just fixes where the *playable map* stops inside/around that
+off-map area; it doesn't touch Newport's own gateway routes. But
+KY-1120 Memorial Parkway, E 10th St, 11th St bridge, and MLK Jr Blvd
+don't appear anywhere in the Newport doc today — worth folding in if
+Covington ever gets its own pass.
+
+### West boundary — I-75 to SR-127
+
+**I-75 north to SR-127.**
+
+**Cross-check — this file's own §1 and §3, and
+`LevelDesign_Hamilton_Fairfield_1995.md`:** §1 already calls I-75 "the
+continuous north–south spine" running "the length of the game's west
+side," while §3 names **SR-127** (not I-75) as the confirmed west
+edge. This boundary line threading I-75 *into* SR-127 reads as
+consistent with both — I-75 carries the southern/middle stretch, SR-127
+takes over further north — but flagging that §1 and §3 have never been
+explicitly reconciled with each other on this point until now, and
+that the Hamilton/Fairfield doc's own §2 arterial table doesn't list
+I-75 at all (SR-4, US-127, SR-128, SR-129, I-275 are its named
+arterials; I-75 appears exactly once, in its period-accuracy note
+about the future Union Centre interchange). That doc's own documented
+west edge is SR-128 (the river road), not I-75 or SR-127. Not
+contradictory on its face, but the three descriptions (§1, §3, and
+Hamilton/Fairfield's own §2) have three different roads in mind for
+"west," and none of them has been walked through against the others
+before this pass.
+
+### North boundary — Hamilton/Fairfield to I-75
+
+**Hamilton/Fairfield's own route meeting I-75 north of I-275.**
+
+**Cross-check — `LevelDesign_Hamilton_Fairfield_1995.md`:** no road in
+that doc's own §2 arterial table is documented as reaching I-75 — its
+northward roads are SR-4 (G4, fading toward LeSourdsville/Middletown,
+explicitly "soft fade, not a wall") and SR-129 (§2, "east out of
+Hamilton toward Liberty Twp," which that doc frames as an *eastern*
+rural fade, not a northern one). This file's own §3 already flagged
+that exact framing mismatch — SR-129 as "north edge" here vs.
+"eastern rural fade" in Hamilton/Fairfield's own text — as an open
+note, not a contradiction, back when it was first written. This new
+boundary line most likely intends SR-129, but doesn't name it, so
+that pre-existing ambiguity is inherited here rather than resolved.
+Flagging, not guessing.
+
+### NE corner — capped at the I-275 loop
+
+The northeast corner is deliberately **capped at the I-275 loop**,
+for two real-world reasons kept out of the game rather than worked
+around: the land-use pattern beyond the loop gets complicated fast,
+and **Kings Island** sits out there as trademarked IP — both avoided
+by simply not extending the map that far.
+
+The corner is anchored at **Blue Ash**, using its real 1995 identity:
+a municipal airport plus a corporate-office-hub character, not the
+tech/business-park Blue Ash of later decades.
+
+**Standing rule for every real airport in-bounds** — Blue Ash, Lunken
+(East End), and Clermont County Airport (Milford/Batavia, the airport
+itself only, **not** the Tri-State Warbird Museum, which is a real
+museum but a 2004 arrival and therefore an anachronism for this map):
+all three are **roamable, no flight mechanic, no building interiors.**
+
+**Cross-check — `LevelDesign_EastEnd_1995.md`:** Lunken Airport is
+already documented there (§3d, §4) as a roamable perimeter with small
+aircraft as ambient flavor, not a mission site — consistent with the
+no-flight-mechanic rule stated here, though that doc doesn't spell the
+rule out explicitly; this section is now the canonical place that
+does. **Cross-check — `LevelDesign_Milford_Batavia_1995.md`:** Clermont
+County Airport is already documented there (§4) as a small rural
+airfield, hangars and wind sock, with an invented [F] tenant running
+one hangar — no Tri-State Warbird Museum reference exists in that doc
+already, so no fix needed there, just confirming the exclusion holds.
+Blue Ash itself doesn't appear in any companion doc yet — genuinely
+new ground, not a conflict.
+
+### East boundary — the Milford/Batavia loop closure
+
+**SR-132 runs Goshen → Owensville → Batavia**, but cuts straight
+through Owensville's downtown — the boundary **bypasses Owensville's
+center** via **SR-132 → US-50 → Benton Rd → back to SR-132** (which
+continues to Batavia/SR-32).
+
+Benton Rd's far end connects near **Stonelick-Williams Corner Rd** —
+the same real **Stonelick Covered Bridge** already documented in the
+Milford/Batavia doc. The loop closes two ways: **Benton Rd junction →
+US-50/SR-222 → Batavia**, or **→ SR-132/SR-131 → Miami Township →
+Milford proper.**
+
+**Mt. Zion Rd** (near Benton Rd's bottom, connecting to **Dry Run
+Rd**) is included as period-accurate for 1995 — it predates the game's
+era via its 19th-century cemetery/church origin, even without an exact
+paved/unpaved record for that stretch.
+
+Real terrain along Benton Rd — a creek running alongside it and a
+steep hill at its end — is flagged as a **high-Heat evasion route**:
+real risk/reward terrain, not a free escape.
+
+**Skip the Loveland and Branch Hill I-275 exits** — the boundary
+doesn't route through either interchange.
+
+**Cross-check — `LevelDesign_Milford_Batavia_1995.md`:** SR-132,
+SR-131, SR-222, and Stonelick Williams Corner Rd are all already
+documented there (§2 arterials/secondary roads), and the doc's SR-132
+entry ("north–south: Owensville ⇄ Batavia ⇄ south") is consistent with
+— if less specific than — this boundary's Goshen extension; not a
+contradiction, just an extension worth folding into that doc's own §2
+on its next pass. **Benton Rd, Mt. Zion Rd, and Dry Run Rd don't
+appear in the Milford/Batavia doc at all** — new roads, not yet
+cross-referenced there; flagging for the same future pass, not a
+conflict as written today. **On Branch Hill specifically:** that doc's
+own §4 already lists "Miamiville & Branch Hill" as a P3 roamable
+location ("tiny river hamlets up the Little Miami valley toward
+Loveland, strung along the rail-trail," §4, and referenced again in
+chase route 9, §5) — this boundary skipping the *I-275 exit* named
+for Branch Hill doesn't remove the town itself from the map, it just
+means the map edge isn't reached by that interchange. Worth confirming
+that's the intended reading (interior road, not the I-275 off-ramp)
+since the two statements could otherwise look like they disagree.
+
+---
+
+## 8. Change log
 
 - **2026-08-09:** File created. Documents the I-75 spine, the Norwood
   Lateral handoff to I-71 (used to fix Downtown/OTR's G4 — see
@@ -164,3 +317,18 @@ kind of confirmation §1–§3 got here.
   map-structure principle (Price Hill anchored bottom-left, world
   radiating outward to match real density). Reed Hartman Highway
   considered and dropped — runs north, not east-west.
+- **2026-08-14:** Added §7, the complete map-boundary perimeter
+  (south: I-275/I-471/Newport-Bellevue/Covington/Ohio River; west:
+  I-75 to SR-127; north: Hamilton/Fairfield to I-75; NE corner: capped
+  at the I-275 loop, anchored at Blue Ash, standing airport rule for
+  Blue Ash/Lunken/Clermont County Airport; east: the Milford/Batavia
+  loop closure via Benton Rd/Mt. Zion Rd, bypassing Owensville's
+  center and the Loveland/Branch Hill I-275 exits) — closes the §6 gap
+  this file left open on 2026-08-09. §6 kept as a struck-through
+  historical record rather than deleted. Cross-checked against
+  `LevelDesign_Newport_1995.md`, `LevelDesign_Hamilton_Fairfield_1995.md`,
+  `LevelDesign_Milford_Batavia_1995.md`, and `LevelDesign_EastEnd_1995.md`;
+  no hard contradictions found, but several not-yet-cross-referenced
+  roads and one inherited ambiguity (SR-129's "north edge" vs. "eastern
+  fade" framing, first flagged in §3) are called out inline in §7
+  rather than silently resolved.
