@@ -7386,3 +7386,32 @@ trigger, radius 10) at (-40,0,-50), same position as TurfNode_InclineHouse
 but NOT parented to it or reliant on its ownership state - the guaranteed
 fallback survives even if the Incline House node itself is ever lost.
 Scene saved. Console clean, no compile errors.
+
+[DONE] Laundering-thread decision written into docs (doc update only, no
+build). Both Queensgate's and Downtown/OTR's docs previously flagged this
+thread as unresolved ("your call, not built or assumed") - now decided:
+
+  (1) Queensgate doc: the Frontage is now a Construction/Paving/
+      Demolition Contractor front - inflated payrolls, heavy-equipment
+      leasing scams, illicit cash laundered through materials/demolition
+      billing. Ties to the Rust Barons' existing industrial identity and
+      sits on/adjacent to the already-built rail yard. Updated S1, S3c,
+      S4 (Frontage row), S6, S8 build note 4. Interior/ownership/Baron-
+      interaction still open for a later pass - only the mechanism is
+      decided.
+
+  (2) Downtown/OTR doc: the Sky Garage is now a Commercial Real Estate
+      Shell Company/Title Agency front - buying up commercial strips and
+      multi-family units, mixing illicit cash into legitimate property
+      flips. This is the clean/output end of the same pipeline whose
+      cash-generation end is Queensgate's Frontage. Ties to the Neon
+      Saints' canon "corporate-backed" description and their "sanitize
+      the city" identity. Updated S1, S4 (Sky Garage row), S6. Shell
+      company name and exact Saints-awareness level still open.
+
+  (3) Newport doc: added a one-line period-accuracy note (S7) validating
+      the existing Monmouth/York strip-club flavor as period-real -
+      confirmed incidentally while researching the above, not a change
+      to district content.
+
+No build performed - doc-only pass per explicit request.
