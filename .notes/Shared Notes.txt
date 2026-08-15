@@ -7415,3 +7415,77 @@ thread as unresolved ("your call, not built or assumed") - now decided:
       to district content.
 
 No build performed - doc-only pass per explicit request.
+
+[FLAG] Frontage build - Milestone 1 proposed, NOT YET BUILT. Planning
+pass only, per explicit request ("no scene changes until the milestone's
+confirmed"), same discipline as the rail yard's own first pass.
+
+Part 1 - verified before proposing anything: searched the live scene by
+name/path for "Frontage", "Contractor" and confirmed zero matches -
+nothing exists at this location yet. Confirmed what DOES exist nearby:
+TurfNode_QueensgateYard (-60,0,60), RoundhouseClubhouse_PLACEHOLDER
+(-75,4,60), QueensgateYard_Turntable_PLACEHOLDER (-58,0.05,60), 2 track-
+bed placeholders (siding z=63, dead spur z=57, both spanning roughly
+x=-50 to x=-10), and 4 freight-car placeholders (FC01-03 on the siding,
+FC04 dead on the spur, all at x=-16 to -44). The Frontage itself is
+untouched - doc-only decision so far, matching what the doc's own S8
+build note now says.
+
+Part 2 - proposed Milestone 1 (exterior/silhouette only, mirroring the
+rail yard's own first-pass scope and naming convention - flat root-level
+box placeholders, "_PLACEHOLDER" suffix, no interior, no new TurfNode):
+  - Frontage_Office_PLACEHOLDER (small clean contractor office/trailer)
+  - Frontage_Lot_PLACEHOLDER (paved apron, Asphalt-tagged, contrasting
+    with the yard's Dirt-tagged track beds - "the clean run" per S5)
+  - Frontage_PerimeterFence_PLACEHOLDER (chain-link + barbed top rail
+    silhouette, long thin box)
+  - Frontage_GuardGate_PLACEHOLDER (single controlled entrance - the
+    S5-flagged "deliberate, not desperate" chokepoint)
+  - Frontage_Grader_PLACEHOLDER, Frontage_Paver_PLACEHOLDER,
+    Frontage_DemoExcavator_PLACEHOLDER (three leased-heavy-equipment
+    silhouettes, sitting suspiciously idle per S3c/S4)
+  7 objects total, same budget as the rail yard's own first pass
+  (Roundhouse + turntable + 2 track beds + 4 freight cars = 8). No
+  TurfNode created this pass - the Frontage doesn't have one assigned in
+  the doc (S6 still leaves ownership/interaction open), so inventing a
+  capture node now would be building past what's decided.
+
+Part 3 - coordination check, not isolated:
+  - Proposed placement: south of the yard's already-built east end (the
+    dead-spur/freight-car cluster ends around x=-10 to -30 at z=57-63) -
+    suggest centering the Frontage lot around x=-20, z=38-42, a ~20-unit
+    offset south, same order of spacing already used between InclineCut_
+    Stub and StateAve_Stub. Keeps it physically adjacent to the built
+    yard rather than floating disconnected elsewhere in the scene.
+  - Sightline note from the doc (S5) says the Frontage's fence line
+    should NOT see into Scrap Row - Roundhouse/turntable sit at x=-75/
+    -58. Proposed placement keeps clear separation from that cluster,
+    which reinforces the "suspicious separation" tone through geometry,
+    not just narrative.
+  - Real open question, not assumed either way: whether the Frontage
+    ever gets its own TurfNode (a raid/heist-style capture point) is a
+    system decision the doc explicitly leaves open (S6) - Milestone 1
+    doesn't answer it, just leaves room for it later without conflicting.
+
+Awaiting confirmation before touching the scene.
+
+[DONE] Frontage Milestone 1 built, per confirmation. 7 root-level
+placeholder GameObjects created in QueenCity_Main.unity, exterior/
+silhouette only, no interior, no new TurfNode (per the plan above -
+that decision stays open):
+  - Frontage_Lot_PLACEHOLDER: (-20,0.1,42), scale (40,0.2,24),
+    tag Asphalt, layer Ground (10) - matches the tag/layer convention
+    every other paved-surface stub in the scene already uses. (Initial
+    create call took the "10" layer arg as a literal name rather than
+    an index and left it on layer 0 - confirmed via execute_code that
+    layer 10 = "Ground" by name, then corrected with a modify call.)
+  - Frontage_Office_PLACEHOLDER: (-32,2,50), scale (10,4,6)
+  - Frontage_PerimeterFence_PLACEHOLDER: (-20,1.25,30), scale (40,2.5,0.3)
+  - Frontage_GuardGate_PLACEHOLDER: (-20,1.5,28), scale (4,3,1.5)
+  - Frontage_Grader_PLACEHOLDER: (-33,1,42), scale (6,1.8,2.5)
+  - Frontage_Paver_PLACEHOLDER: (-20,1,36), scale (5,1.5,2.5)
+  - Frontage_DemoExcavator_PLACEHOLDER: (-8,1.5,44), scale (4,3,3)
+All south of the yard's already-built east end (dead spur/freight cars
+end around x=-10 to -30, z=57-63), separated from the Roundhouse/
+turntable cluster (x=-75/-58) per the sightline note. Console clean
+after creation (0 errors/warnings), scene saved.
