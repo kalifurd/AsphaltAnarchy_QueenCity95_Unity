@@ -311,6 +311,12 @@ namespace AsphaltAnarchy.Factions
             if (other.CompareTag("Player"))
             {
                 OnNodeEntered?.Invoke(this);
+
+                // Manual save point — safehouse nodes only, no autosave.
+                if (hasSafehouse)
+                {
+                    GameManager.Instance?.SaveGame();
+                }
             }
         }
 

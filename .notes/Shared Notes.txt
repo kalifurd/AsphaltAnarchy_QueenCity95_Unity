@@ -7364,3 +7364,25 @@ Benton Rd/Mt. Zion Rd/Dry Run Rd last pass.
 No new decisions made - all three were already-settled real geography,
 just corrected/tightened/folded in. RealGeography_Reference.md S6/S7
 cross-check notes rewritten to state resolved rather than flagged.
+
+[DONE] Manual save-point system built (Part 2 + 3 of the save-point pass;
+Part 1 findings were reported separately last session - existing
+GameManager.SaveGame()/LoadGame() was dead/unwired scaffolding, reused
+as-is rather than duplicated).
+
+Part 2: TurfNode.cs OnTriggerEnter now calls GameManager.Instance.SaveGame()
+when hasSafehouse is true - manual only, no autosave anywhere, no new
+save-file format. New Assets/Scripts/Combat/WeaponPickupTrigger.cs: bare
+trigger-collider, hand-assigned WeaponData field, calls
+WeaponManager.UnlockWeapon() on player entry - no tier/level field added
+(none exists on WeaponData; scoped down from the original ask per Part 1
+findings). Not yet placed on any node in-scene - script exists, per-node
+placement + WeaponData assignment is a follow-up task, not done this pass.
+
+Part 3: New Assets/Scripts/World/PermanentSavePoint.cs - always-on save
+trigger, no TurfNode/hasSafehouse dependency. Built into the scene as a
+standalone GameObject "PriceHill_PermanentSavePoint" (SphereCollider
+trigger, radius 10) at (-40,0,-50), same position as TurfNode_InclineHouse
+but NOT parented to it or reliant on its ownership state - the guaranteed
+fallback survives even if the Incline House node itself is ever lost.
+Scene saved. Console clean, no compile errors.
