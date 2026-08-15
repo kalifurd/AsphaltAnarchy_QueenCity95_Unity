@@ -7489,3 +7489,46 @@ All south of the yard's already-built east end (dead spur/freight cars
 end around x=-10 to -30, z=57-63), separated from the Roundhouse/
 turntable cluster (x=-75/-58) per the sightline note. Console clean
 after creation (0 errors/warnings), scene saved.
+
+[DONE] Frontage Milestone 1 play-tested in Play mode. Entered play,
+teleported the player to (-20,3,15) - just south of the Frontage lot,
+facing it - and captured Game View screenshots (ground-level and an
+overhead angle from (-20,30,15)). Layout reads as intended: office
+building, perimeter fence line with a gate notch, and the three
+equipment silhouettes (grader/paver/excavator) sitting on the paved lot,
+correctly separated from the Roundhouse/yard cluster. No materials
+assigned yet (default white Unity primitives, same as every other
+_PLACEHOLDER object in the scene) - expected at this stage, not a bug.
+Exited play mode cleanly afterward.
+
+[FLAG] Pre-existing bug surfaced during this play-test, NOT caused by
+the Frontage build - the Frontage placeholders have no TurfNode/trigger
+components and weren't involved. Two NullReferenceExceptions fired at
+GameManager.cs:69 (inside SaveGame()), both from OnTriggerEnter calls
+(TurfNode.cs:318 and PermanentSavePoint.cs:17) - the player's teleport
+into the scene passed through the existing PriceHill_PermanentSavePoint/
+InclineHouse trigger volumes near spawn. Root cause: GameManager.
+SaveGame() reads playerBike.transform.position, and playerBike is
+unassigned in the live scene - the manual save-point system (logged
+2026-08-14) wired TurfNode/PermanentSavePoint to call SaveGame() but
+nothing confirmed GameManager's playerBike field was actually hooked up
+first. Needs a human decision (assign playerBike in the Systems
+GameObject inspector, or guard SaveGame() against a null reference) -
+not fixed here, flagging per protocol rather than guessing.
+
+[DONE] playerBike null-reference bug fixed, per user request. Root
+cause confirmed via the components resource: Systems' GameManager had
+playerBike=null and playerStats=null (both [SerializeField], never
+wired in the Inspector) while RaceManager's own playerBike field on the
+same GameObject WAS correctly assigned to Player - only GameManager's
+copy was missed. Scene-data fix, no code change: set GameManager.
+playerBike -> Player's MotorcycleController (instanceID 27086) and
+GameManager.playerStats -> Player's PlayerStats (instanceID 27084) via
+manage_components set_property. Verified both ways in Play mode:
+(1) called GameManager.Instance.SaveGame() directly - logged "[GameManager]
+Game saved." with zero exceptions; (2) re-entered play from a clean
+state, letting the player's default spawn position (inside the
+PriceHill_PermanentSavePoint/InclineHouse trigger radii) fire the real
+TurfNode/PermanentSavePoint OnTriggerEnter path - same clean "Game
+saved" logs, no NullReferenceException this time (previously threw 2).
+Scene saved.
