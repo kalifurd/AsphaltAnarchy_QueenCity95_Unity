@@ -7338,3 +7338,29 @@ user asked whether to tackle next or hold:
       framing ambiguity (RealGeography §3: "north edge" vs H/F doc's
       own "eastern rural fade") rather than resolving it.
 Not resolved by an agent per notes_rules.md rule 3 - awaiting human call.
+
+[DONE] Reconciled all three flagged cross-check items from the map-
+boundary pass, per user request:
+  (1) Fixed a real naming error, project-wide: the west-edge road was
+      mislabeled "SR-127" throughout RealGeography_Reference.md (S1,
+      S3, S7) - real road is US-127. Hamilton/Fairfield doc already had
+      it right ("US 127 / Pleasant Avenue"), no fix needed there.
+      Current-content occurrences corrected; 2026-08-09/08-10 changelog
+      entries kept as-written (historical record of what was actually
+      typed at the time), not retroactively rewritten.
+  (2) Tightened S1/S3 language: I-75 now stated plainly as the
+      connective spine (not a boundary); US-127 stated as the actual
+      west edge.
+  (3) Tightened Hamilton/Fairfield doc's SR-129 language from vague
+      "eastern rural fade toward Liberty Twp" to its real confirmed
+      endpoint: I-75 near Bethany/Liberty Township, north of I-275.
+      Updated both the S2 arterials table row and the ASCII schematic.
+      RealGeography S7's north-boundary cross-check re-verified against
+      this - still matches, now stated as resolved instead of flagged.
+Also folded the South boundary's specific streets (KY-1120 Memorial
+Pkwy, E 10th St, the 11th St Licking bridge, MLK Jr Blvd) into
+LevelDesign_Newport_1995.md S2, same treatment Milford/Batavia got for
+Benton Rd/Mt. Zion Rd/Dry Run Rd last pass.
+No new decisions made - all three were already-settled real geography,
+just corrected/tightened/folded in. RealGeography_Reference.md S6/S7
+cross-check notes rewritten to state resolved rather than flagged.

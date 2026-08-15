@@ -21,8 +21,12 @@ road/place, name kept as-is.
 
 ## 1. I-75 — the continuous north–south spine
 
-**[R]** I-75 runs the length of the game's west side as one continuous
-real corridor, not a series of unrelated district-local highways:
+**[R]** I-75 is the game's connective spine, not a boundary — it runs
+the length of the map as one continuous real corridor, not a series of
+unrelated district-local highways, stitching districts together the
+same way the Norwood Lateral and I-71 do (§2). **The actual west edge
+of the map is US-127** (§3), which I-75 runs roughly parallel to and
+feeds into further north, not the same road under a different name.
 
 - **South end:** Queensgate/Downtown, running along the Mill Creek
   valley's western flank (`LevelDesign_Queensgate_1995.md` §2; its own
@@ -33,7 +37,8 @@ real corridor, not a series of unrelated district-local highways:
   Norwood, Avondale, or Uptown hands off east onto SR-562, not where
   it continues straight north.
 - **North end:** straight run further north into the already-documented
-  Hamilton/Fairfield district (`LevelDesign_Hamilton_Fairfield_1995.md`).
+  Hamilton/Fairfield district (`LevelDesign_Hamilton_Fairfield_1995.md`),
+  where it hands off to US-127 as the map's west boundary (§3, §7).
 
 **Do not confuse this spine with the real Clifton/Mt. Storm Park
 I-74/I-75 interchange.** That interchange is real and does exist, but
@@ -64,29 +69,32 @@ Clifton/I-74 interchange (§1).
 
 ---
 
-## 3. SR-127 and SR-129 — the northwest map-boundary lines
+## 3. US-127 and SR-129 — the northwest map-boundary lines
 
-**[R]** These two real state routes are the confirmed edge of the
-game's map on the northwest side:
+**[R]** These two real routes are the confirmed edge of the game's map
+on the northwest side. (**Naming fix, 2026-08-14:** this section
+previously mislabeled the west-edge road "SR-127" — the real road is
+**US-127**, and `LevelDesign_Hamilton_Fairfield_1995.md` had it right
+all along ("US 127 / Pleasant Avenue"). Corrected throughout this file;
+see §8 change log.)
 
-- **SR-127** — the west edge, running the Fairfield/Lindenwald/Mt.
-  Healthy corridor. (Note: `LevelDesign_Hamilton_Fairfield_1995.md`
-  currently refers to this same real corridor as "US 127 / Pleasant
-  Avenue" — same road, doc uses the US-route name rather than the
-  state-route name; not a contradiction, just a naming variant worth
-  knowing if the two need to be reconciled later.)
-- **SR-129** — the north edge, running the Hamilton/Princeton/Bethany
-  corridor. (Note: `LevelDesign_Hamilton_Fairfield_1995.md` currently
-  describes its own SR 129 reference as an "eastern rural fade" toward
-  Liberty Township, a different emphasis than "north edge" — likely
-  the same real route doing double duty on two sides of Hamilton, not
-  a contradiction, but flagging the difference in framing rather than
-  silently reconciling it.)
+- **US-127** — the west edge, running the Fairfield/Lindenwald/Mt.
+  Healthy corridor. Matches `LevelDesign_Hamilton_Fairfield_1995.md`'s
+  own naming exactly — no reconciliation needed, that doc was always
+  right.
+- **SR-129** — the north edge, running Hamilton east to its real
+  confirmed endpoint: **I-75 near Bethany/Liberty Township, north of
+  I-275.** `LevelDesign_Hamilton_Fairfield_1995.md` §2 previously
+  described this same road only as an "eastern rural fade toward
+  Liberty Township" — tightened (2026-08-14) to name the actual
+  endpoint, matching this section's "north edge" framing rather than
+  sitting beside it as a looser, unreconciled description. One real
+  route, one consistent description in both docs now.
 
 **Beckett Ridge and Union Centre — already correctly placed.**
 Hamilton/Fairfield's own doc already notes Beckett Ridge exists in
 1995 (a golf community) but Union Centre's I-75 interchange/office boom
-doesn't arrive until the late '90s. Both sit south of the SR-127/SR-129
+doesn't arrive until the late '90s. Both sit south of the US-127/SR-129
 boundary line described here, so **nothing already built in that doc
 needs to move** — this reference just confirms the boundary those
 locations already sit inside.
@@ -130,7 +138,7 @@ This isn't just a layout convenience — it's meant to **match real
 population/traffic density**, not fight it. Density and traffic
 naturally increase moving away from Price Hill toward downtown and the
 inner-ring districts, then thin out again toward the rural map edges
-(Milford/Batavia's US 50 corridor, Hamilton/Fairfield's SR-127/SR-129
+(Milford/Batavia's US 50 corridor, Hamilton/Fairfield's US-127/SR-129
 boundary). Any future district placement should check itself against
 this radiating structure before assuming a location.
 
@@ -183,49 +191,45 @@ bypasses Fort Thomas and crosses the Licking at 11th St instead of 4th
 St. **Not a contradiction** — Newport's doc already treats Covington
 as off-map ("its own pass if ever needed," doc header), and this
 boundary just fixes where the *playable map* stops inside/around that
-off-map area; it doesn't touch Newport's own gateway routes. But
-KY-1120 Memorial Parkway, E 10th St, 11th St bridge, and MLK Jr Blvd
-don't appear anywhere in the Newport doc today — worth folding in if
-Covington ever gets its own pass.
+off-map area; it doesn't touch Newport's own gateway routes. **Folded
+in, 2026-08-14:** KY-1120 Memorial Parkway, E 10th St, the 11th St
+bridge, and MLK Jr Blvd are now documented in that doc's own §2, same
+treatment Milford/Batavia got for Benton Rd/Mt. Zion Rd/Dry Run Rd.
 
-### West boundary — I-75 to SR-127
+### West boundary — I-75 to US-127
 
-**I-75 north to SR-127.**
+**I-75 north to US-127.** (**Naming fix, 2026-08-14:** this line
+previously read "SR-127" — the real road is US-127; see §3.)
 
-**Cross-check — this file's own §1 and §3, and
-`LevelDesign_Hamilton_Fairfield_1995.md`:** §1 already calls I-75 "the
-continuous north–south spine" running "the length of the game's west
-side," while §3 names **SR-127** (not I-75) as the confirmed west
-edge. This boundary line threading I-75 *into* SR-127 reads as
-consistent with both — I-75 carries the southern/middle stretch, SR-127
-takes over further north — but flagging that §1 and §3 have never been
-explicitly reconciled with each other on this point until now, and
-that the Hamilton/Fairfield doc's own §2 arterial table doesn't list
-I-75 at all (SR-4, US-127, SR-128, SR-129, I-275 are its named
-arterials; I-75 appears exactly once, in its period-accuracy note
-about the future Union Centre interchange). That doc's own documented
-west edge is SR-128 (the river road), not I-75 or SR-127. Not
-contradictory on its face, but the three descriptions (§1, §3, and
-Hamilton/Fairfield's own §2) have three different roads in mind for
-"west," and none of them has been walked through against the others
-before this pass.
+**Reconciled 2026-08-14 — see §1 and §3.** I-75 is the connective
+spine (§1), not a boundary; US-127 is the actual west edge (§3), and
+matches `LevelDesign_Hamilton_Fairfield_1995.md`'s own naming exactly
+("US 127 / Pleasant Avenue," that doc's §2). The prior version of this
+note flagged three different roads in mind for "west" across §1, §3,
+and Hamilton/Fairfield's own §2 (I-75, SR-127, and SR-128
+respectively) — that's now down to one real naming error (corrected)
+and one deliberate distinction that was never actually a conflict:
+I-75 threads through/near the district as connective tissue, US-127 is
+the edge itself, and SR-128 (the river road down the west bank) is a
+separate real road serving as that doc's own *district-internal* back
+route, not a claim about the map's outer edge. No further
+reconciliation needed.
 
 ### North boundary — Hamilton/Fairfield to I-75
 
-**Hamilton/Fairfield's own route meeting I-75 north of I-275.**
+**Hamilton/Fairfield's own route meeting I-75 north of I-275** — this
+is **SR-129**, confirmed.
 
-**Cross-check — `LevelDesign_Hamilton_Fairfield_1995.md`:** no road in
-that doc's own §2 arterial table is documented as reaching I-75 — its
-northward roads are SR-4 (G4, fading toward LeSourdsville/Middletown,
-explicitly "soft fade, not a wall") and SR-129 (§2, "east out of
-Hamilton toward Liberty Twp," which that doc frames as an *eastern*
-rural fade, not a northern one). This file's own §3 already flagged
-that exact framing mismatch — SR-129 as "north edge" here vs.
-"eastern rural fade" in Hamilton/Fairfield's own text — as an open
-note, not a contradiction, back when it was first written. This new
-boundary line most likely intends SR-129, but doesn't name it, so
-that pre-existing ambiguity is inherited here rather than resolved.
-Flagging, not guessing.
+**Reconciled 2026-08-14.** SR-129 runs Hamilton east to its real
+endpoint at **I-75 near Bethany/Liberty Township, north of I-275** —
+`LevelDesign_Hamilton_Fairfield_1995.md` §2 previously described this
+same road only as an "eastern rural fade toward Liberty Township";
+tightened today to name the actual endpoint (see that doc's own
+changelog-equivalent note at §2). That correction closes the framing
+gap this section and §3 previously flagged between "north edge" here
+and "eastern rural fade" there — one route, one description, in both
+docs now. This boundary line's phrasing is confirmed to mean SR-129,
+not a guess carried forward from an earlier pass.
 
 ### NE corner — capped at the I-275 loop
 
@@ -332,3 +336,22 @@ since the two statements could otherwise look like they disagree.
   roads and one inherited ambiguity (SR-129's "north edge" vs. "eastern
   fade" framing, first flagged in §3) are called out inline in §7
   rather than silently resolved.
+- **2026-08-14 (later same day):** Reconciled the three items flagged
+  above. **Naming fix:** the west-edge road was mislabeled "SR-127"
+  throughout this file (§1, §3, §7) — the real road is **US-127**,
+  and `LevelDesign_Hamilton_Fairfield_1995.md` had it right all along.
+  Corrected every current-content occurrence (§1, §3, §7); the
+  2026-08-09/08-10 changelog entries above keep the original wording
+  as a historical record of what was actually written at the time, not
+  retroactively rewritten. **§1/§3 tightened:** §1 now states plainly
+  that I-75 is the connective spine, not a boundary; §3 states US-127
+  is the actual west edge. **SR-129 tightened:** its "eastern rural
+  fade toward Liberty Township" framing (both here and in
+  Hamilton/Fairfield's own §2) is now its real confirmed endpoint —
+  I-75 near Bethany/Liberty Township, north of I-275 — closing the
+  "north edge" vs. "eastern fade" framing gap for good. §7's West and
+  North boundary cross-checks rewritten to match; both now read as
+  resolved rather than flagged. Folded the South boundary's specific
+  streets (KY-1120 Memorial Parkway, E 10th St, the 11th St Licking
+  bridge, MLK Jr Blvd) into `LevelDesign_Newport_1995.md`, same
+  treatment Milford/Batavia got for Benton Rd/Mt. Zion Rd/Dry Run Rd.

@@ -33,9 +33,10 @@ Structure: **three north–south strands and a river**, converging on the mill c
 ### Schematic (topology only, not to scale)
 
 ```
- (N fade: SR 4 toward LeSourdsville's fading amusement park,        (NE fade: SR 129 two-lane
-  Middletown, the rest of the Rust Belt — off-map)                   toward Liberty Twp — off-map;
-                          |                                          no Union Centre boom yet in '95)
+ (N fade: SR 4 toward LeSourdsville's fading amusement park,        (NE: SR 129 two-lane through
+  Middletown, the rest of the Rust Belt — off-map)                   Liberty Twp/Bethany to I-75 —
+                          |                                          the map's north edge; no Union
+                          |                                          Centre boom yet in '95)
                  ┌─── HAMILTON! ────────────────┐
    Champion mill │  courthouse / High St        │══ CSX main line (at-grade crossings)
    row, west bank│  High–Main & Black St bridges│    North End industry → THE VAULT (clubhouse)
@@ -68,7 +69,7 @@ Structure: **three north–south strands and a river**, converging on the mill c
 | **High St / Main St axis + High–Main Bridge** | [R] | East–west through downtown, across the river into Rossville | The city's front door and main river crossing. |
 | **Black Street Bridge** | [R] | Second downtown river crossing | The swap option (§5). |
 | **SR 4 Bypass** | [R] | Skirts Hamilton's east side | The bypass strand — faster, exposed, sparse. |
-| **SR 129** | [R] | East out of Hamilton toward Liberty Twp (two-lane in '95) | Eastern rural fade. |
+| **SR 129** | [R] | East out of Hamilton through Liberty Twp/Bethany to its real confirmed endpoint at **I-75, north of I-275** (two-lane in '95) | The district's north edge — see `RealGeography_Reference.md` §3/§7. Reads as a rural fade in-district, but the road itself is the map boundary, not a soft off-map trail. |
 | **I-275** | [R] | The loop across the district's southern lip | Kin patrol ritual; the stitch to the Milford half (G3). |
 
 ### Secondary roads (real names for signage; alignments free)

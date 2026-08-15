@@ -89,6 +89,18 @@ And their kingdom was never really the ground — it's **the crossings**. Newpor
 | G3 | **US 27 / I-471 south over the hill** | [R] | I-275 south leg → the airport side → **Anderson Ferry back door to Price Hill** (reciprocal of the PH doc's G3) | The southern fade through Fort Thomas/Southgate money. |
 | G4 | **KY 8 east** | [R] | Bellevue, Dayton (KY) — little river towns, soft eastern fade | Quiet river-level escape direction. |
 
+**South map-boundary streets** — added per `RealGeography_Reference.md`
+§7, distinct from the gateways above. The playable map's south edge
+runs I-275 → **I-471 north** (bypassing Fort Thomas via the mainline,
+not G3's hill climb) → **Exit 4 / KY-1120 Memorial Parkway**
+(Newport–Bellevue) → **E 10th St** → crosses the **Licking River at
+11th St** into Covington → **MLK Jr Blvd** → dead-ends at **I-71**,
+plus the Ohio River itself. This is a map-edge line, not a gateway —
+it doesn't replace G2's 4th St crossing to Covington or G3's hill
+route to I-275, both of which remain this doc's documented gameplay
+routes. Covington itself stays off-map ("its own pass if ever needed,"
+§0) regardless of which street the boundary happens to run through.
+
 ---
 
 ## 3. Sub-area character sheets
