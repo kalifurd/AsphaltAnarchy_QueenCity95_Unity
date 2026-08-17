@@ -7532,3 +7532,160 @@ PriceHill_PermanentSavePoint/InclineHouse trigger radii) fire the real
 TurfNode/PermanentSavePoint OnTriggerEnter path - same clean "Game
 saved" logs, no NullReferenceException this time (previously threw 2).
 Scene saved.
+
+[NOTE] Full map-state audit (K.I.S.S. FIRST, no build), read directly
+from the live QueenCity_Main scene via Unity MCP (hierarchy dump +
+execute_code inspecting TurfNode SerializedObjects and transforms) -
+Docs/ level-design .md files NOT used as the source of truth, since the
+ask was what's actually IN the scene vs doc text.
+
+PART 1 - per-district scene reality (8 districts per Docs/):
+  - Downtown/OTR: 3 TurfNodes only (OTRAlley, DowntownOverpass,
+    AbandonedSubway - the last one's desc places it "beneath Central
+    Parkway," geographically OTR/West End border). Zero safehouses.
+    Zero non-TurfNode geometry - no clubhouse, no road stubs, nothing
+    but the capture-trigger spheres themselves sitting on bare Ground.
+  - Queensgate: 1 TurfNode (QueensgateYard, hasSafehouse=true) +
+    RoundhouseClubhouse_PLACEHOLDER + yard placeholders (turntable,
+    2 track beds, 4 freight cars) + the 7 Frontage_* laundering-front
+    placeholders (Milestone 1, logged 2026-08-15). Most geometry of
+    any district, but every piece is an untextured primitive
+    _PLACEHOLDER, not final art.
+  - Price Hill/Delhi: 4 TurfNodes (InclineHouse hasSafehouse=true,
+    EighthAndState, AndersonFerry, WarsawAve) + InclineHouse_Clubhouse_
+    PLACEHOLDER + StateAve_Stub + InclineCut_Stub + MeyersCarryout_
+    PLACEHOLDER + AndersonFerryRd_Stub + PriceHill_PermanentSavePoint.
+    Most-built district overall; matches memory (CLOSED loop).
+  - Newport: 1 TurfNode (NewportRiverfront) + Kingfish dock/gangway/
+    clubhouse placeholder + all 3 Ohio-side bridges (Taylor-Southgate,
+    L&N, Big Mac), each with deck geometry, 2 WaterHazard blockers, and
+    KY/OH JurisdictionCrossingTrigger pairs. Heavily built, matches
+    memory (all 3 bridges live-tested).
+  - Milford/Batavia: 1 TurfNode (Milford, pos 80,0,80) and NOTHING
+    else - no safehouse, no clubhouse, no road, no distinguishing
+    geometry. The node sits alone on bare Ground.
+  - Hamilton/Fairfield: 1 TurfNode (Hamilton, pos -80,0,-80), same
+    story as Milford - alone on bare Ground, zero other objects.
+  - Norwood: CONFIRMED NOTHING BUILT. No TurfNode, no geometry, no
+    scene object of any kind found searching the full 81-object
+    hierarchy. Doc-only district.
+  - East End: CONFIRMED NOTHING BUILT. No TurfNode, no geometry.
+    Ground_EastExtension exists but is a bare terrain-extension mesh
+    (worldSize 47x200 @ x=100-147), not East End content - no node, no
+    building, no name tying it to the district.
+  Total TurfNode count in scene: 11 (matches the turf-wiring memory).
+
+PART 2 - AndersonFerryRd_Stub disconnection: CONFIRMED STILL OPEN.
+  Ground (core plane): centered (0,0,0), scale (20,1,20) -> world
+  200x200, spans x -100..100.
+  AndersonFerryRd_Stub: pos (-157.29, 8.15, -50), scale (60.5,1,6) ->
+  spans x -187.54..-127.04.
+  Gap: ~27 units of empty x-space (x -127.04..-100) between Ground's
+  west edge and the stub's near edge, PLUS an 8.15-unit vertical rise
+  (stub sits at y=8.15, Ground at y=0) - per the vertical-elevation
+  invariant this is real-world-meters hero terrain (Delhi bluffs), so
+  closing the gap isn't just extending a flat mesh, it needs slope/ramp
+  geometry that climbs ~8m over that ~27-unit run to physically join
+  the stub to shared Ground. Nothing currently occupies that space -
+  no filler mesh, no collider, no terrain patch.
+
+PART 3 - CincinnatiTerrainGenerator coverage: only 1 patch exists
+  (Terrain_EastFillerPatch01), holding one Terrain component sized
+  1000x1000 (terrainData.size), positioned at world (400,0,-565) -
+  spans roughly x 400..1400, z -565..435. This is FAR outside the
+  built cluster (everything else in the scene sits within roughly
+  x -190..150, z -100..100) - fully disconnected/orphaned relative to
+  the playable core, not adjacent filler. Given the built footprint is
+  ~350x200 units and the one generated patch is a 1000x1000 island a
+  few hundred units away with nothing bridging them, the overwhelming
+  majority of the districts' documented geographic footprint (per
+  RealGeography_Reference.md's real-world distances) is still default/
+  bare - only Queensgate, Price Hill/Delhi, and Newport have any
+  meaningful built terrain at all.
+
+PART 4 - proposed priority order (NOT built, awaiting decision):
+  1. Close AndersonFerryRd_Stub gap first - it's the one dangling
+     connection on an already-built district (Price Hill/Delhi), cheap
+     relative to standing up a new district, and leaves a real hole in
+     an otherwise-closed loop.
+  2. Stand up Norwood and East End with the same placeholder-tier pass
+     Queensgate/Price Hill got (TurfNode + safehouse-or-not + a
+     handful of _PLACEHOLDER geometry) - currently doc-only, the
+     biggest gap between "designed" and "exists."
+  3. Give Milford and Hamilton at minimum a placeholder clubhouse/
+     safehouse pass - they have a capture node but nothing else, so
+     right now capturing them has no visual or gameplay payoff beyond
+     the node itself.
+  4. Only after 1-3: more CincinnatiTerrainGenerator filler patches or
+     art polish on existing placeholders - the single existing patch is
+     disconnected from everything, so more terrain doesn't help until
+     districts it should border actually exist.
+  Rationale: this order closes real, already-half-built gaps (Anderson
+  Ferry, the two bare nodes) and gets all 8 districts to the same
+  placeholder floor before spending effort on terrain/art that nothing
+  currently connects to.
+
+[NOTE] Correction to the prior map-state audit's Anderson Ferry gap
+numbers before closing it. The earlier audit's "27-unit horizontal /
+8.15-unit vertical" figures used AndersonFerryRd_Stub's raw pivot
+position and axis-aligned scale, which don't account for the stub
+already being a TILTED ramp (rot.z=24.65 deg, same convention as
+InclineCut_Stub) - not a flat box. Recomputed via TransformPoint on the
+stub's actual corners: its low end (~x=-185, y=-4.5) sits at the
+TurfNode_AndersonFerry ferry landing as expected, but its HIGH end -
+the end nearest Ground - is at (~x=-129.8, y=~20.76), matching
+InclineCut_Stub's own high end (~x=20, y=~21.6, right by
+TurfNode_WarsawAve at y=22.04) almost exactly. Both ramps climb to the
+same bluff-crest elevation - confirms this is deliberate real
+geography (Delhi bluffs/West Price Hill crest), not two unrelated
+stubs. The real gap to close was therefore Ground's edge (x=-100,y=0)
+to the stub's HIGH end (x=-129.8,y=20.76): ~30 units horizontal, ~20.8
+units vertical, ~34.9 deg grade - steeper than either existing ramp
+(InclineCut 28.37 deg, the stub's own slope 24.65 deg).
+
+[DONE] AndersonFerryRd_Stub gap closed. Built AndersonFerry_
+ConnectorRamp: single tilted box (Cube primitive, same style as every
+other road stub in the project), tag Asphalt, layer Ground(10),
+pos=(-114.9,10.38,-50), rot=(0,0,145.1336), scale=(36.31686,1,6) -
+scale/rotation solved directly from the two connection points (Ground
+edge and the stub's high-face center) so both ends land flush with
+sub-unit overlap (~0.3 units into Ground, <1 unit into the stub's high
+face - confirmed via TransformPoint on the new box's corners against
+both targets, no gap either side). Scene saved before play-testing so
+the object persists regardless of play-mode state.
+
+Verification (K.I.S.S. - raycast/physics checks via execute_code
+in Play mode, not a real WASD drive - noting the limitation below):
+  - Raycast sweep down the z=-50 lane from x=-95 to x=-139 in 2-unit
+    steps: continuous ground hit at every sample, zero gaps
+    (anyGap=False). Surface handoff Ground -> ConnectorRamp at x=-99/
+    -101 (dy=1.30, matches the ~35 deg grade, not a cliff) and
+    ConnectorRamp -> AndersonFerryRd_Stub at x=-129/-131 (dy=-0.05,
+    essentially seamless), then the original stub continues its own
+    descent toward the ferry landing as expected. No floating, no
+    missing-collider segments, no double-surface overlap glitches.
+  - Attempted a genuine WheelCollider-driven play-test (reflection to
+    grab MotorcycleController's private frontWheel/rearWheel fields,
+    set rearWheel.motorTorque directly, since Input.GetAxis can't be
+    driven headlessly through MCP) - inconclusive: after teleporting
+    the player, wheel suspension didn't re-settle cleanly
+    (isGrounded flipped false on both wheels despite the capsule
+    resting on the surface) and motorTorque alone didn't produce
+    forward motion. Not treated as a ramp defect - it's a test-rig
+    limitation (no way to hold a real throttle key), separate from a
+    gravity-only capsule drop test on the ramp itself, which held and
+    slid along the slope under gravity with no clipping/fall-through
+    (it did slide sideways off the narrow 6-unit-wide ramp under pure
+    gravity with zero steering input, which is expected for an
+    unpowered capsule with no vehicle traction on a ~35 deg grade, not
+    evidence of a geometry problem).
+  [FLAG] Real human/gamepad drive test still needed to confirm actual
+  playability - this connector is the steepest slope built so far
+  (~34.9 deg vs 24.65/28.37 on the existing two), and the project's
+  already-documented standing-start wheelspin/traction-ceiling issue
+  (see project_slope_climbing_traction_ceiling memory) means a
+  standing start on this ramp is likely to fail even though the
+  geometry itself is sound - a running start should be used first, per
+  the same finding that closed that investigation. Not fixed/decided
+  here, flagging per protocol rather than guessing at a tuning change.
+  Console clean (0 errors/warnings) through the whole test.
