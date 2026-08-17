@@ -7689,3 +7689,42 @@ in Play mode, not a real WASD drive - noting the limitation below):
   the same finding that closed that investigation. Not fixed/decided
   here, flagging per protocol rather than guessing at a tuning change.
   Console clean (0 errors/warnings) through the whole test.
+
+[DONE] Terrain_EastFillerPatch01's "jagged/rocky" look wasn't a
+heightmap regression (confirmed in the prior two passes: live
+generator params matched the 2026-08-14 tuned values exactly, and the
+original confirmed-good screenshot from that session showed the same
+jagged silhouette). Root cause was rendering, not data: terrainLayers
+count was 0 - the terrain had never had a texture assigned, so it was
+rendering with Unity's flat default white Default-Terrain-Standard
+material, and a single directional light hitting raw per-vertex
+normals on an untextured heightmap reads as harsh/spiky.
+
+[NOTE] Checked for existing usable ground/rock/grass textures before
+creating anything new, per instruction - none exist anywhere in the
+project (Assets/Materials and Assets/Textures both essentially empty,
+no Yughues or other terrain texture pack, nothing under TripoModels
+fits). Also checked Unity 6's builtin_extra/default resources - only
+UI/particle textures available (Default-Checker, Default-Particle,
+etc.), no usable terrain diffuse among them.
+
+[DONE] Generated one small placeholder ground texture (64x64, muted
+olive/tan RGB ~0.42/0.40/0.28 with +/-4% per-pixel grain to avoid a
+flat-plastic look) - same placeholder tier as every other
+_PLACEHOLDER object already in this project. Saved to
+Assets/Textures/Terrain/TerrainLayer_Ground01_Diffuse.png. Created a
+single TerrainLayer asset (Assets/Materials/Terrain/
+TerrainLayer_Ground01.terrainlayer, tileSize 15x15) and assigned it as
+Terrain_EastFillerPatch01's only terrainLayers entry - one layer only,
+no splat-map blending, per explicit scope limit (multi-texture
+blending is real future-polish work, not this fix).
+
+[DONE] Re-screenshot from the same overview angle as
+terrain_regression_check_02 (view_position [900,550,-900], view_target
+[900,60,-65], temp TerrainCheckCam, deleted after capture) - saved as
+terrain_layer_check_02_overview_after.png. Confirms this actually
+fixes the harsh-white-under-single-light look, not just a color swap:
+same underlying rolling-hills silhouette, but now reads with visible
+shading variation across ridges/valleys in a muted ground tone instead
+of the flat white glacier/snow look. Scene saved
+(Assets/Scenes/QueenCity_Main.unity - TerrainLayer assignment).
